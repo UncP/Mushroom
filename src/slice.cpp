@@ -11,6 +11,11 @@
 
 namespace Mushroom {
 
+void KeyCopy(KeySlice *a, KeySlice *b, uint8_t len)
+{
+	memcpy(a, b, static_cast<uint32_t>(len) + sizeof(KeySlice));
+}
+
 std::string Slice::ToString() const
 {
 	char len[16];

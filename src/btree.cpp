@@ -7,27 +7,11 @@
  *    > Created Time: 2016-10-07 20:12:13
 **/
 
+#include <cassert>
+
 #include "btree.hpp"
 
 namespace Mushroom {
-
-std::string BTreePage::ToString() const
-{
-	std::string str("type: ");
-	if (type_ == LEAF)   str += "leaf  ";
-	if (type_ == BRANCH) str += "branch  ";
-	if (type_ == ROOT)   str += "root  ";
-	char no[16];
-	snprintf(no, 16, "%d  ", page_no_);
-	str += "page_no: " + std::string(no);
-	snprintf(no, 16, "%d  ", total_key_);
-	str += "tot_key: " + std::string(no);
-	snprintf(no, 16, "%d  ", total_child_);
-	str += "tot_chd: " + std::string(no);
-	snprintf(no, 16, "%d  ", right_);
-	str += "right: " + std::string(no) + "\n";
-	return std::move(str);
-}
 
 std::string BTree::ToString() const
 {
@@ -46,14 +30,48 @@ std::string BTree::ToString() const
 	return std::move(str);
 }
 
-Status BTree::Init(int max_key_len)
+Status BTree::Init(const int fd, const int key_len)
 {
 	// TODO
 
-	max_key_len_ = static_cast<uint8_t>(max_key_len);
+	key_len_ = static_cast<uint8_t>(key_len);
 
-	int degree = (BTreePage::PageSize - 13) / (BTreePage::DataIdLength + 2 + 1 + max_key_len) + 1;
-	degree_ = static_cast<uint16_t>(degree);
+	degree_ = static_cast<uint16_t>(
+		(BTreePage::PageSize - sizeof(BTreePage)) /
+		(DataPage::DataId + BTreePage::IndexByte + key_len) + 1);
+
+	pager_ = new BTreePager(fd);
+
+	return Success;
+}
+
+Status BTree::Close()
+{
+	if (pager_) assert(pager_->Close());
+	return Success;
+}
+
+BTreePage* BTree::DescendToLeaf(const Slice &key, BTreePage **stack, uint8_t *depth)
+{
+	BTreePage *node = &root_;
+	for (; node->Type() != BTreePage::LEAF; ++*depth) {
+		page_id page_no = node->Descend(key);
+		stack[*depth] = node;
+		assert(node = pager_->GetPage(page_no));
+	}
+	return node;
+}
+
+Status BTree::Put(const Slice &key, const Slice &val)
+{
+	assert(key.Length() == key_len_);
+	assert(val.Empty());
+
+	uint8_t depth = 0;
+	BTreePage* stack[8];
+
+	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
+	leaf->Insert(key);
 
 	return Success;
 }

@@ -31,7 +31,9 @@ class Slice
 		Slice(const char *data):data_(data), len_(strlen(data)) { }
 
 		const void* Data() const { return data_; }
-		size_t      Len()  const { return len_; }
+		size_t      Length()  const { return len_; }
+
+		bool Empty() const { return !len_; }
 
 		Slice& operator=(const Slice &that) = default;
 
@@ -44,21 +46,23 @@ class Slice
 
 class KeySlice
 {
-	public:
-		KeySlice() { }
-
-		int compare(const KeySlice *that) const {
-			uint8_t min_len = std::min(this->len_, that->len_);
-			int res = memcmp(this->data_, that->data_, min_len);
-			if (res || this->len_ == that->len_)
-				return res;
-			return this->len_ > that->len_ ? 1 : -1;
+	friend
+		inline int compare(const KeySlice *a, const KeySlice *b, uint8_t len) {
+			return memcmp(a->data_, b->data_, (size_t)len);
 		}
 
+	public:
+
+		KeySlice() { }
+
+		const char* Key() const { return data_; }
+
+		bool DataEmpty() const { int i = 0; return memcmp(this, &i, 4) == 0; }
+
 	private:
-		uint32_t page_no_;
-		uint16_t pos_;
-		uint8_t  len_;
+		unsigned page_no_:22;
+		unsigned pos_:10;
+
 		char     data_[0];
 };
 
@@ -71,6 +75,8 @@ class DataSlice
 		uint16_t len_;
 		char     data_[0];
 };
+
+void KeyCopy(KeySlice *a, KeySlice *b, uint8_t len);
 
 } // namespace Mushroom
 

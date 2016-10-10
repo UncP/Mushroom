@@ -4,16 +4,12 @@
  *    > Github:   https://www.github.com/UncP/Mushroom
  *    > Description:
  *
- *    > Created Time: 2016-10-09 16:04:16
+ *    > Created Time: 2016-10-10 16:02:16
 **/
 
-#ifndef _STATUS_HPP_
-#define _STATUS_HPP_
+#include "data_page.hpp"
 
-namespace Mushroom {
-
-enum Status {Fail, Success, Fatal };
+namespace Mushroom
+{
 
 } // namespace Mushroom
-
-#endif /* _STATUS_HPP_ */

@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "btree.hpp"
+#include "slice.hpp"
 
 int main(int argc, char **argv)
 {
