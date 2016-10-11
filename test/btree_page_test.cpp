@@ -16,6 +16,7 @@ int main(int argc, char **argv)
 	using namespace Mushroom;
 	BTreePage *leaf;
 	std::cout << sizeof(BTreePage) << std::endl;
+	std::cout << ((char *)leaf->Data() - (char *)leaf) << std::endl;
 	char a[16] = {0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 6, 0, 7, 0};
 	leaf = static_cast<BTreePage *>(static_cast<void *>(a));
 	std::cout << leaf;

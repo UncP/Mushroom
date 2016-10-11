@@ -16,12 +16,14 @@
 
 namespace Mushroom {
 
+typedef uint32_t page_id;
+
 class Slice
 {
 	friend
 		std::ostream& operator<<(std::ostream &os, const Slice *slice) {
 			return os << slice->ToString();
-		}
+		};
 
 	public:
 		Slice():data_(nullptr), len_(0) { }
@@ -30,7 +32,7 @@ class Slice
 
 		Slice(const char *data):data_(data), len_(strlen(data)) { }
 
-		const void* Data() const { return data_; }
+		const char* Data() const { return data_; }
 		size_t      Length()  const { return len_; }
 
 		bool Empty() const { return !len_; }
@@ -46,23 +48,18 @@ class Slice
 
 class KeySlice
 {
-	friend
-		inline int compare(const KeySlice *a, const KeySlice *b, uint8_t len) {
-			return memcmp(a->data_, b->data_, (size_t)len);
-		}
-
 	public:
 
 		KeySlice() { }
 
-		const char* Key() const { return data_; }
+		const char* Data() const { return data_; }
+
+		page_id PageNo() const { return page_no_; }
 
 		bool DataEmpty() const { int i = 0; return memcmp(this, &i, 4) == 0; }
 
 	private:
-		unsigned page_no_:22;
-		unsigned pos_:10;
-
+		page_id  page_no_;
 		char     data_[0];
 };
 
@@ -76,7 +73,10 @@ class DataSlice
 		char     data_[0];
 };
 
-void KeyCopy(KeySlice *a, KeySlice *b, uint8_t len);
+template<typename T1, typename T2>
+inline int compare(const T1 *a, const T2 *b, size_t len) {
+	return memcmp(a->Data(), b->Data(), len);
+}
 
 } // namespace Mushroom
 

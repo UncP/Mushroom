@@ -20,8 +20,6 @@
 
 namespace Mushroom {
 
-typedef uint32_t page_id;
-
 class BTreePage
 {
 	friend
@@ -33,11 +31,10 @@ class BTreePage
 		static enum { ROOT = 0, BRANCH, LEAF } TYPE;
 
 		static const int PageSize  = 4096;
-		static const int DataId    = 4;
 
 		static const int IndexByte = 2;
-		static const int PageByte  = 4;
-
+		static const int PageByte  = sizeof(page_id);
+		static const int DataId    = sizeof(page_id);
 
 		static BTreePage* NewPage(const page_id page_no);
 
@@ -47,15 +44,25 @@ class BTreePage
 
 		int Type() const { return type_; }
 
+		const char* Data() const { return data_; }
+
 		page_id PageNo() const { return page_no_; }
 
 		bool Dirty() const { return dirty_; }
 
 		bool Occupy() const { return occupy_; }
 
+		uint16_t KeyNo() const { return total_key_; }
+
+		uint16_t ChildNo() const { return total_child_; }
+
 		page_id Descend(const Slice &key) const;
 
-		void Info(uint8_t key_len, uint16_t max) const;
+		bool Insert(const Slice &key);
+
+		void Split(BTreePage *that, const uint8_t key_len);
+
+		void Info(uint8_t key_len) const;
 
 		std::string ToString() const;
 
@@ -110,11 +117,13 @@ class BTreePager
 		}
 
 	public:
-		BTreePager(int fd):fd_(fd), total_(0) { }
+		BTreePager(int fd):fd_(fd), curr_(1) { }
 
 		std::string ToString() const;
 
 		BTreePage* GetPage(const page_id page_no);
+
+		BTreePage* NewPage();
 
 		Status Close();
 
@@ -126,7 +135,7 @@ class BTreePager
 		static const page_id  Mask = (page_id)Hash - 1;
 
 		int             fd_;
-		page_id         total_;
+		page_id         curr_;
 		BTreePageBucket bucket_[Hash];
 };
 

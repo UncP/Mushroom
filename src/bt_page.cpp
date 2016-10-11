@@ -14,8 +14,6 @@
 
 namespace Mushroom {
 
-#define KeyPtr(data, idx, key_len, data_id) (data + (idx * (key_len + data_id)))
-
 std::string BTreePage::ToString() const
 {
 	std::string str("type: ");
@@ -65,11 +63,71 @@ std::string BTreePager::ToString() const
 
 page_id BTreePage::Descend(const Slice &key) const
 {
-
-	return 0;
+	int low = 0, high = total_key_, mid = low + ((high - low) >> 1);
+	uint16_t *index = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
+	KeySlice *curr = nullptr;
+	while (low != high) {
+		curr = (KeySlice *)(data_ + index[mid]);
+		int res = compare(&key, curr, key.Length());
+		if (res < 0) {
+			high = mid;
+		} else if (res > 0) {
+			low = mid + 1;
+		} else {
+			curr = (KeySlice *)(data_ + index[mid+1]);
+			break;
+		}
+		mid = low + ((high - low) >> 1);
+	}
+	assert(curr);
+	return curr->PageNo();
 }
 
-void BTreePage::Info(const uint8_t key_len, const uint16_t max) const
+bool BTreePage::Insert(const Slice &key)
+{
+	int low = 0, high = total_key_, pos = low + ((high - low) >> 1);
+	uint16_t *index = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
+	while (low != high) {
+		KeySlice *curr = (KeySlice *)(data_ + index[pos]);
+		int res = compare(&key, curr, key.Length());
+		if (res < 0)
+			high = pos;
+		else if (res > 0)
+			low = pos + 1;
+		else
+			return false;
+		pos = low + ((high - low) >> 1);
+	}
+	uint16_t slot_len = DataId + key.Length(), end = total_key_ * slot_len;
+	memcpy(data_ + end + DataId, key.Data(), key.Length());
+	--index;
+	if (pos) memmove(&index[0], &index[1], pos << 1);
+	index[pos] = end;
+	++total_key_;
+	return true;
+}
+
+void BTreePage::Split(BTreePage *that, const uint8_t key_len)
+{
+	uint16_t start = total_key_ >> 1;
+	uint16_t *l_idx = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
+	uint16_t *r_idx = (uint16_t *)((char *)that + (PageSize - (right * IndexByte)));
+	uint16_t slot_len = DataId + key_len;
+	uint16_t limit = left * slot_len, offset = 0;
+	for (uint16_t i = start, j = 0; i != total_key_; ++i, ++j) {
+		r_idx[j] = j * slot_len;
+		KeySlice *l = (KeySlice *)(this->data_ + l_idx[i]);
+		KeySlice *r = (KeySlice *)(that->data_ + r_idx[j]);
+		memcpy(r, l, slot_len);
+		if (l_idx[i] < limit && offset < limit) {
+
+		}
+	}
+	that->right_ = this->right_;
+	this->right_ = that->page_no_;
+}
+
+void BTreePage::Info(const uint8_t key_len) const
 {
 	std::string str = ToString();
 	if (!total_key_) {
@@ -77,20 +135,18 @@ void BTreePage::Info(const uint8_t key_len, const uint16_t max) const
 		return ;
 	}
 
-	assert(total_key_ < max);
+	uint16_t *index = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
+	char no[8];
 	for (uint16_t i = 0; i != total_key_; ++i) {
-		uint16_t idx = *(uint16_t *)(data_ + (i << 1));
-		char no[8];
-		snprintf(no, 8, "%d ", idx);
+		snprintf(no, 8, "%d ", index[i]);
 		str += std::string(no);
 	}
 	str += "\n";
 
-	const char *keys = data_ + (max << 1);
 	for (uint16_t i = 0; i != total_key_; ++i) {
-		KeySlice *key = (KeySlice *)KeyPtr(keys, i, key_len, DataId);
+		KeySlice *key = (KeySlice *)(data_ + index[i]);
 		assert(!key->DataEmpty());
-		str += std::string(key->Key(), key_len) + " ";
+		str += std::string(key->Data(), key_len) + " ";
 	}
 	std::cout << str << std::endl;
 }
@@ -173,18 +229,19 @@ Status BTreePageBucket::PinPage(BTreePage *page, const int fd)
 
 BTreePage* BTreePager::GetPage(const page_id page_no)
 {
+	assert(page_no < curr_);
 	BTreePageBucket &bucket = bucket_[page_no & Mask];
-	BTreePage *page;
-	if (page_no < total_) {
-		page = bucket.GetPage(page_no, fd_);
-		if (page) ++total_;
-		return page;
-	} else {
-		page = BTreePage::NewPage(page_no);
-		if (page) {
-			assert(bucket.PinPage(page, fd_));
-			++total_;
-		}
+	BTreePage *page = bucket.GetPage(page_no, fd_);
+	return page;
+}
+
+BTreePage* BTreePager::NewPage()
+{
+	BTreePage *page = BTreePage::NewPage(curr_);
+	if (page) {
+		BTreePageBucket &bucket = bucket_[curr_ & Mask];
+		assert(bucket.PinPage(page, fd_));
+		++curr_;
 	}
 	return page;
 }

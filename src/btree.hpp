@@ -43,6 +43,7 @@ class BTree
 
 	private:
 		BTreePage* DescendToLeaf(const Slice &key, BTreePage **stack, uint8_t *depth);
+		Status Split(BTreePage *leaf, BTreePage **stack, uint8_t depth);
 
 		BTreePage   root_;
 

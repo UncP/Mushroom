@@ -32,13 +32,20 @@ std::string BTree::ToString() const
 
 Status BTree::Init(const int fd, const int key_len)
 {
-	// TODO
+	assert(key_len >= 4 && key_len <= 256);
 
 	key_len_ = static_cast<uint8_t>(key_len);
 
 	degree_ = static_cast<uint16_t>(
-		(BTreePage::PageSize - sizeof(BTreePage)) /
-		(DataPage::DataId + BTreePage::IndexByte + key_len) + 1);
+		(BTreePage::PageSize - 13) / (BTreePage::DataId + BTreePage::IndexByte + key_len));
+
+	// std::cout << degree_ << std::endl;
+
+	min_key_  = ((degree_ - 1) + ((degree_ - 1) % 2)) >> 1;
+	max_key_  = degree_ - 1;
+
+	min_node_ = (degree_ + (degree_ % 2)) >> 1;
+	max_node_ = degree_ + 1;
 
 	pager_ = new BTreePager(fd);
 
@@ -56,6 +63,7 @@ BTreePage* BTree::DescendToLeaf(const Slice &key, BTreePage **stack, uint8_t *de
 	BTreePage *node = &root_;
 	for (; node->Type() != BTreePage::LEAF; ++*depth) {
 		page_id page_no = node->Descend(key);
+		assert(page_no);
 		stack[*depth] = node;
 		assert(node = pager_->GetPage(page_no));
 	}
@@ -71,8 +79,19 @@ Status BTree::Put(const Slice &key, const Slice &val)
 	BTreePage* stack[8];
 
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
-	leaf->Insert(key);
+	if (!leaf->Insert(key)) return Success;
 
+	if (leaf->KeyNo() < degree_) return Success;
+
+	Split(leaf, stack, depth);
+
+	return Success;
+}
+
+Status BTree::Split(BTreePage *leaf, BTreePage **stack, uint8_t depth)
+{
+	BTreePage *right = pager_->NewPage();
+	leaf->Split(right, key_len_);
 	return Success;
 }
 

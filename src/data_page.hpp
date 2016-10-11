@@ -10,14 +10,12 @@
 #ifndef _DATA_PAGE_HPP_
 #define _DATA_PAGE_HPP_
 
-namespace Mushroom
-{
+namespace Mushroom {
 
 class DataPage
 {
 	public:
 		static const int PageSize = 4096;
-		static const int DataId   = 4;
 
 	private:
 };

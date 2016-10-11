@@ -15,8 +15,8 @@ btree_pager_test:bt_page.o ../test/btree_pager_test.cpp
 slice_test:slice.o ../test/slice_test.cpp
 	$(CPP) $(CPPFLAGS) -o slice_test slice.o ../test/slice_test.cpp
 
-btree_test:btree.o ../test/btree_test.cpp
-	$(CPP) $(CPPFLAGS) -o btree_test btree.o ../test/btree_test.cpp
+btree_test:bt_page.o btree.o ../test/btree_test.cpp
+	$(CPP) $(CPPFLAGS) -o btree_test bt_page.o btree.o ../test/btree_test.cpp
 
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp
