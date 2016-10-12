@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "../src/bt_page.hpp"
+#include "../src/btree_page.hpp"
 
 int main(int argc, char **argv)
 {
