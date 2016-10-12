@@ -37,7 +37,7 @@ Status BTree::Init(const int fd, const int key_len)
 	key_len_ = static_cast<uint8_t>(key_len);
 
 	degree_ = static_cast<uint16_t>(
-		(BTreePage::PageSize - 13) / (BTreePage::DataId + BTreePage::IndexByte + key_len));
+		(BTreePage::PageSize - 14) / (BTreePage::DataId + BTreePage::IndexByte + key_len));
 
 	// std::cout << degree_ << std::endl;
 
@@ -60,7 +60,7 @@ Status BTree::Close()
 
 BTreePage* BTree::DescendToLeaf(const Slice &key, BTreePage **stack, uint8_t *depth)
 {
-	BTreePage *node = &root_;
+	BTreePage *node = root_;
 	for (; node->Type() != BTreePage::LEAF; ++*depth) {
 		page_id page_no = node->Descend(key);
 		assert(page_no);
@@ -88,10 +88,29 @@ Status BTree::Put(const Slice &key, const Slice &val)
 	return Success;
 }
 
-Status BTree::Split(BTreePage *leaf, BTreePage **stack, uint8_t depth)
+Status BTree::Grow(BTreePage *left, BTreePage *right)
 {
-	BTreePage *right = pager_->NewPage();
-	leaf->Split(right, key_len_);
+	root_ = pager_->NewPage(BTreePage::ROOT, key_len_);
+	if (left->Type() == BTreePage::ROOT) {
+		left->AssignType(BTreePage::LEAF);
+		left->AssignPageNo(2);
+		left->AssignRight(3);
+		right->AssignPageNo(3);
+	}
+	root_->Insert()
+	return Success;
+}
+
+Status BTree::Split(BTreePage *child, BTreePage **stack, uint8_t depth)
+{
+	BTreePage *right = pager_->NewPage(BTreePage::LEAF, key_len_);
+	child->Split(right);
+	if (child->Type() == BTreePage::ROOT) {
+		assert(!depth);
+		return Grow(child, right);
+	}
+	child = stack[--depth];
+
 	return Success;
 }
 

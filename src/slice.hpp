@@ -58,6 +58,8 @@ class KeySlice
 
 		bool DataEmpty() const { int i = 0; return memcmp(this, &i, 4) == 0; }
 
+		void MarkDead() { *data_ = 0; }
+
 	private:
 		page_id  page_no_;
 		char     data_[0];

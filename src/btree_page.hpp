@@ -30,13 +30,15 @@ class BTreePage
 	public:
 		static enum { ROOT = 0, BRANCH, LEAF } TYPE;
 
-		static const int PageSize  = 4096;
+		static const uint16_t PageSize  = 4096;
 
-		static const int IndexByte = 2;
-		static const int PageByte  = sizeof(page_id);
-		static const int DataId    = sizeof(page_id);
+		static const uint16_t IndexByte = 2;
+		static const uint16_t PageByte  = sizeof(page_id);
+		static const uint16_t DataId    = sizeof(page_id);
 
-		static BTreePage* NewPage(const page_id page_no);
+		static const uint16_t Dead = (uint16_t)PageSize;
+
+		static BTreePage* NewPage(const page_id page_no, int type, uint8_t key_len);
 
 		Status Write(const int fd);
 
@@ -44,9 +46,17 @@ class BTreePage
 
 		int Type() const { return type_; }
 
+		void AssignType(int type) { type_ = type; }
+
 		const char* Data() const { return data_; }
 
 		page_id PageNo() const { return page_no_; }
+
+		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
+
+		page_id Right() const { return right_; }
+
+		void AssignRight(page_id right) { right_ = right; }
 
 		bool Dirty() const { return dirty_; }
 
@@ -60,17 +70,21 @@ class BTreePage
 
 		bool Insert(const Slice &key);
 
-		void Split(BTreePage *that, const uint8_t key_len);
+		void Split(BTreePage *that);
 
 		void Info(uint8_t key_len) const;
 
 		std::string ToString() const;
 
 	private:
+
+		void Compact();
+
 		page_id  page_no_;
 		page_id  right_;
 		uint16_t total_key_;
 		uint16_t total_child_;
+		uint8_t  key_len_;
 		unsigned   type_:2;
 		unsigned  dirty_:1;
 		unsigned occupy_:1;
@@ -102,6 +116,7 @@ class BTreePageBucket
 		BTreePageBucket(const BTreePageBucket &) = delete;
 
 	private:
+
 		static const int Max = 8;
 
 		BTreePage *pages_[Max];
@@ -123,7 +138,7 @@ class BTreePager
 
 		BTreePage* GetPage(const page_id page_no);
 
-		BTreePage* NewPage();
+		BTreePage* NewPage(int type, uint8_t key_len);
 
 		Status Close();
 

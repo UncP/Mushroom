@@ -16,7 +16,7 @@
 
 #include "status.hpp"
 #include "slice.hpp"
-#include "bt_page.hpp"
+#include "btree_page.hpp"
 #include "data_page.hpp"
 
 namespace Mushroom {
@@ -44,8 +44,9 @@ class BTree
 	private:
 		BTreePage* DescendToLeaf(const Slice &key, BTreePage **stack, uint8_t *depth);
 		Status Split(BTreePage *leaf, BTreePage **stack, uint8_t depth);
+		Status Grow();
 
-		BTreePage   root_;
+		BTreePage  *root_;
 
 		BTreePager *pager_;
 
