@@ -36,8 +36,6 @@ class BTreePage
 		static const uint16_t PageByte  = sizeof(page_id);
 		static const uint16_t DataId    = sizeof(page_id);
 
-		static const uint16_t Dead = (uint16_t)PageSize;
-
 		static BTreePage* NewPage(const page_id page_no, int type, uint8_t key_len);
 
 		Status Write(const int fd);
@@ -49,28 +47,26 @@ class BTreePage
 		void AssignType(int type) { type_ = type; }
 
 		const char* Data() const { return data_; }
-
 		page_id PageNo() const { return page_no_; }
+		page_id Right() const { return right_; }
+		bool Dirty() const { return dirty_; }
+		bool Occupy() const { return occupy_; }
+		uint16_t KeyNo() const { return total_key_; }
+		uint16_t ChildNo() const { return total_child_; }
 
 		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
-
-		page_id Right() const { return right_; }
-
 		void AssignRight(page_id right) { right_ = right; }
-
-		bool Dirty() const { return dirty_; }
-
-		bool Occupy() const { return occupy_; }
-
-		uint16_t KeyNo() const { return total_key_; }
-
-		uint16_t ChildNo() const { return total_child_; }
+		void AssignFirst(page_id first) {
+			assert(type_ != LEAF);
+			first_ = first;
+		}
 
 		page_id Descend(const Slice &key) const;
 
 		bool Insert(const Slice &key);
+		bool Insert(const KeySlice *key);
 
-		void Split(BTreePage *that);
+		void Split(BTreePage *that, char *key = nullptr);
 
 		void Info(uint8_t key_len) const;
 
@@ -82,13 +78,15 @@ class BTreePage
 
 		page_id  page_no_;
 		page_id  right_;
+		page_id  first_;
 		uint16_t total_key_;
 		uint16_t total_child_;
 		uint8_t  key_len_;
-		unsigned   type_:2;
-		unsigned  dirty_:1;
-		unsigned occupy_:1;
-		unsigned        :4;
+		unsigned    type_:2;
+		unsigned   dirty_:1;
+		unsigned  occupy_:1;
+		unsigned    lock_:1;
+		unsigned readers_:3;
 		char     data_[0];
 };
 

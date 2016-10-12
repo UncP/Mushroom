@@ -63,10 +63,11 @@ std::string BTreePager::ToString() const
 
 page_id BTreePage::Descend(const Slice &key) const
 {
-	int low = 0, high = total_key_, mid = low + ((high - low) >> 1);
+	int low = 0, high = total_key_;
 	uint16_t *index = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 	KeySlice *curr = nullptr;
 	while (low != high) {
+		int mid = low + ((high - low) >> 1);
 		curr = (KeySlice *)(data_ + index[mid]);
 		int res = compare(&key, curr, key.Length());
 		if (res < 0) {
@@ -77,10 +78,9 @@ page_id BTreePage::Descend(const Slice &key) const
 			curr = (KeySlice *)(data_ + index[mid+1]);
 			break;
 		}
-		mid = low + ((high - low) >> 1);
 	}
 	assert(curr);
-	return curr->PageNo();
+	return high ? curr->PageNo() : first_;
 }
 
 bool BTreePage::Insert(const Slice &key)
@@ -89,7 +89,7 @@ bool BTreePage::Insert(const Slice &key)
 	uint16_t *index = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 	while (low != high) {
 		KeySlice *curr = (KeySlice *)(data_ + index[pos]);
-		int res = compare(&key, curr, key.Length());
+		int res = compare(&key, curr, key_len_);
 		if (res < 0)
 			high = pos;
 		else if (res > 0)
@@ -98,8 +98,8 @@ bool BTreePage::Insert(const Slice &key)
 			return false;
 		pos = low + ((high - low) >> 1);
 	}
-	uint16_t slot_len = DataId + key.Length(), end = total_key_ * slot_len;
-	memcpy(data_ + end + DataId, key.Data(), key.Length());
+	uint16_t slot_len = DataId + key_len_, end = total_key_ * slot_len;
+	memcpy(data_ + end + DataId, key.Data(), key_len_);
 	--index;
 	if (pos) memmove(&index[0], &index[1], pos << 1);
 	index[pos] = end;
@@ -107,12 +107,41 @@ bool BTreePage::Insert(const Slice &key)
 	return true;
 }
 
-void BTreePage::Split(BTreePage *that)
+bool BTreePage::Insert(const KeySlice *key)
+{
+	int low = 0, high = total_key_, pos = low + ((high - low) >> 1);
+	uint16_t *index = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
+	while (low != high) {
+		KeySlice *curr = (KeySlice *)(data_ + index[pos]);
+		int res = compare(key, curr, key_len_);
+		if (res < 0)
+			high = pos;
+		else if (res > 0)
+			low = pos + 1;
+		else
+			return false;
+		pos = low + ((high - low) >> 1);
+	}
+	uint16_t slot_len = DataId + key_len_, end = total_key_ * slot_len;
+	memcpy(data_ + end, key, slot_len);
+	--index;
+	if (pos) memmove(&index[0], &index[1], pos << 1);
+	index[pos] = end;
+	++total_key_;
+	return true;
+}
+
+void BTreePage::Split(BTreePage *that, char *key)
 {
 	uint16_t left = total_key_ >> 1, right = total_key_ - left;
 	uint16_t *l_idx = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 	uint16_t *r_idx = (uint16_t *)((char *)that + (PageSize - (right * IndexByte)));
 	uint16_t slot_len = DataId + key_len_;
+	if (type_ == BRANCH) {
+		KeySlice *l = (KeySlice *)(this->data_ + l_idx[left++]);
+		that->AssignFirst(l->PageNo());
+		memcpy(key, l->Data(), key_len_);
+	}
 	for (uint16_t i = left, j = 0; i != total_key_; ++i, ++j) {
 		r_idx[j] = j * slot_len;
 		KeySlice *l = (KeySlice *)(this->data_ + l_idx[i]);
