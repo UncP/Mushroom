@@ -56,9 +56,12 @@ class KeySlice
 
 		page_id PageNo() const { return page_no_; }
 
-		bool DataEmpty() const { int i = 0; return memcmp(this, &i, 4) == 0; }
+		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
 
-		void MarkDead() { *data_ = 0; }
+		void Assign(page_id page_no, const char *data, size_t len) {
+			page_no_ = page_no;
+			memcpy(data_, data, len);
+		}
 
 	private:
 		page_id  page_no_;

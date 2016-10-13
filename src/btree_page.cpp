@@ -23,12 +23,8 @@ std::string BTreePage::ToString() const
 	char no[16];
 	snprintf(no, 16, "%d  ", page_no_);
 	str += "page_no: " + std::string(no);
-	snprintf(no, 16, "%d  ", total_key_);
+	snprintf(no, 16, "%d  ", total_key_ - 1);
 	str += "tot_key: " + std::string(no);
-	snprintf(no, 16, "%d  ", total_child_);
-	str += "tot_chd: " + std::string(no);
-	snprintf(no, 16, "%d  ", right_);
-	str += "right: " + std::string(no);
 	if (dirty_)
 		str += "dirty: true\n";
 	else
@@ -61,7 +57,7 @@ std::string BTreePager::ToString() const
 	return std::move(str);
 }
 
-page_id BTreePage::Descend(const Slice &key) const
+page_id BTreePage::Descend(const KeySlice *key) const
 {
 	int low = 0, high = total_key_;
 	uint16_t *index = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
@@ -69,7 +65,7 @@ page_id BTreePage::Descend(const Slice &key) const
 	while (low != high) {
 		int mid = low + ((high - low) >> 1);
 		curr = (KeySlice *)(data_ + index[mid]);
-		int res = compare(&key, curr, key.Length());
+		int res = compare(key, curr, key_len_);
 		if (res < 0) {
 			high = mid;
 		} else if (res > 0) {
@@ -81,30 +77,6 @@ page_id BTreePage::Descend(const Slice &key) const
 	}
 	assert(curr);
 	return high ? curr->PageNo() : first_;
-}
-
-bool BTreePage::Insert(const Slice &key)
-{
-	int low = 0, high = total_key_, pos = low + ((high - low) >> 1);
-	uint16_t *index = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
-	while (low != high) {
-		KeySlice *curr = (KeySlice *)(data_ + index[pos]);
-		int res = compare(&key, curr, key_len_);
-		if (res < 0)
-			high = pos;
-		else if (res > 0)
-			low = pos + 1;
-		else
-			return false;
-		pos = low + ((high - low) >> 1);
-	}
-	uint16_t slot_len = DataId + key_len_, end = total_key_ * slot_len;
-	memcpy(data_ + end + DataId, key.Data(), key_len_);
-	--index;
-	if (pos) memmove(&index[0], &index[1], pos << 1);
-	index[pos] = end;
-	++total_key_;
-	return true;
 }
 
 bool BTreePage::Insert(const KeySlice *key)
@@ -131,18 +103,22 @@ bool BTreePage::Insert(const KeySlice *key)
 	return true;
 }
 
-void BTreePage::Split(BTreePage *that, char *key)
+void BTreePage::Split(BTreePage *that, KeySlice *slice)
 {
-	uint16_t left = total_key_ >> 1, right = total_key_ - left;
+	uint16_t left = total_key_ >> 1, index = left, right = total_key_ - left;
 	uint16_t *l_idx = (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 	uint16_t *r_idx = (uint16_t *)((char *)that + (PageSize - (right * IndexByte)));
 	uint16_t slot_len = DataId + key_len_;
+	KeySlice *fence = (KeySlice *)(this->data_ + l_idx[left]);
+
 	if (type_ == BRANCH) {
-		KeySlice *l = (KeySlice *)(this->data_ + l_idx[left++]);
+		++index;
 		that->AssignFirst(l->PageNo());
-		memcpy(key, l->Data(), key_len_);
 	}
-	for (uint16_t i = left, j = 0; i != total_key_; ++i, ++j) {
+	slice->Assign(that->PageNo(), fence->Data(), key_len_);
+	fence->AssignPageNo(that->PageNo());
+
+	for (uint16_t i = index, j = 0; i != total_key_; ++i, ++j) {
 		r_idx[j] = j * slot_len;
 		KeySlice *l = (KeySlice *)(this->data_ + l_idx[i]);
 		KeySlice *r = (KeySlice *)(that->data_ + r_idx[j]);
@@ -162,8 +138,6 @@ void BTreePage::Split(BTreePage *that, char *key)
 	Compact();
 	that->total_key_ = left;
 	that->total_key_ = right;
-	that->right_ = this->right_;
-	this->right_ = that->page_no_;
 }
 
 void BTreePage::Compact()
@@ -207,19 +181,19 @@ void BTreePage::Info(const uint8_t key_len) const
 
 	for (uint16_t i = 0; i != total_key_; ++i) {
 		KeySlice *key = (KeySlice *)(data_ + index[i]);
-		assert(!key->DataEmpty());
 		str += std::string(key->Data(), key_len) + " ";
 	}
 	std::cout << str << std::endl;
 }
 
-BTreePage* BTreePage::NewPage(const page_id page_no, int type, uint8_t key_len)
+BTreePage* BTreePage::NewPage(const page_id page_no, int type, uint8_t key_len, uint8_t level)
 {
 	BTreePage *page = (BTreePage *)calloc(1, BTreePage::PageSize);
 	assert(page);
 	page->page_no_ = page_no;
-	page->type_ = type;
+	page->type_    = type;
 	page->key_len_ = key_len;
+	page->level_   = level;
 	return page;
 }
 
@@ -261,7 +235,7 @@ BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 		assert(pages_[index]->Read(fd));
 		return pages_[index];
 	} else {
-		BTreePage *page = BTreePage::NewPage(page_no, 0, 0);
+		BTreePage *page = BTreePage::NewPage(page_no, 0, 0, 0);
 		if (page) {
 			assert(page->Read(fd));
 			pages_[index] = page;
@@ -300,9 +274,9 @@ BTreePage* BTreePager::GetPage(const page_id page_no)
 	return page;
 }
 
-BTreePage* BTreePager::NewPage(int type, uint8_t key_len)
+BTreePage* BTreePager::NewPage(int type, uint8_t key_len, uint8_t level)
 {
-	BTreePage *page = BTreePage::NewPage(curr_, type, key_len);
+	BTreePage *page = BTreePage::NewPage(curr_, type, key_len, level);
 	if (page) {
 		BTreePageBucket &bucket = bucket_[curr_ & Mask];
 		assert(bucket.PinPage(page, fd_));

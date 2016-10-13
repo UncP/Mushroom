@@ -30,9 +30,9 @@ class BTree
 
 		Status Close();
 
-		Status Put(const Slice &key, const Slice &val = Slice());
-		Status Delete(const Slice &key);
-		Status Get(const Slice &key, Slice &val);
+		Status Put(const KeySlice *key, const DataSlice *val = nullptr);
+		Status Delete(const KeySlice *key);
+		Status Get(const KeySlice *key, DataSlice *val);
 
 		std::string ToString() const;
 
@@ -42,8 +42,9 @@ class BTree
 		~BTree() { if (pager_) delete pager_; }
 
 	private:
-		BTreePage* DescendToLeaf(const Slice &key, BTreePage **stack, uint8_t *depth);
+		BTreePage* DescendToLeaf(const KeySlice *key, BTreePage **stack, uint8_t *depth);
 		Status Split(BTreePage *leaf, BTreePage **stack, uint8_t depth);
+		Status SplitRoot();
 
 		BTreePage  *root_;
 
