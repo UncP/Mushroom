@@ -1,2 +1,0 @@
-#! /bin/sh
-rm -rf ../mushroom && make db_test && ./db_test $1
