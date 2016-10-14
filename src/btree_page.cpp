@@ -78,8 +78,8 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, b
 			if (!ge) {
 				return true;
 			} else {
-				curr = (KeySlice *)(data_ + index[++mid]);
-				low = mid;
+				low = ++mid;
+				curr = (KeySlice *)(data_ + index[mid]);
 			}
 		}
 	}
@@ -90,7 +90,7 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, b
 
 page_id BTreePage::Descend(const KeySlice *key) const
 {
-	assert(type_ == BRANCH);
+	assert(type_ != LEAF);
 	uint16_t index;
 	KeySlice *slice = nullptr;
 	Traverse(key, &index, &slice, true);
@@ -151,9 +151,10 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 {
 	uint16_t left = total_key_ >> 1, right = total_key_ - left;
 	uint16_t *l_idx = this->Index();
-	uint16_t *r_idx = that->Index();
+	uint16_t *r_idx = that->Index() - right;
+	std::cout << ((char *)r_idx - (char *)that) << std::endl;
 	uint16_t slot_len = DataId + key_len_;
-	KeySlice *fence = (KeySlice *)(this->data_ + l_idx[left++]);
+	KeySlice *fence = (KeySlice *)(this->data_ + l_idx[left]);
 
 	if (type_ == BRANCH)
 		that->AssignFirst(fence->PageNo());
@@ -161,7 +162,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 
 	slice->Assign(that->PageNo(), fence->Data(), key_len_);
 
-	for (uint16_t i = left, j = 0; i != total_key_; ++i, ++j) {
+	for (uint16_t i = left++, j = 0; i != total_key_; ++i, ++j) {
 		r_idx[j] = j * slot_len;
 		KeySlice *l = (KeySlice *)(this->data_ + l_idx[i]);
 		KeySlice *r = (KeySlice *)(that->data_ + r_idx[j]);
@@ -183,8 +184,8 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 		if (l_idx[i] < limit && offset < left) {
 			for (uint16_t j = offset; j < left; offset = ++j) {
 				if (l_idx[j] >= limit) {
-					KeySlice *o = (KeySlice *)(data_ + l_idx[i]);
-					KeySlice *n = (KeySlice *)(data_ + l_idx[j]);
+					KeySlice *o = (KeySlice *)(that->data_ + l_idx[i]);
+					KeySlice *n = (KeySlice *)(that->data_ + l_idx[j]);
 					l_idx[j] = l_idx[i];
 					memcpy(o, n, slot_len);
 					++offset;
@@ -194,8 +195,10 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 		}
 		if (offset == left) break;
 	}
-	that->total_key_ = left;
+	this->total_key_ = left;
 	that->total_key_ = right;
+	// this->Info();
+	// that->Info();
 }
 
 void BTreePage::Info() const
@@ -223,7 +226,7 @@ void BTreePage::Info() const
 
 BTreePage* BTreePage::NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level)
 {
-	BTreePage *page = (BTreePage *)calloc(BTreePage::PageSize, 1);
+	BTreePage *page = (BTreePage *)new char[BTreePage::PageSize];
 	if (!page) return page;
 	page->page_no_ = page_no;
 	page->type_    = type;
@@ -254,11 +257,11 @@ BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 	int index = len_;
 	uint16_t fresh = 0xFFFF;
 	for (int i = 0; i != len_; ++i) {
-		if (page_no == pages_[i]->PageNo()) {
+		if (pages_[i] && page_no == pages_[i]->PageNo()) {
 			++ages_[i];
 			return pages_[i];
 		}
-		if (ages_[i] < fresh && !pages_[i]->Occupy()) {
+		if (!pages_[i] || (ages_[i] < fresh && !pages_[i]->Occupy())) {
 			index = i;
 			fresh = ages_[i];
 		}
@@ -350,8 +353,10 @@ Status BTreePager::UnPinPage(BTreePage *page)
 Status BTreePageBucket::Clear(const int fd)
 {
 	for (int i = len_ - 1; i >= 0; --i) {
-		assert(pages_[i]->Write(fd));
-		free(pages_[i]);
+		if (pages_[i]) {
+			assert(pages_[i]->Write(fd));
+			delete [] pages_[i];
+		}
 		ages_[i] = 0;
 		--len_;
 	}

@@ -52,7 +52,7 @@ class BTree
 		~BTree() {
 			if (pager_) delete pager_;
 			pager_ = nullptr;
-			if (root_) delete root_;
+			if (root_) delete [] root_;
 			root_ = nullptr;
 		}
 

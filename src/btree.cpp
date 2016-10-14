@@ -91,13 +91,13 @@ Status BTree::SplitRoot()
 	char key[key_len_ + BTreePage::PageByte];
 	KeySlice *slice = (KeySlice *)key;
 	root_->Split(next, slice);
+	root_->AssignType(next->Type());
+	root_->AssignPageNo(new_root->PageNo());
 	new_root->AssignFirst(root_->PageNo());
 	new_root->Insert(slice);
-	root_->AssignType(next->Type());
 	pager_->UnPinPage(new_root);
-	root_->AssignPageNo(new_root->PageNo());
-	new_root->AssignPageNo(0);
 	pager_->PinPage(root_);
+	new_root->AssignPageNo(0);
 	root_ = new_root;
 	return Success;
 }
