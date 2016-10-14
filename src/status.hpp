@@ -12,7 +12,7 @@
 
 namespace Mushroom {
 
-enum Status {Fail, Success, Fatal };
+enum Status {Fail = 0, Success, Fatal };
 
 } // namespace Mushroom
 

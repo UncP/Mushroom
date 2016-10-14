@@ -11,6 +11,8 @@
 
 namespace Mushroom {
 
+OutputCallBack KeySlice::output_callback_ = nullptr;
+
 std::string Slice::ToString() const
 {
 	char len[16];

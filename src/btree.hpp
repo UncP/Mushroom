@@ -23,38 +23,49 @@ namespace Mushroom {
 
 class BTree
 {
+	friend
+		std::ostream& operator<<(std::ostream &os, const BTree *btree) {
+			return os << btree->ToString();
+		}
+
 	public:
-		BTree():pager_(nullptr) { }
+		static const int MAX_KEY_LENGTH = 256;
+
+		BTree():pager_(nullptr), root_(nullptr) { }
 
 		Status Init(const int fd, const int key_len);
 
 		Status Close();
 
-		Status Put(const KeySlice *key, const DataSlice *val = nullptr);
+		uint8_t KeyLen() const { return key_len_; }
+
+		Status Put(const KeySlice *key);
 		Status Delete(const KeySlice *key);
-		Status Get(const KeySlice *key, DataSlice *val);
+		bool Get(KeySlice *key, page_id *page_no) const;
+		bool Next(KeySlice *key, page_id *page_no) const;
 
 		std::string ToString() const;
 
 		BTree& operator=(const BTree &) = delete;
 		BTree(const BTree &) = delete;
 
-		~BTree() { if (pager_) delete pager_; }
+		~BTree() {
+			if (pager_) delete pager_;
+			pager_ = nullptr;
+			if (root_) delete root_;
+			root_ = nullptr;
+		}
 
 	private:
-		BTreePage* DescendToLeaf(const KeySlice *key, BTreePage **stack, uint8_t *depth);
+		BTreePage* DescendToLeaf(const KeySlice *key, BTreePage **stack, uint8_t *depth) const;
 		Status Split(BTreePage *leaf, BTreePage **stack, uint8_t depth);
 		Status SplitRoot();
 
-		BTreePage  *root_;
-
 		BTreePager *pager_;
 
+		BTreePage  *root_;
+
 		uint16_t 	  degree_;			// B+ 树的阶
-		uint16_t 	  min_key_;			// 叶子结点允许的最少关键值数
-		uint16_t    max_key_;			// 叶子结点中允许的最大关键值数
-		uint16_t    min_node_;		// 非叶子结点中最少孩子数
-		uint16_t    max_node_;		// 分裂时非叶子结点中存在的孩子结点数
 
 		uint8_t     key_len_;
 };

@@ -36,7 +36,7 @@ class BTreePage
 		static const uint16_t PageByte  = sizeof(page_id);
 		static const uint16_t DataId    = sizeof(page_id);
 
-		static BTreePage* NewPage(const page_id page_no, int type, uint8_t key_len, uint8_t level);
+		static BTreePage* NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level);
 
 		Status Write(const int fd);
 
@@ -64,15 +64,22 @@ class BTreePage
 
 		bool Insert(const KeySlice *key);
 
+		bool Search(KeySlice *key, page_id *page_no) const;
+
+		bool FindGreatEq(KeySlice *key, page_id *page_no) const;
+
 		void Split(BTreePage *that, KeySlice *slice = nullptr);
 
-		void Info(uint8_t key_len) const;
+		void Info() const;
 
 		std::string ToString() const;
 
 	private:
 
-		void Compact();
+		uint16_t* Index() const {
+			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
+		}
+		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, bool ge = false) const;
 
 		page_id  page_no_;
 		page_id  first_;
@@ -101,7 +108,9 @@ class BTreePageBucket
 
 		Status PinPage(BTreePage *page, const int fd);
 
-		Status Close(const int fd);
+		Status UnPinPage(BTreePage *page, const int fd);
+
+		Status Clear(const int fd);
 
 		int Length() const { return len_; }
 
@@ -122,8 +131,8 @@ class BTreePageBucket
 class BTreePager
 {
 	friend
-		std::ostream& operator<<(std::ostream &os, const BTreePager &pager) {
-			return os << pager.ToString();
+		std::ostream& operator<<(std::ostream &os, const BTreePager *pager) {
+			return os << pager->ToString();
 		}
 
 	public:
@@ -134,6 +143,10 @@ class BTreePager
 		BTreePage* GetPage(const page_id page_no);
 
 		BTreePage* NewPage(int type, uint8_t key_len, uint8_t level);
+
+		Status PinPage(BTreePage *page);
+
+		Status UnPinPage(BTreePage *page);
 
 		Status Close();
 

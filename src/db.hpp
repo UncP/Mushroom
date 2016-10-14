@@ -20,13 +20,20 @@ class MushroomDB
 
 		Status Open(const char *file, const int key_len);
 
+		Status Put(const KeySlice *key) {
+			return btree_->Put(key);
+		}
+
+		const BTree* Btree() const { return btree_ ; }
+
 		Status Close();
+
+		~MushroomDB() { if (btree_) delete btree_; btree_ = nullptr; }
 
 	private:
 		std::string file_;
 
-		BTree       btree_;
-
+		BTree      *btree_;
 };
 
 } // namespace Mushroom

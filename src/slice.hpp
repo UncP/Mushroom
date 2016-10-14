@@ -13,8 +13,13 @@
 #include <cstring>
 #include <string>
 #include <iostream>
+#include <functional>
 
 namespace Mushroom {
+
+class KeySlice;
+
+using OutputCallBack = std::function<void(const KeySlice *)>;
 
 typedef uint32_t page_id;
 
@@ -23,7 +28,7 @@ class Slice
 	friend
 		std::ostream& operator<<(std::ostream &os, const Slice *slice) {
 			return os << slice->ToString();
-		};
+		}
 
 	public:
 		Slice():data_(nullptr), len_(0) { }
@@ -48,13 +53,27 @@ class Slice
 
 class KeySlice
 {
-	public:
+	friend
+		int Compare(const KeySlice *a, const KeySlice *b, size_t len) {
+			return memcmp(a->data_, b->data_, len);
+		};
 
+	friend
+		std::ostream& operator<<(std::ostream &os, const KeySlice *key) {
+			key->Output();
+			return os;
+		}
+
+	public:
 		KeySlice() { }
 
 		const char* Data() const { return data_; }
 
+		char* Data() { return data_; }
+
 		page_id PageNo() const { return page_no_; }
+
+		page_id Valid() const { return page_no_ != 0; }
 
 		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
 
@@ -63,9 +82,18 @@ class KeySlice
 			memcpy(data_, data, len);
 		}
 
+		void Output() const { output_callback_(this); }
+
+		static void SetOutput(const OutputCallBack &callback) {
+			output_callback_ = callback;
+		}
+
+		static OutputCallBack output_callback_;
+
 	private:
 		page_id  page_no_;
 		char     data_[0];
+
 };
 
 class DataSlice
@@ -77,11 +105,6 @@ class DataSlice
 		uint16_t len_;
 		char     data_[0];
 };
-
-template<typename T1, typename T2>
-inline int compare(const T1 *a, const T2 *b, size_t len) {
-	return memcmp(a->Data(), b->Data(), len);
-}
 
 } // namespace Mushroom
 

@@ -19,20 +19,15 @@ std::string BTree::ToString() const
 	char no[16];
 	snprintf(no, 16, "%d  ", degree_);
 	str = "阶: " + std::string(no);
-	snprintf(no, 16, "%d  ", min_key_);
-	str = "min_key: " + std::string(no);
-	snprintf(no, 16, "%d  ", max_key_);
-	str = "max_key: " + std::string(no);
-	snprintf(no, 16, "%d  ", min_node_);
-	str = "min_node: " + std::string(no);
-	snprintf(no, 16, "%d  ", max_node_);
-	str = "max_node: " + std::string(no) + "\n";
+	snprintf(no, 16, "%d  ", key_len_);
+	str += "key_len: " + std::string(no) + "\n";
+	root_->Info();
 	return std::move(str);
 }
 
 Status BTree::Init(const int fd, const int key_len)
 {
-	assert(key_len >= 4 && key_len <= 256);
+	assert(key_len <= 256);
 
 	key_len_ = static_cast<uint8_t>(key_len);
 
@@ -41,21 +36,15 @@ Status BTree::Init(const int fd, const int key_len)
 	degree_ = static_cast<uint16_t>(
 		(BTreePage::PageSize - offset) / (BTreePage::DataId + BTreePage::IndexByte + key_len));
 
-	std::cout << degree_ << std::endl;
-
-	min_key_  = ((degree_ - 1) + ((degree_ - 1) % 2)) >> 1;
-	max_key_  = degree_ - 1;
-
-	min_node_ = (degree_ + (degree_ % 2)) >> 1;
-	max_node_ = degree_ + 1;
-
-	char key[key_len_ + BTreePage::PageByte];
-	memset(key, 0, BTreePage::PageByte);
-	memset(key + BTreePage::PageByte, 1, key_len_);
-	KeySlice *slice = (KeySlice *)key;
-	root_->Insert(slice);
-
 	pager_ = new BTreePager(fd);
+
+	root_ = BTreePage::NewPage(0, BTreePage::ROOT, key_len_, 0);
+	assert(root_ && pager_);
+
+	char buf[BTreePage::DataId + key_len_];
+	KeySlice *key = (KeySlice *)buf;
+	memset(key, 0xFF, sizeof(buf));
+	root_->Insert(key);
 
 	return Success;
 }
@@ -66,18 +55,20 @@ Status BTree::Close()
 	return Success;
 }
 
-BTreePage* BTree::DescendToLeaf(const KeySlice *key, BTreePage **stack, uint8_t *depth)
+BTreePage* BTree::DescendToLeaf(const KeySlice *key, BTreePage **stack, uint8_t *depth) const
 {
-	BTreePage *node = root_;
-	for (; node->Type() != BTreePage::LEAF; ++*depth) {
-		page_id page_no = node->Descend(key);
-		stack[*depth] = node;
-		assert(node = pager_->GetPage(page_no));
+	BTreePage *parent = root_, *child = nullptr;
+	for (; parent->Level();) {
+		page_id page_no = parent->Descend(key);
+		assert(child = pager_->GetPage(page_no));
+		assert(child->Level() != parent->Level());
+		stack[*depth++] = parent;
+		parent = child;
 	}
-	return node;
+	return parent;
 }
 
-Status BTree::Put(const KeySlice *key, const DataSlice *val)
+Status BTree::Put(const KeySlice *key)
 {
 	uint8_t depth = 0;
 	BTreePage* stack[8];
@@ -95,15 +86,18 @@ Status BTree::Put(const KeySlice *key, const DataSlice *val)
 Status BTree::SplitRoot()
 {
 	BTreePage *new_root = pager_->NewPage(BTreePage::ROOT, root_->KeyLen(), root_->Level() + 1);
-	BTreePage *next = pager_->NewPage(root_->Type(), root_->KeyLen(), root_->Level());
+	BTreePage *next = pager_->NewPage(root_->Level() ? BTreePage::BRANCH : BTreePage::LEAF,
+		root_->KeyLen(), root_->Level());
 	char key[key_len_ + BTreePage::PageByte];
 	KeySlice *slice = (KeySlice *)key;
 	root_->Split(next, slice);
-	new_root->Insert(slice);
-	root_->AssignType(root_->Level() ? BTreePage::BRANCH : BTreePage::LEAF);
 	new_root->AssignFirst(root_->PageNo());
+	new_root->Insert(slice);
+	root_->AssignType(next->Type());
+	pager_->UnPinPage(new_root);
 	root_->AssignPageNo(new_root->PageNo());
 	new_root->AssignPageNo(0);
+	pager_->PinPage(root_);
 	root_ = new_root;
 	return Success;
 }
@@ -137,6 +131,26 @@ Status BTree::Split(BTreePage *left, BTreePage **stack, uint8_t depth)
 		parent->Insert(slice);
 	}
 	return Success;
+}
+
+bool BTree::Get(KeySlice *key, page_id *page_no) const
+{
+	uint8_t depth = 0;
+	BTreePage* stack[8];
+	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
+	return leaf->Search(key, page_no);
+}
+
+bool BTree::Next(KeySlice *key, page_id *page_no) const
+{
+	BTreePage *leaf = *page_no ? pager_->GetPage(*page_no) : root_;
+	bool flag = leaf->FindGreatEq(key, page_no);
+	if (flag) return true;
+	if (*page_no) {
+		leaf = pager_->GetPage(*page_no);
+		return leaf->FindGreatEq(key, page_no);
+	}
+	return false;
 }
 
 } // namespace Mushroom
