@@ -20,11 +20,7 @@ namespace Mushroom {
 class Iterator
 {
 	public:
-		Iterator(const BTree *btree):btree_(btree), curr_(0) {
-			char *buf = new char[BTree::MAX_KEY_LENGTH + sizeof(page_id)];
-			assert(buf);
-			key_ = (KeySlice *)buf;
-		}
+		Iterator(const BTree *btree);
 
 		bool Begin();
 

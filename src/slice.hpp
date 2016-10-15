@@ -19,7 +19,7 @@ namespace Mushroom {
 
 class KeySlice;
 
-using OutputCallBack = std::function<void(const KeySlice *)>;
+using FormString = std::function<std::string(const KeySlice *)>;
 
 typedef uint32_t page_id;
 
@@ -60,14 +60,17 @@ class KeySlice
 
 	friend
 		std::ostream& operator<<(std::ostream &os, const KeySlice *key) {
-			key->Output();
-			return os;
+			return os << key->ToString();
 		}
 
 	public:
 		KeySlice() { }
 
 		const char* Data() const { return data_; }
+
+		std::string ToString() const {
+			return form_string_(this);
+		}
 
 		char* Data() { return data_; }
 
@@ -82,13 +85,11 @@ class KeySlice
 			memcpy(data_, data, len);
 		}
 
-		void Output() const { output_callback_(this); }
-
-		static void SetOutput(const OutputCallBack &callback) {
-			output_callback_ = callback;
+		static void SetStringForm(const FormString &from_string) {
+			form_string_ = from_string;
 		}
 
-		static OutputCallBack output_callback_;
+		static FormString form_string_;
 
 	private:
 		page_id  page_no_;

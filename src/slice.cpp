@@ -11,7 +11,7 @@
 
 namespace Mushroom {
 
-OutputCallBack KeySlice::output_callback_ = nullptr;
+FormString KeySlice::form_string_ = nullptr;
 
 std::string Slice::ToString() const
 {

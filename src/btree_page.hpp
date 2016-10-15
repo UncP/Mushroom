@@ -40,16 +40,21 @@ class BTreePage
 
 		Status Write(const int fd);
 
-		Status Read(const int fd);
+		Status Read(const page_id page_no, const int fd);
 
 		int Type() const { return type_; }
 
 		void AssignType(int type) { type_ = type; }
 
 		const char* Data() const { return data_; }
-		uint8_t KeyLen() const { return key_len_ ; }
+		uint8_t KeyLen() const { return key_len_; }
 		uint8_t Level() const { return level_; }
 		page_id PageNo() const { return page_no_; }
+		page_id First() const { return first_; }
+		page_id Next() const {
+			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);
+			return key->PageNo();
+		}
 		bool Dirty() const { return dirty_; }
 		bool Occupy() const { return occupy_; }
 		uint16_t KeyNo() const { return total_key_; }
@@ -66,11 +71,9 @@ class BTreePage
 
 		bool Search(KeySlice *key, page_id *page_no) const;
 
-		bool FindGreatEq(KeySlice *key, page_id *page_no) const;
+		bool FindGreatEq(KeySlice *key, page_id *page_no);
 
 		void Split(BTreePage *that, KeySlice *slice = nullptr);
-
-		void Info() const;
 
 		std::string ToString() const;
 
@@ -79,7 +82,12 @@ class BTreePage
 		uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 		}
-		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, bool ge = false) const;
+		KeySlice* Key(const uint16_t *index, int pos) const {
+			return (KeySlice *)(data_ + index[pos]);
+		}
+		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = Eq) const;
+
+		static enum { Eq, Ge, Desc} TraverseType;
 
 		page_id  page_no_;
 		page_id  first_;

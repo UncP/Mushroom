@@ -44,6 +44,8 @@ class BTree
 		bool Get(KeySlice *key, page_id *page_no) const;
 		bool Next(KeySlice *key, page_id *page_no) const;
 
+		void Traverse(int level) const;
+
 		std::string ToString() const;
 
 		BTree& operator=(const BTree &) = delete;
@@ -68,6 +70,8 @@ class BTree
 		uint16_t 	  degree_;			// B+ 树的阶
 
 		uint8_t     key_len_;
+
+		int num = 0;
 };
 
 } // namespace Mushroom

@@ -11,6 +11,13 @@
 
 namespace Mushroom {
 
+Iterator::Iterator(const BTree *btree)
+:btree_(btree), curr_(1) {
+	char *buf = new char[BTree::MAX_KEY_LENGTH + sizeof(page_id)];
+	assert(buf);
+	key_ = (KeySlice *)buf;
+}
+
 bool Iterator::Seek(const char *key)
 {
 	size_t len = strlen(key);

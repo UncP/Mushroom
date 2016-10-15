@@ -11,6 +11,7 @@
 #include <fstream>
 #include <cassert>
 #include <iomanip>
+#include <string>
 
 #include "../src/iterator.hpp"
 #include "../src/db.hpp"
@@ -19,40 +20,55 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	std::ifstream in("../data/Int.txt");
+	std::ifstream in("../data/Str.txt");
 	if (!in.is_open()) {
 		std::cerr << "文件打开失败 :(\n";
 		exit(-1);
 	}
 
-	KeySlice::SetOutput([](const KeySlice *key) {
-		std::cout << std::setw(10) << *(uint32_t *)key->Data();
+	KeySlice::SetStringForm([](const KeySlice *key) {
+		// char buf[11];
+		// snprintf(buf, 11, "%10d ", *(uint32_t *)key->Data());
+		return std::string(key->Data()) + "    ";
 	});
 
 	MushroomDB db;
-	db.Open("mushroom", sizeof(uint32_t));
+	int key_len = 10;
+	db.Open("mushroom", key_len);
 
-	char buf[BTreePage::PageByte + sizeof(uint32_t)];
+	char buf[BTreePage::PageByte + key_len] = {0};
 	KeySlice *key = (KeySlice *)buf;
-	memset(buf, 0, BTreePage::PageByte);
-	uint32_t val;
+	// uint32_t val;
+	std::string val;
 
-	for (; !in.eof(); ) {
+	int total = argc == 2 ? atoi(argv[1]) : 100;
+	for (int i = 0; !in.eof() && i < total; ++i) {
 		in >> val;
-		*(uint32_t *)key->Data() = val;
+		// *(uint32_t *)key->Data() = val;
+		memcpy(key->Data(), val.c_str(), key_len);
 		db.Put(key);
 	}
 	in.close();
+	db.Btree()->Traverse(0);
+	std::cout << "done\n";
+	// return 0;
 
-	std::cout << db.Btree();
-
-	memset(key, 0, sizeof(key));
+	memset(key, 0, sizeof(buf));
 	Iterator it(db.Btree());
 	it.Begin();
+	int count = 0;
 	for (; it.Next();) {
-		std::cout << it.Key();
-		assert(Compare(key, it.Key(), 4) < 0);
-		memcpy(key, it.Key(), sizeof(key));
+		++count;
+		if (memcmp(it.Key()->Data(), "9ohb798j6", 10) == 0)
+			std::cout << key << it.Key() << std::endl;
+		// std::cout << key << it.Key() << std::endl;
+		if (Compare(key, it.Key(), key_len) >= 0) {
+			std::cout << key << it.Key() << std::endl;
+			exit(-1);
+		}
+		// assert(Compare(key, it.Key(), key_len) < 0);
+		memcpy(key, it.Key(), sizeof(buf));
 	}
+	std::cout << "\ntotal: " << count << std::endl;
 	return 0;
 }

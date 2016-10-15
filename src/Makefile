@@ -18,8 +18,8 @@ slice_test:slice.o ../test/slice_test.cpp
 btree_test:btree_page.o btree.o ../test/btree_test.cpp
 	$(CPP) $(CPPFLAGS) -o btree_test btree_page.o btree.o ../test/btree_test.cpp
 
-db_test:slice.o btree_page.o btree.o iterator.o db.o ../test/db_test.cpp
-	$(CPP) $(CPPFLAGS) -o db_test slice.o btree_page.o btree.o iterator.o db.o ../test/db_test.cpp
+db_test:$(OBJ) ../test/db_test.cpp
+	$(CPP) $(CPPFLAGS) -o db_test $(OBJ) ../test/db_test.cpp
 
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp

@@ -20,12 +20,13 @@ Status MushroomDB::Open(const char *file, const int key_len)
 {
 	assert(!chdir(".."));
 	file_ = std::string(file);
-
 	assert(mkdir(file, S_IRUSR | S_IWUSR | S_IROTH) >= 0);
-	assert(chdir(file) == 0);
+	assert(!chdir(file));
 
 	assert(access("index", F_OK));
-	int fd = creat("index", O_RDWR);
+	assert(creat("index", O_RDWR) > 0);
+	int fd = open("index", O_RDWR);
+	std::cout << fd << std::endl;
 	assert(fd > 0);
 
 	assert(btree_ = new BTree());
