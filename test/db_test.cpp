@@ -27,8 +27,6 @@ int main(int argc, char **argv)
 	}
 
 	KeySlice::SetStringForm([](const KeySlice *key) {
-		// char buf[11];
-		// snprintf(buf, 11, "%10d ", *(uint32_t *)key->Data());
 		return std::string(key->Data()) + "    ";
 	});
 
@@ -38,20 +36,17 @@ int main(int argc, char **argv)
 
 	char buf[BTreePage::PageByte + key_len] = {0};
 	KeySlice *key = (KeySlice *)buf;
-	// uint32_t val;
 	std::string val;
 
 	int total = argc == 2 ? atoi(argv[1]) : 100;
 	for (int i = 0; !in.eof() && i < total; ++i) {
 		in >> val;
-		// *(uint32_t *)key->Data() = val;
 		memcpy(key->Data(), val.c_str(), key_len);
 		db.Put(key);
 	}
 	in.close();
 	db.Btree()->Traverse(0);
-	std::cout << "done\n";
-	// return 0;
+	return 0;
 
 	memset(key, 0, sizeof(buf));
 	Iterator it(db.Btree());
@@ -59,16 +54,17 @@ int main(int argc, char **argv)
 	int count = 0;
 	for (; it.Next();) {
 		++count;
-		if (memcmp(it.Key()->Data(), "9ohb798j6", 10) == 0)
-			std::cout << key << it.Key() << std::endl;
+		// if (memcmp(it.Key()->Data(), "9ohb798j6", 10) == 0)
+			// std::cout << key << it.Key() << std::endl;
 		// std::cout << key << it.Key() << std::endl;
-		if (Compare(key, it.Key(), key_len) >= 0) {
-			std::cout << key << it.Key() << std::endl;
-			exit(-1);
-		}
-		// assert(Compare(key, it.Key(), key_len) < 0);
+		// if (Compare(key, it.Key(), key_len) >= 0) {
+		// 	std::cout << key << it.Key() << std::endl;
+		// 	exit(-1);
+		// }
+		assert(Compare(key, it.Key(), key_len) < 0);
 		memcpy(key, it.Key(), sizeof(buf));
 	}
 	std::cout << "\ntotal: " << count << std::endl;
+	db.Close();
 	return 0;
 }

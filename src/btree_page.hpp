@@ -64,6 +64,11 @@ class BTreePage
 			assert(type_ != LEAF);
 			first_ = first;
 		}
+		void SetOccupy(bool o) {
+			if (o) assert(!occupy_);
+			else assert(occupy_);
+			occupy_ = o;
+		}
 
 		page_id Descend(const KeySlice *key) const;
 
@@ -158,12 +163,14 @@ class BTreePager
 
 		Status Close();
 
+		int fd() const { return fd_; }
+
 		BTreePager& operator=(const BTreePager &) = delete;
 		BTreePager(const BTreePager &) = delete;
 
 	private:
-		static const uint32_t Hash = 32;
-		static const page_id  Mask = (page_id)Hash - 1;
+		static const uint32_t Hash = 1024;
+		static const page_id  Mask = Hash - 1;
 
 		int             fd_;
 		page_id         curr_;

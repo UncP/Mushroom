@@ -230,7 +230,7 @@ BTreePage* BTreePage::NewPage(page_id page_no, int type, uint8_t key_len, uint8_
 Status BTreePage::Write(const int fd)
 {
 	if (dirty_) {
-		if (page_no_ == 228) Output(this);
+		// if (page_no_ == 228 && total_key_ == 255) Output(this);
 		dirty_ = 0;
 		if (pwrite(fd, this, (size_t)PageSize, page_no_ * PageSize) != PageSize)
 			return Fail;
@@ -277,6 +277,7 @@ BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 	assert(pages_[index]->Write(fd));
 	ages_[index] = 0;
 	assert(pages_[index]->Read(page_no, fd));
+
 	return pages_[index];
 }
 
@@ -298,6 +299,7 @@ Status BTreePageBucket::PinPage(BTreePage *page, const int fd)
 			fresh = ages_[i];
 		}
 	}
+
 	assert(index != len_);
 	if (pages_[index])
 		assert(pages_[index]->Write(fd));

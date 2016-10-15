@@ -51,6 +51,7 @@ Status BTree::Init(const int fd, const int key_len)
 
 Status BTree::Close()
 {
+	// assert(root_->Write(pager_->fd()));
 	if (pager_) assert(pager_->Close());
 	return Success;
 }
@@ -64,6 +65,7 @@ BTreePage* BTree::DescendToLeaf(const KeySlice *key, BTreePage **stack, uint8_t 
 		assert(child->Level() != parent->Level());
 		stack[*depth] = parent;
 		parent = child;
+		parent->SetOccupy(true);
 	}
 	return parent;
 }
@@ -89,20 +91,29 @@ Status BTree::Put(const KeySlice *key)
 	// }
 	if (!leaf->Insert(key)) {
 		std::cout << "repeat\n";
-		return Success;
+		goto end;
 	}
 	// if (num == 73855) {
 		// Output(leaf);
 		// leaf = pager_->GetPage(leaf->Next());
 		// Output(leaf);
 	// }
-	if (leaf->KeyNo() < degree_) return Success;
+	if (leaf->KeyNo() < degree_) goto end;
 	// if (leaf->PageNo() == 228 && leaf->KeyNo() ==255) {
 	// 	std::cout << leaf;
 	// }
 
 	Split(leaf, stack, depth);
+	goto end;
 
+end:
+	if (leaf->Occupy())
+		leaf->SetOccupy(false);
+	while (depth > 1) {
+		leaf = stack[--depth];
+		// if (leaf->Occupy())
+		leaf->SetOccupy(false);
+	}
 	return Success;
 }
 
@@ -129,7 +140,9 @@ Status BTree::SplitRoot()
 	pager_->UnPinPage(new_root);
 	pager_->PinPage(root_);
 	new_root->AssignPageNo(0);
+
 	root_ = new_root;
+
 	// Output(root_);
 	// Traverse(1);
 	return Success;
@@ -147,6 +160,11 @@ Status BTree::Split(BTreePage *left, BTreePage **stack, uint8_t depth)
 		left->Split(right, slice);
 		assert(depth > 0);
 		parent = stack[--depth];
+		// if (left->PageNo() == 228) {
+		// 	std::cout << left;
+		// 	std::cout << parent;
+		// 	std::cout << num << std::endl;
+		// }
 		assert(parent);
 		// if (left->PageNo() == 228) {
 			// Output(parent);

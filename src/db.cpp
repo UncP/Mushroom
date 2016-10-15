@@ -26,7 +26,6 @@ Status MushroomDB::Open(const char *file, const int key_len)
 	assert(access("index", F_OK));
 	assert(creat("index", O_RDWR) > 0);
 	int fd = open("index", O_RDWR);
-	std::cout << fd << std::endl;
 	assert(fd > 0);
 
 	assert(btree_ = new BTree());
