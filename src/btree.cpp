@@ -76,45 +76,35 @@ Status BTree::Put(const KeySlice *key)
 	BTreePage* stack[8];
 
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
-	// 	Output(leaf);
-	// 	getchar();
-	// }
-	++num;
-	// if (++num == 73855) {
-	// 	Traverse(-1);
-	// 	Traverse(1);
-	// 	Output(leaf);
-	// 	Output(key);
-	// 	leaf = pager_->GetPage(228);
-	// 	Output(leaf);
-	// 	exit(-1);
-	// }
 	if (!leaf->Insert(key)) {
 		std::cout << "repeat\n";
 		goto end;
 	}
-	// if (num == 73855) {
-		// Output(leaf);
-		// leaf = pager_->GetPage(leaf->Next());
-		// Output(leaf);
-	// }
 	if (leaf->KeyNo() < degree_) goto end;
-	// if (leaf->PageNo() == 228 && leaf->KeyNo() ==255) {
-	// 	std::cout << leaf;
-	// }
-
 	Split(leaf, stack, depth);
 	goto end;
 
 end:
 	if (leaf->Occupy())
 		leaf->SetOccupy(false);
-	while (depth > 1) {
-		leaf = stack[--depth];
-		// if (leaf->Occupy())
-		leaf->SetOccupy(false);
-	}
+	while (depth > 1)
+		stack[--depth]->SetOccupy(false);
 	return Success;
+}
+
+bool BTree::Get(KeySlice *key) const
+{
+	uint8_t depth = 0;
+	BTreePage* stack[8];
+	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
+	bool flag = leaf->Search(key);
+
+	if (leaf->Occupy())
+		leaf->SetOccupy(false);
+	while (depth > 1)
+		stack[--depth]->SetOccupy(false);
+
+	return flag;
 }
 
 Status BTree::SplitRoot()
@@ -122,29 +112,19 @@ Status BTree::SplitRoot()
 	BTreePage *new_root = pager_->NewPage(BTreePage::ROOT, root_->KeyLen(), root_->Level() + 1);
 	BTreePage *next = pager_->NewPage(root_->Level() ? BTreePage::BRANCH : BTreePage::LEAF,
 		root_->KeyLen(), root_->Level());
-	// Output(root_);
 	char key[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *slice = (KeySlice *)key;
 	memset(slice->Data(), 0xFF, key_len_);
 	new_root->Insert(slice);
-	// Output(root_);
 	root_->Split(next, slice);
-
 	root_->AssignType(next->Type());
 	root_->AssignPageNo(new_root->PageNo());
 	new_root->AssignFirst(root_->PageNo());
 	new_root->Insert(slice);
-	// Output(new_root);
-	// Output(root_);
-	// Output(next);
 	pager_->UnPinPage(new_root);
 	pager_->PinPage(root_);
 	new_root->AssignPageNo(0);
-
 	root_ = new_root;
-
-	// Output(root_);
-	// Traverse(1);
 	return Success;
 }
 
@@ -201,47 +181,39 @@ Status BTree::Split(BTreePage *left, BTreePage **stack, uint8_t depth)
 	return Success;
 }
 
-bool BTree::Get(KeySlice *key, page_id *page_no) const
-{
-	uint8_t depth = 0;
-	BTreePage* stack[8];
-	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
-	assert(leaf);
-	return leaf->Search(key, page_no);
-}
-
-bool BTree::Next(KeySlice *key, page_id *page_no) const
-{
-	BTreePage *leaf = *page_no ? pager_->GetPage(*page_no) : root_;
-	bool flag = leaf->FindGreatEq(key, page_no);
-	if (flag) return true;
-	if (!*page_no) return false;
-	// Output(leaf);
-	leaf = pager_->GetPage(*page_no);
-	assert(leaf);
-	return leaf->FindGreatEq(key, page_no);
-}
-
-void BTree::Traverse(int level) const
+BTreePage* BTree::First(page_id *page_no, int level) const
 {
 	if (level > root_->Level())
-		return ;
+		return nullptr;
 	if (level == -1)
 		level = root_->Level();
 
 	BTreePage *page = root_;
-	page_id page_no;
-	while (page->Level() != level) {
-		page_no = page->First();
-		page = pager_->GetPage(page_no);
-	}
+	for (; page->Level() != level;)
+		page = pager_->GetPage(page->First());
+	if (page_no)
+		*page_no = page->PageNo();
+	return page;
+}
+
+bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
+{
+	BTreePage *leaf = *page_no ? pager_->GetPage(*page_no) : root_;
+	bool flag = leaf->Ascend(key, page_no, index);
+	if (flag)
+		return true;
+	if (!*page_no)
+		return false;
+	leaf = pager_->GetPage(*page_no);
+	return leaf->Ascend(key, page_no, index);
+}
+
+void BTree::Traverse(int level) const
+{
+	BTreePage *page = First(nullptr, level);
+	if (!page) return ;
 	for (;;) {
-		// Output(page);
-		// std::cout << page->PageNo() << "  ";
-		// if (page->PageNo() == 452 || page->PageNo() == 228) {
-		// 	Output(page);
-		// 	std::cout << "!";
-		// }
+		Output(page);
 		page_id page_no = page->Next();
 		if (!page_no) break;
 		page = pager_->GetPage(page_no);

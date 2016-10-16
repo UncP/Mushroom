@@ -11,8 +11,8 @@
 
 namespace Mushroom {
 
-Iterator::Iterator(const BTree *btree)
-:btree_(btree), curr_(1) {
+Iterator::Iterator(const BTree *btree, int level)
+:btree_(btree), level_(level), curr_(0), index_(0) {
 	char *buf = new char[BTree::MAX_KEY_LENGTH + sizeof(page_id)];
 	assert(buf);
 	key_ = (KeySlice *)buf;
@@ -21,21 +21,22 @@ Iterator::Iterator(const BTree *btree)
 bool Iterator::Seek(const char *key)
 {
 	size_t len = strlen(key);
-	assert(len <= BTree::MAX_KEY_LENGTH);
+	if (len > BTree::MAX_KEY_LENGTH) return false;
 	memcpy(key_->Data(), key, len);
-	return btree_->Get(key_, &curr_);
+	return btree_->Get(key_);
 }
 
 bool Iterator::Begin()
 {
 	memset(key_->Data(), 0, BTree::MAX_KEY_LENGTH);
-	btree_->Get(key_, &curr_);
-	return true;
+	if (btree_->First(&curr_, level_))
+		return true;
+	return false;
 }
 
 bool Iterator::Next()
 {
-	return btree_->Next(key_, &curr_);
+	return btree_->Next(key_, &curr_, &index_);
 }
 
 } // namespace Mushroom

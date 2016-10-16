@@ -24,6 +24,10 @@ class MushroomDB
 			return btree_->Put(key);
 		}
 
+		bool Get(KeySlice *key) {
+			return btree_->Get(key);
+		}
+
 		const BTree* Btree() const { return btree_ ; }
 
 		Status Close();

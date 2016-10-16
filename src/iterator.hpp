@@ -20,7 +20,7 @@ namespace Mushroom {
 class Iterator
 {
 	public:
-		Iterator(const BTree *btree);
+		Iterator(const BTree *btree, int level = 0);
 
 		bool Begin();
 
@@ -34,7 +34,9 @@ class Iterator
 
 	private:
 		const BTree *btree_;
+		int          level_;
 		page_id      curr_;
+		uint16_t     index_;
 		KeySlice    *key_;
 };
 

@@ -10,10 +10,9 @@
 #ifndef _BT_PAGE_HPP_
 #define _BT_PAGE_HPP_
 
+#include <cassert>
 #include <cstdint>
-#include <iostream>
 #include <string>
-#include <memory.h>
 
 #include "status.hpp"
 #include "slice.hpp"
@@ -22,11 +21,6 @@ namespace Mushroom {
 
 class BTreePage
 {
-	friend
-		std::ostream& operator<<(std::ostream& os, const BTreePage *bpage) {
-			return os << bpage->ToString();
-		}
-
 	public:
 		static enum { ROOT = 0, BRANCH, LEAF } TYPE;
 
@@ -41,6 +35,15 @@ class BTreePage
 		Status Write(const int fd);
 
 		Status Read(const page_id page_no, const int fd);
+
+		void Reset(page_id page_no, int type, uint8_t key_len, uint8_t level) {
+			assert(!dirty_ && !occupy_);
+			memset(this, 0, PageSize);
+			page_no_ = page_no;
+			type_    = type;
+			key_len_ = key_len;
+			level_   = level;
+		}
 
 		int Type() const { return type_; }
 
@@ -74,16 +77,15 @@ class BTreePage
 
 		bool Insert(const KeySlice *key);
 
-		bool Search(KeySlice *key, page_id *page_no) const;
+		bool Search(KeySlice *key) const;
 
-		bool FindGreatEq(KeySlice *key, page_id *page_no);
+		bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
 
 		void Split(BTreePage *that, KeySlice *slice = nullptr);
 
 		std::string ToString() const;
 
 	private:
-
 		uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 		}
@@ -92,7 +94,7 @@ class BTreePage
 		}
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = Eq) const;
 
-		static enum { Eq, Ge, Desc} TraverseType;
+		static enum { Eq, Ge} TraverseType;
 
 		page_id  page_no_;
 		page_id  first_;
@@ -109,11 +111,6 @@ class BTreePage
 
 class BTreePageBucket
 {
-	friend
-		std::ostream& operator<<(std::ostream &os, const BTreePageBucket &bucket) {
-			return os << bucket.ToString();
-		}
-
 	public:
 		BTreePageBucket():len_(0) { memset(ages_, 0, Max * sizeof(uint16_t)); }
 
@@ -122,6 +119,8 @@ class BTreePageBucket
 		Status PinPage(BTreePage *page, const int fd);
 
 		Status UnPinPage(BTreePage *page, const int fd);
+
+		BTreePage* GetEmptyPage(page_id page_no, int type, uint8_t key_len, uint8_t level, int fd);
 
 		Status Clear(const int fd);
 
@@ -137,17 +136,12 @@ class BTreePageBucket
 		static const int Max = 8;
 
 		BTreePage *pages_[Max];
-		uint16_t   ages_[Max];
+		uint32_t   ages_[Max];
 		int        len_;
 };
 
 class BTreePager
 {
-	friend
-		std::ostream& operator<<(std::ostream &os, const BTreePager *pager) {
-			return os << pager->ToString();
-		}
-
 	public:
 		BTreePager(int fd):fd_(fd), curr_(1) { }
 

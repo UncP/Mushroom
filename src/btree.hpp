@@ -11,7 +11,6 @@
 #define _BTREE_HPP_
 
 #include <cstdint>
-#include <iostream>
 #include <string>
 
 #include "status.hpp"
@@ -23,11 +22,6 @@ namespace Mushroom {
 
 class BTree
 {
-	friend
-		std::ostream& operator<<(std::ostream &os, const BTree *btree) {
-			return os << btree->ToString();
-		}
-
 	public:
 		static const int MAX_KEY_LENGTH = 256;
 
@@ -41,8 +35,10 @@ class BTree
 
 		Status Put(const KeySlice *key);
 		Status Delete(const KeySlice *key);
-		bool Get(KeySlice *key, page_id *page_no) const;
-		bool Next(KeySlice *key, page_id *page_no) const;
+		bool Get(KeySlice *key) const;
+
+		BTreePage* First(page_id *page_no, int level) const;
+		bool Next(KeySlice *key, page_id *page_no, uint16_t *index) const;
 
 		void Traverse(int level) const;
 
@@ -67,7 +63,7 @@ class BTree
 
 		BTreePage  *root_;
 
-		uint16_t 	  degree_;			// B+ 树的阶
+		uint16_t 	  degree_;
 
 		uint8_t     key_len_;
 

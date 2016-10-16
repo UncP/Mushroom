@@ -12,7 +12,6 @@
 
 #include <cstring>
 #include <string>
-#include <iostream>
 #include <functional>
 
 namespace Mushroom {
@@ -25,10 +24,10 @@ typedef uint32_t page_id;
 
 class Slice
 {
-	friend
-		std::ostream& operator<<(std::ostream &os, const Slice *slice) {
-			return os << slice->ToString();
-		}
+	// friend
+	// 	std::ostream& operator<<(std::ostream &os, const Slice *slice) {
+	// 		return os << slice->ToString();
+	// 	}
 
 	public:
 		Slice():data_(nullptr), len_(0) { }

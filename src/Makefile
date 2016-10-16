@@ -1,7 +1,7 @@
 CPP 		 = g++
 CPPFLAGS = -std=c++14 -Wall -O3
 
-OBJ = slice.o btree_page.o data_page.o btree.o db.o iterator.o
+OBJ = slice.o btree_page.o data_page.o btree.o db.o iterator.o thread_pool.o
 
 Mushroom:$(OBJ) Mushroom.cpp
 	$(CPP) $(CPPFLAGS) -o Mushroom $(OBJ) Mushroom.cpp

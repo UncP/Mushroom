@@ -1,0 +1,13 @@
+#! /bin/sh
+
+DBtest=0
+
+if [ $1 -eq $DBtest ]
+then
+	rm -rf ../mushroom && make db_test
+	beg=$(date +%s.%N)
+	./db_test $2
+	end=$(date +%s.%N)
+	t=`echo "$end-$beg" | bc`
+	echo $t
+fi
