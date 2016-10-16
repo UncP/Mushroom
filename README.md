@@ -1,7 +1,7 @@
 ##Mushroom 非关系型数据库
 [English Version of README](./README.en.md)
 
-`蘑菇：基于B link 树的数据库`
+`蘑菇：基于B link 树索引的数据库`
 
 ###TODO
-- [ ] B link 树存储引擎
+- [x] B link 树索引引擎
