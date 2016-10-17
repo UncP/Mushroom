@@ -159,7 +159,6 @@ bool BTreePage::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
 
 void BTreePage::Split(BTreePage *that, KeySlice *slice)
 {
-	// Output(this);
 	uint16_t left = total_key_ >> 1, right = total_key_ - left, index = left;
 	uint16_t *l_idx = this->Index();
 	uint16_t *r_idx = that->Index();
@@ -203,12 +202,11 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 
 	uint16_t offset = total_key_ - left;
 	memmove(&l_idx[offset], &l_idx[0], left << 1);
+
 	this->total_key_ = left;
 	that->total_key_ = right;
 	this->dirty_ = true;
 	that->dirty_ = true;
-	// Output(this);
-	// Output(that);
 }
 
 BTreePage* BTreePage::NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level)
@@ -242,7 +240,6 @@ BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 	int index = len_;
 	uint32_t fresh = 0xFFFFFFFF;
 	for (int i = 0; i != len_; ++i) {
-		if (!pages_[i]) continue;
 		if (page_no == pages_[i]->PageNo()) {
 			++ages_[i];
 			return pages_[i];
@@ -275,13 +272,13 @@ BTreePage* BTreePageBucket::GetEmptyPage(page_id page_no, int type, uint8_t key_
 	int index = len_;
 	uint32_t fresh = 0xFFFFFFFF;
 	for (int i = 0; i != len_; ++i) {
-		if (!pages_[i]) continue;
 		if (ages_[i] < fresh && !pages_[i]->Occupy()) {
 			index = i;
 			fresh = ages_[i];
 		}
 	}
-	assert(index != len_ && pages_[index]->Write(fd));
+	assert(index != len_);
+	assert(pages_[index]->Write(fd));
 	ages_[index] = 0;
 	pages_[index]->Reset(page_no, type, key_len, level);
 	return pages_[index];
@@ -297,32 +294,17 @@ Status BTreePageBucket::PinPage(BTreePage *page, const int fd)
 	int index = len_;
 	uint32_t fresh = 0xFFFFFFFF;
 	for (int i = 0; i != len_; ++i) {
-		if (!pages_[i]) {
-			index = i;
-			break;
-		} else if (ages_[i] < fresh && !pages_[i]->Occupy()) {
+		if (ages_[i] < fresh && !pages_[i]->Occupy()) {
 			index = i;
 			fresh = ages_[i];
 		}
 	}
 
 	assert(index != len_);
-	if (pages_[index])
-		assert(pages_[index]->Write(fd));
+	assert(pages_[index]->Write(fd));
 	ages_[index]  = 0;
 	pages_[index] = page;
 	return Success;
-}
-
-Status BTreePageBucket::UnPinPage(BTreePage *page, const int fd)
-{
-	for (int i = 0; i != len_; ++i)
-		if (pages_[i] == page) {
-			ages_[i]  = 0;
-			pages_[i] = nullptr;
-			return Success;
-		}
-	assert(0);
 }
 
 BTreePage* BTreePager::GetPage(const page_id page_no)
@@ -348,17 +330,8 @@ BTreePage* BTreePager::NewPage(int type, uint8_t key_len, uint8_t level)
 
 Status BTreePager::PinPage(BTreePage *page)
 {
-	assert(page->PageNo() < curr_);
 	BTreePageBucket &bucket = bucket_[page->PageNo() & Mask];
-	bucket.PinPage(page, fd_);
-	return Success;
-}
-
-Status BTreePager::UnPinPage(BTreePage *page)
-{
-	assert(page->PageNo() < curr_);
-	BTreePageBucket &bucket = bucket_[page->PageNo() & Mask];
-	bucket.UnPinPage(page, fd_);
+	assert(bucket.PinPage(page, fd_));
 	return Success;
 }
 
@@ -377,7 +350,6 @@ Status BTreePageBucket::Clear(const int fd)
 
 Status BTreePager::Close()
 {
-	// Output(this);
 	for (int i = 0; i != Hash; ++i)
 		assert(bucket_[i].Clear(fd_));
 	if (fd_ > 0)

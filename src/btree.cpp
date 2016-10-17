@@ -39,9 +39,10 @@ Status BTree::Init(const int fd, const int key_len)
 	pager_ = new BTreePager(fd);
 
 	root_ = BTreePage::NewPage(0, BTreePage::ROOT, key_len_, 0);
+
 	assert(root_ && pager_);
 
-	char buf[BTreePage::DataId + key_len_] = {0};
+	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
 	memset(key->Data(), 0xFF, key_len_);
 	root_->Insert(key);
@@ -77,7 +78,7 @@ Status BTree::Put(const KeySlice *key)
 
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
 	if (!leaf->Insert(key)) {
-		std::cout << "repeat\n";
+		std::cout << "key existed ;)\n";
 		goto end;
 	}
 	if (leaf->KeyNo() < degree_) goto end;
@@ -109,21 +110,20 @@ bool BTree::Get(KeySlice *key) const
 
 Status BTree::SplitRoot()
 {
-	BTreePage *new_root = pager_->NewPage(BTreePage::ROOT, root_->KeyLen(), root_->Level() + 1);
+	BTreePage *new_root = BTreePage::NewPage(0, BTreePage::ROOT, root_->KeyLen(),
+		root_->Level() + 1);
 	BTreePage *next = pager_->NewPage(root_->Level() ? BTreePage::BRANCH : BTreePage::LEAF,
-		root_->KeyLen(), root_->Level());
+	 	root_->KeyLen(), root_->Level());
 	char key[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *slice = (KeySlice *)key;
 	memset(slice->Data(), 0xFF, key_len_);
 	new_root->Insert(slice);
 	root_->Split(next, slice);
 	root_->AssignType(next->Type());
-	root_->AssignPageNo(new_root->PageNo());
+	root_->AssignPageNo(pager_->IncrPageNo());
 	new_root->AssignFirst(root_->PageNo());
 	new_root->Insert(slice);
-	pager_->UnPinPage(new_root);
 	pager_->PinPage(root_);
-	new_root->AssignPageNo(0);
 	root_ = new_root;
 	return Success;
 }
@@ -136,31 +136,10 @@ Status BTree::Split(BTreePage *left, BTreePage **stack, uint8_t depth)
 
 	if (left->Type() != BTreePage::ROOT) {
 		right = pager_->NewPage(BTreePage::LEAF, left->KeyLen(), left->Level());
-		assert(right);
 		left->Split(right, slice);
-		assert(depth > 0);
 		parent = stack[--depth];
-		// if (left->PageNo() == 228) {
-		// 	std::cout << left;
-		// 	std::cout << parent;
-		// 	std::cout << num << std::endl;
-		// }
-		assert(parent);
-		// if (left->PageNo() == 228) {
-			// Output(parent);
-			// std::cout << slice->PageNo() << std::endl;
-			// Output(slice, 1);
-		// }
 		parent->Insert(slice);
-		// if (left->PageNo() == 228) {
-		// 	Output(left);
-		// 	Output(right);
-		// 	Output(parent);
-		// 	std::cout << num << std::endl;
-		// }
-		// Output(parent);
 	} else {
-		assert(!depth);
 		return SplitRoot();
 	}
 
@@ -168,11 +147,8 @@ Status BTree::Split(BTreePage *left, BTreePage **stack, uint8_t depth)
 		left = parent;
 		right = pager_->NewPage(BTreePage::BRANCH, left->KeyLen(), left->Level());
 		if (left->Type() != BTreePage::ROOT) {
-			assert(depth > 0);
 			parent = stack[--depth];
-			assert(parent);
 		} else {
-			assert(!depth);
 			return SplitRoot();
 		}
 		left->Split(right, slice);

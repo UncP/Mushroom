@@ -18,37 +18,30 @@ namespace Mushroom {
 
 class KeySlice;
 
-using FormString = std::function<std::string(const KeySlice *)>;
-
 typedef uint32_t page_id;
 
-class Slice
-{
-	// friend
-	// 	std::ostream& operator<<(std::ostream &os, const Slice *slice) {
-	// 		return os << slice->ToString();
-	// 	}
+// class Slice
+// {
+// 	public:
+// 		Slice():data_(nullptr), len_(0) { }
 
-	public:
-		Slice():data_(nullptr), len_(0) { }
+// 		Slice(const char *data, size_t len):data_(data), len_(len) { }
 
-		Slice(const char *data, size_t len):data_(data), len_(len) { }
+// 		Slice(const char *data):data_(data), len_(strlen(data)) { }
 
-		Slice(const char *data):data_(data), len_(strlen(data)) { }
+// 		const char* Data() const { return data_; }
+// 		size_t      Length()  const { return len_; }
 
-		const char* Data() const { return data_; }
-		size_t      Length()  const { return len_; }
+// 		bool Empty() const { return !len_; }
 
-		bool Empty() const { return !len_; }
+// 		Slice& operator=(const Slice &that) = default;
 
-		Slice& operator=(const Slice &that) = default;
+// 		std::string ToString() const;
 
-		std::string ToString() const;
-
-	private:
-		const char *data_;
-		size_t      len_;
-};
+// 	private:
+// 		const char *data_;
+// 		size_t      len_;
+// };
 
 class KeySlice
 {
@@ -56,11 +49,6 @@ class KeySlice
 		int Compare(const KeySlice *a, const KeySlice *b, size_t len) {
 			return memcmp(a->data_, b->data_, len);
 		};
-
-	friend
-		std::ostream& operator<<(std::ostream &os, const KeySlice *key) {
-			return os << key->ToString();
-		}
 
 	public:
 		KeySlice() { }
@@ -84,16 +72,16 @@ class KeySlice
 			memcpy(data_, data, len);
 		}
 
-		static void SetStringForm(const FormString &from_string) {
+		static void SetStringForm(const std::function<std::string(const KeySlice *)> &from_string) {
 			form_string_ = from_string;
 		}
 
-		static FormString form_string_;
+		static std::function<std::string(const KeySlice *)> form_string_;
 
 	private:
+
 		page_id  page_no_;
 		char     data_[0];
-
 };
 
 class DataSlice

@@ -11,59 +11,65 @@
 #define _THREAD_POOL_HPP_
 
 #include <thread>
+#include <functional>
 #include <mutex>
-#include <condition_variable>
-#include <queue>
+#include <vector>
+#include <memory>
 
-#include "status.hpp"
-#include "slice.hpp"
-#include "btree.hpp"
+#include "task_queue.hpp"
 
 namespace Mushroom {
 
-class Job
-{
-	public:
-		Job(Status (*fun)(const KeySlice *), BTree *btree, const KeySlice *key)
-		:fun_(fun), btree_(btree), key_(key) { }
-
-		void Execute() {
-			btree_->fun_(key_);
-		}
-
-		~Job() { delete key_; }
-
-	private:
-		Status        (*fun_)(const KeySlice *);
-		BTree          *btree_;
-		const KeySlice *key_;
-};
+class ThreadPool;
 
 class Thread
 {
-	public:
-		void Run();
+	friend class ThreadPool;
 
-		void Join() { thread_.join(); }
+	public:
+		void Start();
+
+		void Stop();
+
+		auto Id() const { return thread_.get_id(); }
+
+		Thread(const Thread &) = delete;
+		Thread& operator=(const Thread &) = delete;
 
 	private:
+
+		Thread(const std::function<void()> &func):func_(func) { }
+
+		std::function<void()>   func_;
 		std::thread             thread_;
-		std::condition_variable condition_;
 };
 
 class ThreadPool
 {
 	public:
-		ThreadPool(int thread_num = 4):thread_num_(thread_num) { }
 
-		bool Init();
+		static std::shared_ptr<Thread> CreateThread(const std::function<void()> &func) {
+			return std::shared_ptr<Thread>(new Thread(func));
+		}
+
+		ThreadPool();
+
+		void Init();
+
+		void Run();
+
+		void Close();
+
+		~ThreadPool() {
+			if (working_)
+				Close();
+			working_ = false;
+		}
 
 	private:
-		int                 thread_num_;
-		std::vector<Thread> threads_;
-		std::queue<Job *>   queue_;
-		std::mutex          mutex_;
-		bool                working_;
+		std::vector<std::shared_ptr<Thread>> threads_;
+		TaskQueue                            queue_;
+		bool                                 working_;
 };
 
 } // namespace Mushroom

@@ -55,6 +55,7 @@ class BTree
 		}
 
 	private:
+
 		BTreePage* DescendToLeaf(const KeySlice *key, BTreePage **stack, uint8_t *depth) const;
 		Status Split(BTreePage *leaf, BTreePage **stack, uint8_t depth);
 		Status SplitRoot();
@@ -66,8 +67,6 @@ class BTree
 		uint16_t 	  degree_;
 
 		uint8_t     key_len_;
-
-		int num = 0;
 };
 
 } // namespace Mushroom

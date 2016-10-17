@@ -94,7 +94,7 @@ class BTreePage
 		}
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = Eq) const;
 
-		static enum { Eq, Ge} TraverseType;
+		static enum { Eq, Ge } TraverseType;
 
 		page_id  page_no_;
 		page_id  first_;
@@ -117,8 +117,6 @@ class BTreePageBucket
 		BTreePage* GetPage(const page_id page_no, const int fd);
 
 		Status PinPage(BTreePage *page, const int fd);
-
-		Status UnPinPage(BTreePage *page, const int fd);
 
 		BTreePage* GetEmptyPage(page_id page_no, int type, uint8_t key_len, uint8_t level, int fd);
 
@@ -153,11 +151,11 @@ class BTreePager
 
 		Status PinPage(BTreePage *page);
 
-		Status UnPinPage(BTreePage *page);
-
 		Status Close();
 
 		int fd() const { return fd_; }
+
+		page_id IncrPageNo() { return curr_++; }
 
 		BTreePager& operator=(const BTreePager &) = delete;
 		BTreePager(const BTreePager &) = delete;

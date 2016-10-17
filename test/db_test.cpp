@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 		assert(db.Get(key));
 	}
 	in.close();
-
+	// db.Btree()->Traverse(-1);
 	int count = 0, level = 0;
 	for (;; ++level) {
 		Iterator it(db.Btree(), level);
