@@ -12,11 +12,11 @@
 
 #include <thread>
 #include <functional>
-#include <mutex>
 #include <vector>
 #include <memory>
 
-#include "task_queue.hpp"
+#include "task.hpp"
+#include "queue.hpp"
 
 namespace Mushroom {
 
@@ -56,6 +56,8 @@ class ThreadPool
 
 		void Init();
 
+		void AddTask(const Task &task);
+
 		void Run();
 
 		void Close();
@@ -68,7 +70,7 @@ class ThreadPool
 
 	private:
 		std::vector<std::shared_ptr<Thread>> threads_;
-		TaskQueue                            queue_;
+		Queue<Task>                          queue_;
 		bool                                 working_;
 };
 

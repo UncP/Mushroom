@@ -45,17 +45,24 @@ void ThreadPool::Init()
 	working_ = true;
 }
 
+void ThreadPool::AddTask(const Task &task)
+{
+	queue_.Push(task);
+}
+
 void ThreadPool::Run()
 {
 	for (;;) {
-
+		Task task(queue_.Pop());
+		if (!working_) break;
+		task();
 	}
 }
 
 void ThreadPool::Close()
 {
 	if (!working_) return ;
-
+	queue_.Clear();
 	working_ = false;
 	for (auto e : threads_) {
 		std::cout << e->Id() << std::endl;

@@ -1,0 +1,41 @@
+/**
+ *    > Author:   UncP
+ *    > Mail:     770778010@qq.com
+ *    > Github:   https://www.github.com/UncP/Mushroom
+ *    > Description:
+ *
+ *    > Created Time: 2016-10-18 15:30:39
+**/
+
+#ifndef _TASK_HPP_
+#define _TASK_HPP_
+
+#include "btree.hpp"
+#include "slice.hpp"
+#include "status.hpp"
+
+namespace Mushroom {
+
+class Task
+{
+	public:
+		Task():fun_(nullptr), btree_(nullptr), key_(nullptr) { }
+
+		Task(Status (BTree::*(fun))(const KeySlice *), BTree *btree, const KeySlice *key)
+		:fun_(fun), btree_(btree), key_(key) { }
+
+		Status operator()() {
+			return (btree_->*fun_)(key_);
+		}
+
+		~Task() { }
+
+	private:
+		Status         (BTree::*(fun_))(const KeySlice *);
+		BTree          *btree_;
+		const KeySlice *key_;
+};
+
+} // namespace Mushroom
+
+#endif /* _TASK_HPP_ */
