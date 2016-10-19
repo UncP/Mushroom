@@ -21,8 +21,8 @@ btree_test:btree_page.o btree.o ../test/btree_test.cpp
 db_test:$(OBJ) ../test/db_test.cpp
 	$(CPP) $(CPPFLAGS) -o db_test $(OBJ) ../test/db_test.cpp
 
-thread_pool_test:thread_pool.o ../test/thread_pool_test.cpp
-	$(CPP) $(CPPFLAGS) -o thread_pool_test thread_pool.o ../test/thread_pool_test.cpp
+thread_pool_test:$(OBJ) ../test/thread_pool_test.cpp
+	$(CPP) $(CPPFLAGS) -o thread_pool_test $(OBJ) ../test/thread_pool_test.cpp
 
 queue_test:$(OBJ) ../test/queue_test.cpp
 	$(CPP) $(CPPFLAGS) -o queue_test $(OBJ) ../test/queue_test.cpp

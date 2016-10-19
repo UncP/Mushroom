@@ -52,7 +52,7 @@ class ThreadPool
 			return std::shared_ptr<Thread>(new Thread(func));
 		}
 
-		ThreadPool();
+		ThreadPool(Queue<Task> *queue);
 
 		void Init();
 
@@ -60,17 +60,13 @@ class ThreadPool
 
 		void Run();
 
-		void Close();
+		void Clear();
 
-		~ThreadPool() {
-			if (working_)
-				Close();
-			working_ = false;
-		}
+		~ThreadPool();
 
 	private:
 		std::vector<std::shared_ptr<Thread>> threads_;
-		Queue<Task>                          queue_;
+		Queue<Task>                         *queue_;
 		bool                                 working_;
 };
 

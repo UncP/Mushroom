@@ -7,6 +7,8 @@
  *    > Created Time: 2016-10-14 10:55:44
 **/
 
+#include <iostream>
+
 #include "iterator.hpp"
 
 namespace Mushroom {
@@ -37,6 +39,28 @@ bool Iterator::Begin()
 bool Iterator::Next()
 {
 	return btree_->Next(key_, &curr_, &index_);
+}
+
+bool Iterator::CheckBtree()
+{
+	uint8_t key_len = btree_->KeyLen();
+
+	char buf[BTree::MAX_KEY_LENGTH + sizeof(page_id)] = { 0 };
+	KeySlice *pre = (KeySlice *)buf;
+
+	for (level_ = 0; ; ++level_) {
+		int count = 0;
+		if (!Begin()) break;
+		memset(pre, 0, sizeof(buf));
+		for (; Next();) {
+			++count;
+			if (Compare(pre, key_, key_len) >= 0)
+				return false;
+			memcpy(pre, key_, sizeof(page_id) + key_len);
+		}
+		std::cout << "\nlevel: " << level_ << "  total: " << count << std::endl;
+	}
+	return true;
 }
 
 } // namespace Mushroom

@@ -25,10 +25,11 @@ class Task
 		:fun_(fun), btree_(btree), key_(key) { }
 
 		Status operator()() {
-			return (btree_->*fun_)(key_);
+			if (fun_)
+				return (btree_->*fun_)(key_);
+			else
+				return Success;
 		}
-
-		~Task() { }
 
 	private:
 		Status         (BTree::*(fun_))(const KeySlice *);

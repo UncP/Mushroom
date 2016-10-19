@@ -9,10 +9,8 @@
 
 #include <iostream>
 
-#include "slice.hpp"
-
 int main(int argc, char **argv)
 {
-	using namespace Mushroom;
+	// using namespace Mushroom;
 	return 0;
 }

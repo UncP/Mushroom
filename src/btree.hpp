@@ -10,8 +10,10 @@
 #ifndef _BTREE_HPP_
 #define _BTREE_HPP_
 
+#include <fstream>
 #include <cstdint>
 #include <string>
+#include <mutex>
 
 #include "status.hpp"
 #include "slice.hpp"
@@ -42,6 +44,8 @@ class BTree
 
 		void Traverse(int level) const;
 
+		bool KeyCheck(std::ifstream &in, int total) const;
+
 		std::string ToString() const;
 
 		BTree& operator=(const BTree &) = delete;
@@ -67,6 +71,8 @@ class BTree
 		uint16_t 	  degree_;
 
 		uint8_t     key_len_;
+
+		std::mutex  mutex_;
 };
 
 } // namespace Mushroom

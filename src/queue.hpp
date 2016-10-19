@@ -12,9 +12,10 @@
 
 #include <cassert>
 #include <queue>
+#include <vector>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
-#include <iostream>
 
 namespace Mushroom {
 
@@ -24,68 +25,139 @@ class Queue
 	public:
 		Queue():clear_(false) { }
 
-		void Push(const T &t);
+		virtual void Push(const T &t) = 0;
 
-		T Pop();
+		virtual T Pop() = 0;
 
-		void Clear();
+		virtual void Clear() = 0;
 
-		bool Empty();
+		virtual bool Empty() = 0;
 
-		size_t Size();
+		virtual ~Queue() { }
 
-		~Queue() {
-			if (!clear_)
-				Clear();
-			clear_ = true;
-		}
-
-	private:
-		std::queue<T>           queue_;
 		std::mutex              mutex_;
 		std::condition_variable condition_;
 		bool                    clear_;
 };
 
 template<typename T>
-void Queue<T>::Push(const T &t) {
-	std::lock_guard<std::mutex> lock(mutex_);
-	queue_.push(std::move(t));
-	condition_.notify_one();
-}
+class InfinityQueue : public Queue<T>
+{
+	public:
+		InfinityQueue() { }
+
+		void Push(const T &t) override {
+			std::lock_guard<std::mutex> lock(mutex_);
+			queue_.push(std::move(t));
+			condition_.notify_one();
+		}
+
+		T Pop() override {
+			std::unique_lock<std::mutex> lock(mutex_);
+			condition_.wait(lock, [this]{ return !queue_.empty() || clear_; });
+			if (clear_) {
+				assert(queue_.empty());
+				return T();
+			}
+			T t(std::move(queue_.front()));
+			queue_.pop();
+			return std::move(t);
+		}
+
+		void Clear() override {
+			for (; !Empty();)
+				std::this_thread::yield();
+			std::unique_lock<std::mutex> lock(mutex_);
+			assert(queue_.empty());
+			clear_ = true;
+			condition_.notify_all();
+		}
+
+		bool Empty() override {
+			std::lock_guard<std::mutex> lock(mutex_);
+			return queue_.empty();
+		}
+
+		~InfinityQueue() {
+			if (!clear_)
+				Clear();
+			clear_ = true;
+		}
+
+	private:
+
+		// using Queue<T>::queue_;
+		using Queue<T>::mutex_;
+		using Queue<T>::clear_;
+		using Queue<T>::condition_;
+
+		std::queue<T> queue_;
+};
 
 template<typename T>
-T Queue<T>::Pop() {
-	std::unique_lock<std::mutex> lock(mutex_);
-	condition_.wait(lock, [this]{ return !queue_.empty() || clear_; });
-	if (clear_) {
-		assert(queue_.empty());
-		return T();
-	}
-	T t(std::move(queue_.front()));
-	queue_.pop();
-	return std::move(t);
-}
+class FiniteQueue : public Queue<T>
+{
+	public:
+		FiniteQueue(int max = 4096):max_(max), front_(0), back_(0) {
+			if (max_ > 4096) max_ = 4096;
+			std::vector<T> tmp1(max_, T());
+			queue_.swap(tmp1);
+		}
 
-template<typename T>
-void Queue<T>::Clear() {
-	std::unique_lock<std::mutex> lock(mutex_);
-	condition_.wait(lock, [this]{ return queue_.empty(); });
-	clear_ = true;
-	condition_.notify_all();
-}
+		void Push(const T &t) override {
+			std::unique_lock<std::mutex> lock(mutex_);
+			int pre = front_++;
+			for (; front_ == back_;)
+				std::this_thread::yield();
+			assert(front_ != back_);
+			queue_[pre] = t;
+			if (front_ == max_) front_ = 0;
+			condition_.notify_one();
+		}
 
-template<typename T>
-bool Queue<T>::Empty() {
-	std::lock_guard<std::mutex> lock(mutex_);
-	return queue_.empty();
-}
+		T Pop() override {
+			std::unique_lock<std::mutex> lock(mutex_);
+			condition_.wait(lock, [this]{ return front_ != back_ || clear_; });
+			if (clear_) {
+				assert(front_ == back_);
+				return T();
+			}
+			assert(front_ != back_);
+			T t(queue_[back_]);
+			if (++back_ == max_) back_ = 0;
+			return std::move(t);
+		}
 
-template<typename T>
-size_t Queue<T>::Size() {
-	std::lock_guard<std::mutex> lock(mutex_);
-	return queue_.size();
-}
+		void Clear() override {
+			for (; !Empty();)
+				std::this_thread::yield();
+			std::lock_guard<std::mutex> lock(mutex_);
+			assert(front_ == back_);
+			clear_ = true;
+			condition_.notify_all();
+		}
+
+		bool Empty() override {
+			std::lock_guard<std::mutex> lock(mutex_);
+			return front_ == back_;
+		}
+
+		~FiniteQueue() {
+			if (!clear_)
+				Clear();
+			clear_ = true;
+		}
+
+	private:
+		using Queue<T>::mutex_;
+		using Queue<T>::clear_;
+		using Queue<T>::condition_;
+
+		std::vector<T>        queue_;
+		int                   max_;
+		int                   front_;
+		int                   back_;
+};
 
 } // namespace Mushroom
 

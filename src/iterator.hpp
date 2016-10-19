@@ -28,6 +28,8 @@ class Iterator
 
 		bool Next();
 
+		bool CheckBtree();
+
 		const KeySlice* Key() const { return key_; }
 
 		~Iterator() { if (key_) delete [] key_; key_ = nullptr; }

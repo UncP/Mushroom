@@ -25,8 +25,9 @@ void Thread::Stop()
 		thread_.join();
 }
 
-ThreadPool::ThreadPool():working_(false)
+ThreadPool::ThreadPool(Queue<Task> *queue):queue_(queue), working_(false)
 {
+	assert(queue_);
 	size_t thread_num = std::thread::hardware_concurrency();
 	assert(thread_num > 0);
 
@@ -47,27 +48,32 @@ void ThreadPool::Init()
 
 void ThreadPool::AddTask(const Task &task)
 {
-	queue_.Push(task);
+	queue_->Push(task);
 }
 
 void ThreadPool::Run()
 {
 	for (;;) {
-		Task task(queue_.Pop());
+		Task task(queue_->Pop());
 		if (!working_) break;
 		task();
 	}
 }
 
-void ThreadPool::Close()
+void ThreadPool::Clear()
 {
 	if (!working_) return ;
-	queue_.Clear();
+	queue_->Clear();
 	working_ = false;
-	for (auto e : threads_) {
-		std::cout << e->Id() << std::endl;
+	for (auto e : threads_)
 		e->Stop();
-	}
+}
+
+ThreadPool::~ThreadPool() {
+	if (working_)
+		Clear();
+	working_ = false;
+	delete queue_;
 }
 
 } // namespace Mushroom

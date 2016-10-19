@@ -8,6 +8,7 @@
 **/
 
 #include <cassert>
+#include <string>
 
 #include "btree.hpp"
 #include "utility.hpp"
@@ -76,11 +77,16 @@ Status BTree::Put(const KeySlice *key)
 	uint8_t depth = 0;
 	BTreePage* stack[8];
 
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	// Output(key);
+
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
 	if (!leaf->Insert(key)) {
 		std::cout << "key existed ;)\n";
 		goto end;
 	}
+
 	if (leaf->KeyNo() < degree_) goto end;
 	Split(leaf, stack, depth);
 	goto end;
@@ -195,6 +201,22 @@ void BTree::Traverse(int level) const
 		page = pager_->GetPage(page_no);
 		assert(page->Level() == level);
 	}
+}
+
+bool BTree::KeyCheck(std::ifstream &in, int total) const
+{
+	std::string val;
+	char buf[BTreePage::PageByte + key_len_] = { 0 };
+	KeySlice *key = (KeySlice *)buf;
+
+	in.seekg(0);
+	for (int i = 0; !in.eof() && i != total; ++i) {
+		in >> val;
+		memcpy(key->Data(), val.c_str(), key_len_);
+		if (!Get(key))
+			return false;
+	}
+	return true;
 }
 
 } // namespace Mushroom

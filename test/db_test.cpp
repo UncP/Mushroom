@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 
 	const char *file = "../data/Str.txt";
 	const int key_len = 10;
-	const int total = (argc == 2) ? atoi(argv[1]) : 1000000;
+	const int total = (argc == 2) ? atoi(argv[1]) : 100;
 
 	MushroomDB db;
 	assert(db.Open("mushroom", key_len));
@@ -42,30 +42,12 @@ int main(int argc, char **argv)
 		memcpy(key->Data(), val.c_str(), key_len);
 		db.Put(key);
 	}
-	in.seekg(0);
-	for (int i = 0; !in.eof() && i != total; ++i) {
-		in >> val;
-		memcpy(key->Data(), val.c_str(), key_len);
-		assert(db.Get(key));
-	}
-	in.close();
 	// db.Btree()->Traverse(-1);
-	int count = 0, level = 0;
-	for (;; ++level) {
-		Iterator it(db.Btree(), level);
-		if (it.Begin()) {
-			count = 0;
-			memset(key, 0, sizeof(buf));
-			for (; it.Next();) {
-				++count;
-				assert(Compare(key, it.Key(), key_len) < 0);
-				memcpy(key, it.Key(), sizeof(buf));
-			}
-		} else {
-			break;
-		}
-		std::cout << "\nlevel: " << level << "  total: " << count << std::endl;
-	}
+	// assert(db.Btree()->KeyCheck(in, total));
+	// Iterator it(db.Btree());
+	// assert(it.CheckBtree());
+
+	in.close();
 	db.Close();
 	return 0;
 }
