@@ -54,7 +54,7 @@ void ThreadPool::AddTask(const Task &task)
 void ThreadPool::Run()
 {
 	for (;;) {
-		Task task(queue_->Pop());
+		Task task(queue_->Pull());
 		if (!working_) break;
 		task();
 	}

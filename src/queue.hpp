@@ -27,11 +27,13 @@ class Queue
 
 		virtual void Push(const T &t) = 0;
 
-		virtual T Pop() = 0;
+		virtual T Pull() = 0;
 
 		virtual void Clear() = 0;
 
 		virtual bool Empty() = 0;
+
+		virtual bool Empty(int) = 0;
 
 		virtual ~Queue() { }
 
@@ -47,18 +49,19 @@ class InfinityQueue : public Queue<T>
 		InfinityQueue() { }
 
 		void Push(const T &t) override {
-			std::lock_guard<std::mutex> lock(mutex_);
+			std::unique_lock<std::mutex> lock(mutex_);
 			queue_.push(std::move(t));
 			condition_.notify_one();
 		}
 
-		T Pop() override {
+		T Pull() override {
 			std::unique_lock<std::mutex> lock(mutex_);
-			condition_.wait(lock, [this]{ return !queue_.empty() || clear_; });
+			condition_.wait(lock, [this]{ return !Empty(1) || clear_; });
 			if (clear_) {
-				assert(queue_.empty());
+				assert(Empty(1));
 				return T();
 			}
+			assert(!Empty(1));
 			T t(std::move(queue_.front()));
 			queue_.pop();
 			return std::move(t);
@@ -68,13 +71,17 @@ class InfinityQueue : public Queue<T>
 			for (; !Empty();)
 				std::this_thread::yield();
 			std::unique_lock<std::mutex> lock(mutex_);
-			assert(queue_.empty());
+			assert(Empty(1));
 			clear_ = true;
 			condition_.notify_all();
 		}
 
 		bool Empty() override {
 			std::lock_guard<std::mutex> lock(mutex_);
+			return queue_.empty();
+		}
+
+		bool Empty(int) override {
 			return queue_.empty();
 		}
 
@@ -86,7 +93,6 @@ class InfinityQueue : public Queue<T>
 
 	private:
 
-		// using Queue<T>::queue_;
 		using Queue<T>::mutex_;
 		using Queue<T>::clear_;
 		using Queue<T>::condition_;
@@ -98,33 +104,31 @@ template<typename T>
 class FiniteQueue : public Queue<T>
 {
 	public:
-		FiniteQueue(int max = 4096):max_(max), front_(0), back_(0) {
-			if (max_ > 4096) max_ = 4096;
-			std::vector<T> tmp1(max_, T());
+		FiniteQueue(int capacity = 8192):capacity_(capacity), front_(0), back_(0) {
+			if (capacity_ > 8192) capacity_ = 8192;
+			std::vector<T> tmp1(capacity_, T());
 			queue_.swap(tmp1);
 		}
 
 		void Push(const T &t) override {
-			std::unique_lock<std::mutex> lock(mutex_);
-			int pre = front_++;
-			for (; front_ == back_;)
+			for (; Full();)
 				std::this_thread::yield();
-			assert(front_ != back_);
-			queue_[pre] = t;
-			if (front_ == max_) front_ = 0;
+			std::unique_lock<std::mutex> lock(mutex_);
+			queue_[front_] = t;
+			if (++front_ == capacity_) front_ = 0;
 			condition_.notify_one();
 		}
 
-		T Pop() override {
+		T Pull() override {
 			std::unique_lock<std::mutex> lock(mutex_);
-			condition_.wait(lock, [this]{ return front_ != back_ || clear_; });
+			condition_.wait(lock, [this]{ return !Empty(1) || clear_; });
 			if (clear_) {
-				assert(front_ == back_);
+				assert(Empty(1));
 				return T();
 			}
-			assert(front_ != back_);
+			assert(!Empty(1));
 			T t(queue_[back_]);
-			if (++back_ == max_) back_ = 0;
+			if (++back_ == capacity_) back_ = 0;
 			return std::move(t);
 		}
 
@@ -132,13 +136,17 @@ class FiniteQueue : public Queue<T>
 			for (; !Empty();)
 				std::this_thread::yield();
 			std::lock_guard<std::mutex> lock(mutex_);
-			assert(front_ == back_);
+			assert(Empty(1));
 			clear_ = true;
 			condition_.notify_all();
 		}
 
 		bool Empty() override {
 			std::lock_guard<std::mutex> lock(mutex_);
+			return front_ == back_;
+		}
+
+		bool Empty(int) override {
 			return front_ == back_;
 		}
 
@@ -149,12 +157,18 @@ class FiniteQueue : public Queue<T>
 		}
 
 	private:
+
+		bool Full() {
+			std::lock_guard<std::mutex> lock(mutex_);
+			return (front_ + 1) % capacity_ == back_;
+		}
+
 		using Queue<T>::mutex_;
 		using Queue<T>::clear_;
 		using Queue<T>::condition_;
 
 		std::vector<T>        queue_;
-		int                   max_;
+		int                   capacity_;
 		int                   front_;
 		int                   back_;
 };

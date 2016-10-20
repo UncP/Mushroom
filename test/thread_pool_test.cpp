@@ -37,6 +37,7 @@ int main(int argc, char **argv)
 	assert(in.is_open());
 	std::string val;
 
+	// ThreadPool pool(new InfinityQueue<Task>());
 	ThreadPool pool(new FiniteQueue<Task>());
 	pool.Init();
 
@@ -54,9 +55,9 @@ int main(int argc, char **argv)
 
 	// btree.Traverse(-1);
 
-	Iterator it(&btree);
-	assert(it.CheckBtree());
-	assert(btree.KeyCheck(in, total));
+	// Iterator it(&btree);
+	// assert(it.CheckBtree());
+	// assert(btree.KeyCheck(in, total));
 
 	in.close();
 	for (int i = 0; i != total; ++i)
