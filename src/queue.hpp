@@ -104,8 +104,8 @@ template<typename T>
 class FiniteQueue : public Queue<T>
 {
 	public:
-		FiniteQueue(int capacity = 8192):capacity_(capacity), front_(0), back_(0) {
-			if (capacity_ > 8192) capacity_ = 8192;
+		FiniteQueue(int capacity = 1024):capacity_(capacity), front_(0), back_(0) {
+			if (capacity_ > 1024) capacity_ = 1024;
 			std::vector<T> tmp1(capacity_, T());
 			queue_.swap(tmp1);
 		}

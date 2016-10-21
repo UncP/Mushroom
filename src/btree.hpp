@@ -17,7 +17,8 @@
 
 #include "status.hpp"
 #include "slice.hpp"
-#include "btree_page.hpp"
+#include "btree_pager.hpp"
+#include "latch_manager.hpp"
 #include "data_page.hpp"
 
 namespace Mushroom {
@@ -60,16 +61,17 @@ class BTree
 
 	private:
 
-		BTreePage* DescendToLeaf(const KeySlice *key, BTreePage **stack, uint8_t *depth) const;
-		Status Split(BTreePage *leaf, BTreePage **stack, uint8_t depth);
+		BTreePage* DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const;
+		Status Split(BTreePage *leaf, page_id *stack, uint8_t depth);
 		Status SplitRoot();
 
-		BTreePager *pager_;
+		BTreePager  *pager_;
 
-		BTreePage  *root_;
+		LatchManager *latch_manager_;
+
+		BTreePage   *root_;
 
 		uint16_t 	  degree_;
-
 		uint8_t     key_len_;
 
 		std::mutex  mutex_;

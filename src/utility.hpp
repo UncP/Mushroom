@@ -12,6 +12,8 @@
 
 #include <iostream>
 
+typedef uint32_t page_id;
+
 template<typename T>
 void Output(const T *t, bool new_line = false) {
 	std::cout << t->ToString();

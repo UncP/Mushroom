@@ -9,8 +9,9 @@
 
 #include <cassert>
 #include <unistd.h>
+#include <iostream>
 
-#include "btree_page.hpp"
+#include "btree_pager.hpp"
 #include "utility.hpp"
 
 namespace Mushroom {
@@ -299,7 +300,6 @@ Status BTreePageBucket::PinPage(BTreePage *page, const int fd)
 			fresh = ages_[i];
 		}
 	}
-
 	assert(index != len_);
 	assert(pages_[index]->Write(fd));
 	ages_[index]  = 0;
@@ -350,6 +350,7 @@ Status BTreePageBucket::Clear(const int fd)
 
 Status BTreePager::Close()
 {
+	getchar();
 	for (int i = 0; i != Hash; ++i)
 		assert(bucket_[i].Clear(fd_));
 	if (fd_ > 0)

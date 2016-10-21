@@ -14,11 +14,11 @@
 #include <string>
 #include <functional>
 
+#include "utility.hpp"
+
 namespace Mushroom {
 
 class KeySlice;
-
-typedef uint32_t page_id;
 
 // class Slice
 // {
@@ -51,6 +51,8 @@ class KeySlice
 		};
 
 	public:
+		using String_Format = std::function<std::string(const KeySlice *)>;
+
 		KeySlice() { }
 
 		const char* Data() const { return data_; }
@@ -72,11 +74,11 @@ class KeySlice
 			memcpy(data_, data, len);
 		}
 
-		static void SetStringForm(const std::function<std::string(const KeySlice *)> &from_string) {
+		static void SetStringFormat(const String_Format &from_string) {
 			form_string_ = from_string;
 		}
 
-		static std::function<std::string(const KeySlice *)> form_string_;
+		static String_Format form_string_;
 
 	private:
 
