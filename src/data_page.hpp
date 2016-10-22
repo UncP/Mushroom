@@ -10,6 +10,8 @@
 #ifndef _DATA_PAGE_HPP_
 #define _DATA_PAGE_HPP_
 
+#include "slice.hpp"
+
 namespace Mushroom {
 
 class DataPage

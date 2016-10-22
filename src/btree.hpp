@@ -11,7 +11,6 @@
 #define _BTREE_HPP_
 
 #include <fstream>
-#include <cstdint>
 #include <string>
 #include <mutex>
 

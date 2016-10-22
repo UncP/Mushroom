@@ -10,40 +10,36 @@
 #ifndef _LATCH_MANAGER_HPP_
 #define _LATCH_MANAGER_HPP_
 
-#include <shared_mutex>
+#include <mutex>
 
-#include "utility.hpp"
+#include "shared_lock.hpp"
 
 namespace Mushroom {
 
-class Lock
+class LatchSet
 {
+
 	public:
 
-		using lock_id = page_id;
+		LatchSet():head_(nullptr) { }
 
-		Lock() { }
-
-		void ReadLock() { mutex_.lock_shared(); }
-
-		void ReadUnLock() { mutex_.unlock_shared(); }
-
-		void WriteLock() { mutex_.lock(); }
-
-		void WriteUnlock() { mutex_.unlock(); }
 
 	private:
-
-		lock_id                 id_;
-		std::shared_timed_mutex mutex_;
+		std::mutex mutex_;
+		Lock      *head_;
 };
 
 class LatchManager
 {
 	public:
 
-	private:
+		LatchManager() { }
 
+	private:
+		static const int Hash = 16;
+		static const int Mask = Hash - 1;
+
+		LatchSet set_[Hash];
 };
 
 } // namespace Mushroom

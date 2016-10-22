@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "../src/bt_page.hpp"
+#include "../src/bt_pager.hpp"
 
 int main(int argc, char **argv)
 {

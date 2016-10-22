@@ -8,7 +8,6 @@
 **/
 
 #include <cassert>
-#include <string>
 
 #include "btree.hpp"
 #include "utility.hpp"
@@ -35,11 +34,11 @@ Status BTree::Init(const int fd, const int key_len)
 	BTreePage *page = nullptr;
 	uint16_t offset = (uint16_t)((char *)page->Data() - (char *)page);
 	degree_ = static_cast<uint16_t>(
-		(BTreePage::PageSize - offset) / (BTreePage::DataId + BTreePage::IndexByte + key_len));
+		(BTreePage::PageSize - offset) / (BTreePage::PageByte + BTreePage::IndexByte + key_len));
 
 	pager_ = new BTreePager(fd);
 
-	root_ = BTreePage::NewPage(0, BTreePage::ROOT, key_len_, 0);
+	root_ = pager_->NewPage(BTreePage::ROOT, key_len_, 0, false);
 
 	assert(root_ && pager_);
 
@@ -76,7 +75,7 @@ Status BTree::Put(const KeySlice *key)
 	uint8_t depth = 0;
 	page_id stack[8];
 
-	std::lock_guard<std::mutex> lock(mutex_);
+	// std::lock_guard<std::mutex> lock(mutex_);
 	// Output(key);
 
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
@@ -105,8 +104,8 @@ bool BTree::Get(KeySlice *key) const
 
 Status BTree::SplitRoot()
 {
-	BTreePage *new_root = BTreePage::NewPage(0, BTreePage::ROOT, root_->KeyLen(),
-		root_->Level() + 1);
+	BTreePage *new_root = pager_->NewPage(BTreePage::ROOT, root_->KeyLen(),
+		root_->Level() + 1, false);
 	BTreePage *next = pager_->NewPage(root_->Level() ? BTreePage::BRANCH : BTreePage::LEAF,
 	 	root_->KeyLen(), root_->Level());
 
@@ -117,8 +116,9 @@ Status BTree::SplitRoot()
 
 	root_->Split(next, slice);
 	root_->AssignType(next->Type());
-	root_->AssignPageNo(pager_->IncrPageNo());
+	root_->AssignPageNo(new_root->PageNo());
 	new_root->AssignFirst(root_->PageNo());
+	new_root->AssignPageNo(0);
 	new_root->Insert(slice);
 	pager_->PinPage(root_);
 	root_ = new_root;

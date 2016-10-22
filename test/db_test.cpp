@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 	char buf[BTreePage::PageByte + key_len] = {0};
 	KeySlice *key = (KeySlice *)buf;
 
-	KeySlice::SetStringForm([](const KeySlice *key) {
+	KeySlice::SetStringFormat([](const KeySlice *key) {
 		return std::string(key->Data()) + "    ";
 	});
 
@@ -42,10 +42,11 @@ int main(int argc, char **argv)
 		memcpy(key->Data(), val.c_str(), key_len);
 		db.Put(key);
 	}
+
 	// db.Btree()->Traverse(-1);
-	// assert(db.Btree()->KeyCheck(in, total));
-	// Iterator it(db.Btree());
-	// assert(it.CheckBtree());
+	assert(db.Btree()->KeyCheck(in, total));
+	Iterator it(db.Btree());
+	assert(it.CheckBtree());
 
 	in.close();
 	db.Close();

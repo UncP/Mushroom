@@ -17,18 +17,14 @@
 int main(int argc, char **argv)
 {
 	using namespace Mushroom;
-
 	const char *file = "../data/Str.txt";
 	const int key_len = 10;
 	const int total = (argc == 2) ? atoi(argv[1]) : 10;
 
-	// MushroomDB db;
-	// assert(db.Open("mushroom", key_len));
-
 	BTree btree;
 	assert(btree.Init(3, 10));
 
-	KeySlice::SetStringForm([](const KeySlice *key) {
+	KeySlice::SetStringFormat([](const KeySlice *key) {
 		return std::string(key->Data()) + "    ";
 	});
 
@@ -37,7 +33,6 @@ int main(int argc, char **argv)
 	assert(in.is_open());
 	std::string val;
 
-	// ThreadPool pool(new InfinityQueue<Task>());
 	ThreadPool pool(new FiniteQueue<Task>());
 	pool.Init();
 
@@ -55,12 +50,14 @@ int main(int argc, char **argv)
 
 	// btree.Traverse(-1);
 
-	// Iterator it(&btree);
-	// assert(it.CheckBtree());
-	// assert(btree.KeyCheck(in, total));
+	Iterator it(&btree);
+	assert(it.CheckBtree());
+	assert(btree.KeyCheck(in, total));
 
 	in.close();
 	for (int i = 0; i != total; ++i)
 		delete [] buf[i];
+
+	btree.Close();
 	return 0;
 }
