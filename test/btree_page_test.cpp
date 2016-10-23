@@ -19,6 +19,6 @@ int main(int argc, char **argv)
 	std::cout << ((char *)leaf->Data() - (char *)leaf) << std::endl;
 	char a[16] = {0, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 6, 0, 7, 0};
 	leaf = static_cast<BTreePage *>(static_cast<void *>(a));
-	std::cout << leaf;
+	std::cout << leaf->ToString();
 	return 0;
 }

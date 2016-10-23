@@ -20,30 +20,41 @@ SharedLock lock;
 bool on = true;
 std::chrono::milliseconds t1(150);
 std::chrono::milliseconds t2(300);
-std::chrono::milliseconds t3(50);
-std::chrono::milliseconds t4(5000);
+std::chrono::milliseconds t3(100);
+std::chrono::milliseconds t4(2000);
+std::chrono::milliseconds t5(1000);
 
 void Lock(int i)
 {
-	for (;on;) {
+	for (; on;) {
 		switch (i) {
 			case 0:
 				lock.LockShared();
-				std::this_thread::sleep_for(t1);
-				lock.UnlockShared();
+				lock.Upgrade();
+				// std::this_thread::sleep_for(t1);
+				lock.Unlock();
 				break;
 			case 1:
 				lock.Lock();
-				std::this_thread::sleep_for(t2);
+				// std::this_thread::sleep_for(t2);
 				lock.Unlock();
 				break;
 			case 2:
 				lock.LockShared();
-				lock.Upgrade();
-				std::this_thread::sleep_for(t3);
-				lock.Unlock();
+				// lock.Upgrade();
+				// std::this_thread::sleep_for(t3);
+				lock.UnlockShared();
 				break;
 		}
+	}
+}
+
+void Show()
+{
+	for (;;) {
+		std::this_thread::sleep_for(t5);
+		std::cout << lock.ToString();
+		std::cout << on << std::endl;
 	}
 }
 
@@ -51,8 +62,9 @@ int main(int argc, char **argv)
 {
 	// std::cout << sizeof(SharedLock) << std::endl;
 	std::vector<std::thread> threads;
-	for (int i = 0; i != 4; ++i)
+	for (int i = 0; i != 3; ++i)
 		threads.push_back(std::thread(Lock, i % 3));
+	threads.push_back(std::thread(Show));
 	std::this_thread::sleep_for(t4);
 	on = false;
 	for (auto &e : threads)
