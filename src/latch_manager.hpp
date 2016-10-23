@@ -23,10 +23,9 @@ class LatchSet
 
 		LatchSet():head_(nullptr) { }
 
-
 	private:
 		std::mutex mutex_;
-		Lock      *head_;
+		SharedLock      *head_;
 };
 
 class LatchManager

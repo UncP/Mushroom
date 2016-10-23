@@ -49,6 +49,16 @@ std::string BTreePage::ToString() const
 	return std::move(str);
 }
 
+void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level)
+{
+	assert(!dirty_ && !occupy_);
+	memset(this, 0, PageSize);
+	page_no_ = page_no;
+	type_    = type;
+	key_len_ = key_len;
+	level_   = level;
+}
+
 bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type) const
 {
 	int low = 0, high = total_key_, mid = 0;
@@ -75,7 +85,7 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 	}
 	*idx = high;
 	if (type == Ge && high)
-		*slice = Key(index, high-1);
+		*slice = Key(index, high - 1);
 	return false;
 }
 
@@ -188,6 +198,14 @@ BTreePage* BTreePage::NewPage(page_id page_no, int type, uint8_t key_len, uint8_
 	return page;
 }
 
+Status BTreePage::Read(const page_id page_no, const int fd)
+{
+	if (pread(fd, this, PageSize, page_no * PageSize) != PageSize)
+		return Fail;
+	assert(page_no_ == page_no);
+	return Success;
+}
+
 Status BTreePage::Write(const int fd)
 {
 	if (dirty_) {
@@ -195,14 +213,6 @@ Status BTreePage::Write(const int fd)
 		if (pwrite(fd, this, (size_t)PageSize, page_no_ * PageSize) != PageSize)
 			return Fail;
 	}
-	return Success;
-}
-
-Status BTreePage::Read(const page_id page_no, const int fd)
-{
-	if (pread(fd, this, PageSize, page_no * PageSize) != PageSize)
-		return Fail;
-	assert(page_no_ == page_no);
 	return Success;
 }
 

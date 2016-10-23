@@ -10,7 +10,11 @@
 #ifndef _STATUS_HPP_
 #define _STATUS_HPP_
 
+#include <cstdint>
+
 namespace Mushroom {
+
+typedef uint32_t page_id;
 
 enum Status {Fail = 0, Success, Fatal };
 

@@ -91,7 +91,7 @@ Status BTree::Put(const KeySlice *key)
 	return Success;
 }
 
-bool BTree::Get(KeySlice *key) const
+Status BTree::Get(KeySlice *key) const
 {
 	uint8_t depth = 0;
 	page_id stack[8];
@@ -99,7 +99,7 @@ bool BTree::Get(KeySlice *key) const
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
 	bool flag = leaf->Search(key);
 
-	return flag;
+	return flag ? Success : Fail;
 }
 
 Status BTree::SplitRoot()

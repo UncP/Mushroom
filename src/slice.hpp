@@ -14,7 +14,7 @@
 #include <string>
 #include <functional>
 
-#include "utility.hpp"
+#include "status.hpp"
 
 namespace Mushroom {
 
@@ -92,6 +92,7 @@ class DataSlice
 		DataSlice() { }
 
 	private:
+		uint8_t  dead_;
 		uint16_t len_;
 		char     data_[0];
 };

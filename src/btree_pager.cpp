@@ -159,10 +159,8 @@ Status BTreePager::PinPage(BTreePage *page)
 Status BTreePageBucket::Clear(const int fd)
 {
 	for (int i = len_ - 1; i >= 0; --i) {
-		if (pages_[i]) {
-			// assert(pages_[i]->Write(fd));
-			delete [] pages_[i];
-		}
+		// assert(pages_[i]->Write(fd));
+		delete [] pages_[i];
 		ages_[i] = 0;
 		--len_;
 	}

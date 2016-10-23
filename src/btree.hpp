@@ -18,7 +18,6 @@
 #include "slice.hpp"
 #include "btree_pager.hpp"
 #include "latch_manager.hpp"
-#include "data_page.hpp"
 
 namespace Mushroom {
 
@@ -37,9 +36,10 @@ class BTree
 
 		Status Put(const KeySlice *key);
 		Status Delete(const KeySlice *key);
-		bool Get(KeySlice *key) const;
+		Status Get(KeySlice *key) const;
 
 		BTreePage* First(page_id *page_no, int level) const;
+
 		bool Next(KeySlice *key, page_id *page_no, uint16_t *index) const;
 
 		void Traverse(int level) const;

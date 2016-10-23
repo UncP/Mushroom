@@ -24,41 +24,31 @@ class BTreePage
 
 		static const uint16_t PageSize  = 4096;
 
-		static const uint16_t IndexByte = 2;
 		static const uint16_t PageByte  = sizeof(page_id);
+		static const uint16_t IndexByte = 2;
 
 		static BTreePage* NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level);
 
-		Status Write(const int fd);
+		void Reset(page_id page_no, int type, uint8_t key_len, uint8_t level);
 
 		Status Read(const page_id page_no, const int fd);
 
-		void Reset(page_id page_no, int type, uint8_t key_len, uint8_t level) {
-			assert(!dirty_ && !occupy_);
-			memset(this, 0, PageSize);
-			page_no_ = page_no;
-			type_    = type;
-			key_len_ = key_len;
-			level_   = level;
-		}
+		Status Write(const int);
 
-		int Type() const { return type_; }
-
-		void AssignType(int type) { type_ = type; }
-
-		const char* Data() const { return data_; }
-		uint8_t KeyLen() const { return key_len_; }
-		uint8_t Level() const { return level_; }
 		page_id PageNo() const { return page_no_; }
 		page_id First() const { return first_; }
+		uint16_t KeyNo() const { return total_key_; }
+		uint8_t KeyLen() const { return key_len_; }
+		uint8_t Level() const { return level_; }
+		int Type() const { return type_; }
+		const char* Data() const { return data_; }
 		page_id Next() const {
 			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);
 			return key->PageNo();
 		}
-		bool Dirty() const { return dirty_; }
 		bool Occupy() const { return occupy_; }
-		uint16_t KeyNo() const { return total_key_; }
 
+		void AssignType(int type) { type_ = type; }
 		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
 		void AssignFirst(page_id first) {
 			assert(type_ != LEAF);

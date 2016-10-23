@@ -17,13 +17,17 @@ namespace Mushroom {
 class DataPage
 {
 	public:
-		static const int PageSize = 4096;
+		static const uint16_t PageSize = 4096;
 
 	private:
+		page_id   page_no_;
+		uint16_t  total_;
+		DataSlice data_[0];
 };
 
 class DataPager
 {
+	public:
 
 };
 

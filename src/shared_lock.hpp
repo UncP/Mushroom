@@ -14,7 +14,7 @@
 #include <condition_variable>
 #include <string>
 
-#include "utility.hpp"
+#include "status.hpp"
 
 namespace Mushroom {
 
@@ -24,7 +24,7 @@ class SharedLock
 
 		using lock_id = page_id;
 
-		SharedLock():shared_count_(0), block_shared_(false), exclusive_(false) { }
+		SharedLock():shared_count_(0), block_shared_(false), exclusive_(false), upgrade_(false) { }
 
 		void SetId(lock_id id) { id_ = id; }
 
@@ -40,8 +40,8 @@ class SharedLock
 
 		std::string ToString() {
 			char buf[32];
-			snprintf(buf, 32, "%d %s %s", shared_count_, block_shared_ ? "true" : "false",
-				exclusive_ ? "true" : "false");
+			snprintf(buf, 32, "%d %s %s %s\n", shared_count_, block_shared_ ? "true" : "false",
+				exclusive_ ? "true" : "false", upgrade_ ? "true" : "false");
 			return std::string(buf);
 		}
 
@@ -51,9 +51,11 @@ class SharedLock
 		uint32_t                shared_count_;
 		bool                    block_shared_;
 		bool                    exclusive_;
+		bool                    upgrade_;
 		std::mutex              mutex_;
 		std::condition_variable shared_condition_;
 		std::condition_variable exclusive_condition_;
+		std::condition_variable upgrade_condition_;
 };
 
 } // namespace Mushroom
