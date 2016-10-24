@@ -26,8 +26,6 @@ class SharedLock
 
 		SharedLock():shared_count_(0), block_shared_(false), exclusive_(false), upgrade_(false) { }
 
-		void SetId(lock_id id) { id_ = id; }
-
 		void LockShared();
 
 		void UnlockShared();
@@ -37,6 +35,14 @@ class SharedLock
 		void Unlock();
 
 		void Upgrade();
+
+		void Downgrade();
+
+		// void UnlockUpgrade();
+
+		// void UpgradeToLock();
+
+		// void LockToShared();
 
 		std::string ToString() {
 			char buf[32];

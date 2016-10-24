@@ -28,7 +28,7 @@ void Thread::Stop()
 ThreadPool::ThreadPool(Queue<Task> *queue):queue_(queue), working_(false)
 {
 	assert(queue_);
-	size_t thread_num = std::thread::hardware_concurrency();
+	int thread_num = std::thread::hardware_concurrency() - 1;
 	assert(thread_num > 0);
 
 	std::vector<std::shared_ptr<Thread>> threads(thread_num);

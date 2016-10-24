@@ -35,7 +35,9 @@ class BTree
 		uint8_t KeyLen() const { return key_len_; }
 
 		Status Put(const KeySlice *key);
+
 		Status Delete(const KeySlice *key);
+
 		Status Get(KeySlice *key) const;
 
 		BTreePage* First(page_id *page_no, int level) const;

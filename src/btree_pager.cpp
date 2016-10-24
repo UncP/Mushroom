@@ -79,9 +79,9 @@ BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 BTreePage* BTreePageBucket::GetEmptyPage(page_id page_no, int type, uint8_t key_len,
 	uint8_t level, int fd)
 {
+	assert(0);
 	std::lock_guard<std::mutex> lock(mutex_);
 
-	assert(0);
 	int index = len_;
 	uint32_t fresh = 0xFFFFFFFF;
 	for (int i = 0; i != len_; ++i) {

@@ -59,12 +59,18 @@ Status BTree::Close()
 
 BTreePage* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const
 {
+	// LockShared(0);
 	BTreePage *parent = root_, *child = nullptr;
-	for (; parent->Level(); ++*depth) {
+	for (; parent->Level();) {
 		page_id page_no = parent->Descend(key);
+		// LockShared(page_no);
 		assert(child = pager_->GetPage(page_no));
-		assert(child->Level() != parent->Level());
-		stack[*depth] = parent->PageNo();
+		// assert(child->Level() != parent->Level());
+		if (child->Level() != parent->Level()) {
+			stack[*depth] = parent->PageNo();
+			++*depth;
+		}
+		// Unlock(parent->PageNo());
 		parent = child;
 	}
 	return parent;
@@ -78,15 +84,21 @@ Status BTree::Put(const KeySlice *key)
 	// std::lock_guard<std::mutex> lock(mutex_);
 	// Output(key);
 
+	// Upgrade(parent->PageNo));
+
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
 	if (!leaf->Insert(key)) {
 		std::cout << "key existed ;)\n";
 		return Fail;
 	}
 
-	if (leaf->KeyNo() < degree_) return Success;
+	if (leaf->KeyNo() < degree_) {
+		// Unlock(left->PageNo());
+		return Success;
+	}
 
 	Split(leaf, stack, depth);
+	// Unlock(left->PageNo());
 
 	return Success;
 }
@@ -98,6 +110,8 @@ Status BTree::Get(KeySlice *key) const
 
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
 	bool flag = leaf->Search(key);
+
+	// leaf->UnlockShared();
 
 	return flag ? Success : Fail;
 }
@@ -137,11 +151,15 @@ Status BTree::Split(BTreePage *left, page_id *stack, uint8_t depth)
 			right = pager_->NewPage(left->Type(), left->KeyLen(), left->Level());
 			left->SetOccupy(false);
 			left->Split(right, slice);
-			if (stack[--depth])
+			if (stack[--depth]) {
+				// Lock(stack[depth]);
 				parent = pager_->GetPage(stack[depth]);
-			else
+			} else {
+				// Lock(0);
 				parent = root_;
+			}
 			parent->Insert(slice);
+			// Unlock(left->PageNo());
 			left = parent;
 		} else {
 			return SplitRoot();
