@@ -26,7 +26,7 @@ class BTree
 	public:
 		static const int MAX_KEY_LENGTH = 256;
 
-		BTree():pager_(nullptr), root_(nullptr) { }
+		BTree():btree_pager_(nullptr), root_(nullptr) { }
 
 		Status Init(const int fd, const int key_len);
 
@@ -54,8 +54,8 @@ class BTree
 		BTree(const BTree &) = delete;
 
 		~BTree() {
-			if (pager_) delete pager_;
-			pager_ = nullptr;
+			if (btree_pager_) delete btree_pager_;
+			btree_pager_ = nullptr;
 			if (root_) delete [] root_;
 			root_ = nullptr;
 		}
@@ -66,7 +66,7 @@ class BTree
 		Status Split(BTreePage *leaf, page_id *stack, uint8_t depth);
 		Status SplitRoot();
 
-		BTreePager  *pager_;
+		BTreePager  *btree_pager_;
 
 		LatchManager *latch_manager_;
 

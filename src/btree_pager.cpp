@@ -9,6 +9,7 @@
 
 #include <cassert>
 #include <unistd.h>
+#include <sstream>
 
 #include "btree_pager.hpp"
 #include "utility.hpp"
@@ -18,29 +19,22 @@ namespace Mushroom {
 std::string BTreePageBucket::ToString() const
 {
 	if (!len_) return std::string("\n");
-	std::string str("len: ");
-	char no[16];
-	snprintf(no, 16, "%d\n", len_);
-	str += std::string(no);
-	for (int i = 0; i != len_; ++i) {
-		snprintf(no, 16, "%d ", ages_[i]);
-		str += std::string(no);
-	}
-	str += '\n';
-	return std::move(str);
+	std::ostringstream os;
+	os << "len: " << len_ << "\n";
+	for (int i = 0; i != len_; ++i)
+		os << ages_[i] << " ";
+	os << "\n";
+	return os.str();
 }
 
 std::string BTreePager::ToString() const
 {
-	std::string str;
-	char no[16];
+	std::ostringstream os;
 	for (int i = 0; i != Hash; ++i) {
 		if (!bucket_[i].Length()) continue;
-		snprintf(no, 16, "%2d ", i);
-		str += std::string(no);
-		str += bucket_[i].ToString();
+		os << i << " " << bucket_[i].ToString();
 	}
-	return std::move(str);
+	return os.str();
 }
 
 BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)

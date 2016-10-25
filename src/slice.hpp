@@ -45,13 +45,15 @@ class KeySlice;
 
 class KeySlice
 {
-	friend
-		int Compare(const KeySlice *a, const KeySlice *b, size_t len) {
-			return memcmp(a->data_, b->data_, len);
-		};
+	friend inline int CompareKey(const KeySlice *a, const KeySlice *b, size_t len) {
+		return memcmp(a->data_, b->data_, len);
+	};
+	friend inline void CopyKey(KeySlice *a, const KeySlice *b, size_t len) {
+		memcpy(a, b, len);
+	};
 
 	public:
-		using String_Format = std::function<std::string(const KeySlice *)>;
+		using StringFormat = std::function<std::string(const KeySlice *)>;
 
 		KeySlice() { }
 
@@ -74,14 +76,13 @@ class KeySlice
 			memcpy(data_, data, len);
 		}
 
-		static void SetStringFormat(const String_Format &from_string) {
+		static void SetStringFormat(const StringFormat &from_string) {
 			form_string_ = from_string;
 		}
 
-		static String_Format form_string_;
+		static StringFormat form_string_;
 
 	private:
-
 		page_id  page_no_;
 		char     data_[0];
 };
@@ -91,8 +92,9 @@ class DataSlice
 	public:
 		DataSlice() { }
 
+		uint16_t Length() const { return len_; }
+
 	private:
-		uint8_t  dead_;
 		uint16_t len_;
 		char     data_[0];
 };

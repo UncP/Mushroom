@@ -22,37 +22,29 @@ int upgrade = 0;
 int locked = 0;
 bool on1 = true;
 bool on2 = true;
-std::chrono::milliseconds t1(150);
-std::chrono::milliseconds t2(300);
-std::chrono::milliseconds t3(100);
-std::chrono::milliseconds t4(3000);
-std::chrono::milliseconds t5(1000);
+std::chrono::milliseconds t1(3000);
+std::chrono::milliseconds t2(1000);
 
 void Lock(int i)
 {
 	for (; on1;) {
 		switch (i) {
 			case 0:
-				lock.LockShared();
-				lock.Upgrade();
-				++upgrade;
-				// std::this_thread::sleep_for(t1);
+				lock.Lock();
+				++locked;
 				lock.Unlock();
 				break;
 			case 1:
 				lock.LockShared();
 				++share;
-				// std::this_thread::sleep_for(t3);
 				lock.UnlockShared();
 				break;
 			case 2:
-				// lock.Lock();
 				lock.LockShared();
 				lock.Upgrade();
-				++locked;
 				lock.Downgrade();
 				lock.UnlockShared();
-				// lock.Unlock();
+				++upgrade;
 				break;
 		}
 	}
@@ -61,30 +53,24 @@ void Lock(int i)
 void Show()
 {
 	for (; on2;) {
-		std::this_thread::sleep_for(t5);
-		std::cout << lock.ToString();
-		std::cout << on1 << std::endl;
+		std::this_thread::sleep_for(t2);
+		std::cout << share << " " << upgrade << " " << locked << std::endl;
 	}
-	std::cout << "over\n";
 }
 
 int main(int argc, char **argv)
 {
 	std::cout << sizeof(SharedLock) << std::endl;
 	std::vector<std::thread> threads;
-	for (int i = 0; i != 3; ++i) {
-		threads.push_back(std::thread(Lock, i % 3));
-		std::cout << threads[i].get_id() << std::endl;
-	}
+	for (int i = 0; i != 3; ++i)
+		threads.push_back(std::thread(Lock, i % 4));
 	threads.push_back(std::thread(Show));
-	std::this_thread::sleep_for(t4);
+	std::this_thread::sleep_for(t1);
 	on1 = false;
-	std::this_thread::sleep_for(t5);
+	std::this_thread::sleep_for(t2);
 	on2 = false;
-	for (auto &e : threads) {
-		std::cout << e.get_id() << std::endl;
+	for (auto &e : threads)
 		e.join();
-	}
 	std::cout << share << " " << upgrade << " " << locked << std::endl;
 	return 0;
 }

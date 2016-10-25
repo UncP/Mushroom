@@ -10,9 +10,7 @@
 #ifndef _SHARED_LOCK_HPP_
 #define _SHARED_LOCK_HPP_
 
-#include <mutex>
-#include <condition_variable>
-#include <string>
+#include <shared_mutex>
 
 #include "status.hpp"
 
@@ -24,44 +22,38 @@ class SharedLock
 
 		using lock_id = page_id;
 
-		SharedLock():shared_count_(0), block_shared_(false), exclusive_(false), upgrade_(false) { }
+		SharedLock() { }
 
-		void LockShared();
+		void LockShared() {
+			mutex_.lock_shared();
+		}
 
-		void UnlockShared();
+		void UnlockShared() {
+			mutex_.unlock_shared();
+		}
 
-		void Lock();
+		void Lock() {
+			mutex_.lock();
+		}
 
-		void Unlock();
+		void Unlock() {
+			mutex_.unlock();
+		}
 
-		void Upgrade();
+		void Upgrade() {
+			mutex_.unlock_shared();
+			mutex_.lock();
+		}
 
-		void Downgrade();
-
-		// void UnlockUpgrade();
-
-		// void UpgradeToLock();
-
-		// void LockToShared();
-
-		std::string ToString() {
-			char buf[32];
-			snprintf(buf, 32, "%d %s %s %s\n", shared_count_, block_shared_ ? "true" : "false",
-				exclusive_ ? "true" : "false", upgrade_ ? "true" : "false");
-			return std::string(buf);
+		void Downgrade() {
+			mutex_.unlock();
+			mutex_.lock_shared();
 		}
 
 	private:
 
-		lock_id                 id_;
-		uint32_t                shared_count_;
-		bool                    block_shared_;
-		bool                    exclusive_;
-		bool                    upgrade_;
-		std::mutex              mutex_;
-		std::condition_variable shared_condition_;
-		std::condition_variable exclusive_condition_;
-		std::condition_variable upgrade_condition_;
+		lock_id           id_;
+		std::shared_timed_mutex mutex_;
 };
 
 } // namespace Mushroom

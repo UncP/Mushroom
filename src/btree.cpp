@@ -8,6 +8,7 @@
 **/
 
 #include <cassert>
+#include <sstream>
 
 #include "btree.hpp"
 #include "utility.hpp"
@@ -16,13 +17,9 @@ namespace Mushroom {
 
 std::string BTree::ToString() const
 {
-	std::string str;
-	char no[16];
-	snprintf(no, 16, "%d  ", degree_);
-	str = "阶: " + std::string(no);
-	snprintf(no, 16, "%d  ", key_len_);
-	str += "key_len: " + std::string(no) + "\n";
-	return std::move(str);
+	std::ostringstream os;
+	os << "阶: "<< degree_ << " " << "key_len: " << key_len_ << std::endl;
+	return os.str();
 }
 
 Status BTree::Init(const int fd, const int key_len)
@@ -36,11 +33,11 @@ Status BTree::Init(const int fd, const int key_len)
 	degree_ = static_cast<uint16_t>(
 		(BTreePage::PageSize - offset) / (BTreePage::PageByte + BTreePage::IndexByte + key_len));
 
-	pager_ = new BTreePager(fd);
+	btree_pager_ = new BTreePager(fd);
 
-	root_ = pager_->NewPage(BTreePage::ROOT, key_len_, 0, false);
+	root_ = btree_pager_->NewPage(BTreePage::ROOT, key_len_, 0, false);
 
-	assert(root_ && pager_);
+	assert(root_ && btree_pager_);
 
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
@@ -52,8 +49,8 @@ Status BTree::Init(const int fd, const int key_len)
 
 Status BTree::Close()
 {
-	// assert(root_->Write(pager_->fd()));
-	if (pager_) assert(pager_->Close());
+	// assert(root_->Write(btree_pager_->fd()));
+	if (btree_pager_) assert(btree_pager_->Close());
 	return Success;
 }
 
@@ -64,7 +61,7 @@ BTreePage* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *de
 	for (; parent->Level();) {
 		page_id page_no = parent->Descend(key);
 		// LockShared(page_no);
-		assert(child = pager_->GetPage(page_no));
+		assert(child = btree_pager_->GetPage(page_no));
 		// assert(child->Level() != parent->Level());
 		if (child->Level() != parent->Level()) {
 			stack[*depth] = parent->PageNo();
@@ -118,9 +115,9 @@ Status BTree::Get(KeySlice *key) const
 
 Status BTree::SplitRoot()
 {
-	BTreePage *new_root = pager_->NewPage(BTreePage::ROOT, root_->KeyLen(),
+	BTreePage *new_root = btree_pager_->NewPage(BTreePage::ROOT, root_->KeyLen(),
 		root_->Level() + 1, false);
-	BTreePage *next = pager_->NewPage(root_->Level() ? BTreePage::BRANCH : BTreePage::LEAF,
+	BTreePage *next = btree_pager_->NewPage(root_->Level() ? BTreePage::BRANCH : BTreePage::LEAF,
 	 	root_->KeyLen(), root_->Level());
 
 	char key[BTreePage::PageByte + key_len_] = {0};
@@ -134,7 +131,7 @@ Status BTree::SplitRoot()
 	new_root->AssignFirst(root_->PageNo());
 	new_root->AssignPageNo(0);
 	new_root->Insert(slice);
-	pager_->PinPage(root_);
+	btree_pager_->PinPage(root_);
 	root_ = new_root;
 	return Success;
 }
@@ -148,12 +145,12 @@ Status BTree::Split(BTreePage *left, page_id *stack, uint8_t depth)
 	for (; left->KeyNo() == degree_;) {
 		if (left->Type() != BTreePage::ROOT) {
 			left->SetOccupy(true);
-			right = pager_->NewPage(left->Type(), left->KeyLen(), left->Level());
+			right = btree_pager_->NewPage(left->Type(), left->KeyLen(), left->Level());
 			left->SetOccupy(false);
 			left->Split(right, slice);
 			if (stack[--depth]) {
 				// Lock(stack[depth]);
-				parent = pager_->GetPage(stack[depth]);
+				parent = btree_pager_->GetPage(stack[depth]);
 			} else {
 				// Lock(0);
 				parent = root_;
@@ -177,7 +174,7 @@ BTreePage* BTree::First(page_id *page_no, int level) const
 
 	BTreePage *page = root_;
 	for (; page->Level() != level;)
-		page = pager_->GetPage(page->First());
+		page = btree_pager_->GetPage(page->First());
 	if (page_no)
 		*page_no = page->PageNo();
 	return page;
@@ -185,13 +182,13 @@ BTreePage* BTree::First(page_id *page_no, int level) const
 
 bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 {
-	BTreePage *leaf = *page_no ? pager_->GetPage(*page_no) : root_;
+	BTreePage *leaf = *page_no ? btree_pager_->GetPage(*page_no) : root_;
 	bool flag = leaf->Ascend(key, page_no, index);
 	if (flag)
 		return true;
 	if (!*page_no)
 		return false;
-	leaf = pager_->GetPage(*page_no);
+	leaf = btree_pager_->GetPage(*page_no);
 	return leaf->Ascend(key, page_no, index);
 }
 
@@ -203,7 +200,7 @@ void BTree::Traverse(int level) const
 		Output(page);
 		page_id page_no = page->Next();
 		if (!page_no) break;
-		page = pager_->GetPage(page_no);
+		page = btree_pager_->GetPage(page_no);
 		assert(page->Level() == level);
 	}
 }

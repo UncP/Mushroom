@@ -4,11 +4,22 @@
  *    > Github:   https://www.github.com/UncP/Mushroom
  *    > Description:
  *
- *    > Created Time: 2016-10-22 10:01:51
+ *    > Created Time: 2016-10-25 22:21:21
 **/
 
-#include "shared_lock.hpp"
+#ifndef _DATA_PAGER_HPP_
+#define _DATA_PAGER_HPP_
 
 namespace Mushroom {
 
+class DataPager
+{
+	public:
+
+	private:
+
+};
+
 } // namespace Mushroom
+
+#endif /* _DATA_PAGER_HPP_ */

@@ -19,16 +19,20 @@ class DataPage
 	public:
 		static const uint16_t PageSize = 4096;
 
+		static DataPage* NewPage(page_id page_no);
+
+		page_id GetSlot(uint16_t data_len) const;
+
+		void Reset(page_id page_no);
+
+		void PutDataSlice()
+
 	private:
 		page_id   page_no_;
 		uint16_t  total_;
-		DataSlice data_[0];
-};
-
-class DataPager
-{
-	public:
-
+		uint16_t  curr_;
+		uint8_t   dirty_;
+		char      data_[0];
 };
 
 } // namespace Mushroom

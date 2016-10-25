@@ -8,46 +8,12 @@
 **/
 
 #include <unistd.h>
+#include <sstream>
 
 #include "btree_page.hpp"
 #include "utility.hpp"
 
 namespace Mushroom {
-
-std::string BTreePage::ToString() const
-{
-	std::string str("type: ");
-	if (type_ == LEAF)   str += "leaf  ";
-	if (type_ == BRANCH) str += "branch  ";
-	if (type_ == ROOT)   str += "root  ";
-	char no[16];
-	snprintf(no, 16, "%d  ", page_no_);
-	str += "page_no: " + std::string(no);
-	snprintf(no, 16, "%d  ", first_);
-	str += "first: " + std::string(no);
-	snprintf(no, 16, "%d  ", total_key_);
-	str += "tot_key: " + std::string(no);
-	snprintf(no, 16, "%d  ", level_);
-	str += "level: " + std::string(no);
-	if (dirty_)
-		str += "dirty: true\n";
-	else
-		str += "dirty: false\n";
-
-	uint16_t *index = Index();
-	assert(total_key_ < 500);
-	for (uint16_t i = 0; i != total_key_; ++i) {
-		snprintf(no, 16, "%d ", index[i]);
-		str += std::string(no);
-	}
-	str += '\n';
-	for (uint16_t i = 0; i != total_key_; ++i) {
-		KeySlice *key = (KeySlice *)(data_ + index[i]);
-		str += key->ToString();
-	}
-	str += '\n';
-	return std::move(str);
-}
 
 void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level)
 {
@@ -67,7 +33,7 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 	while (low != high) {
 		mid = low + ((high - low) >> 1);
 		curr = Key(index, mid);
-		int res = Compare(key, curr, key_len_);
+		int res = CompareKey(key, curr, key_len_);
 		if (res < 0) {
 			high = mid;
 		} else if (res > 0) {
@@ -128,7 +94,7 @@ bool BTreePage::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
 {
 	uint16_t *index = Index();
 	if (*idx < (total_key_ - 1)) {
-		memcpy(key, Key(index, *idx), PageByte + key_len_);
+		CopyKey(key, Key(index, *idx), PageByte + key_len_);
 		++*idx;
 		return true;
 	} else {
@@ -163,7 +129,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 		r_idx[j] = j * slot_len;
 		KeySlice *l = this->Key(l_idx, i);
 		KeySlice *r = that->Key(r_idx, j);
-		memcpy(r, l, slot_len);
+		CopyKey(r, l, slot_len);
 	}
 	uint16_t limit = left * slot_len, j = 0;
 	for (uint16_t i = left; i < total_key_ && j < left; ++i) {
@@ -173,7 +139,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 					KeySlice *o = this->Key(l_idx, i);
 					KeySlice *n = this->Key(l_idx, j);
 					l_idx[j] = l_idx[i];
-					memcpy(o, n, slot_len);
+					CopyKey(o, n, slot_len);
 					++j;
 					break;
 				}
@@ -192,7 +158,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 
 BTreePage* BTreePage::NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level)
 {
-	BTreePage *page = (BTreePage *)new char[BTreePage::PageSize];
+	BTreePage *page = (BTreePage *)new char[PageSize];
 	if (!page) return page;
 	page->Reset(page_no, type, key_len, level);
 	return page;
@@ -214,6 +180,35 @@ Status BTreePage::Write(const int fd)
 			return Fail;
 	}
 	return Success;
+}
+
+std::string BTreePage::ToString() const
+{
+	std::ostringstream os;
+	os << "type: ";
+	if (type_ == LEAF)   os << "leaf  ";
+	if (type_ == BRANCH) os << "branch  ";
+	if (type_ == ROOT)   os << "root  ";
+	os << "page_no: " << page_no_;
+	os << "first: " << first_;
+	os << "tot_key: " << total_key_;
+	os << "level: " << level_;
+	if (dirty_)
+		os << "dirty: true\n";
+	else
+		os << "dirty: false\n";
+
+	uint16_t *index = Index();
+	assert(total_key_ < 500);
+	for (uint16_t i = 0; i != total_key_; ++i)
+		os << index[i] << " ";
+	os << "\n";
+	for (uint16_t i = 0; i != total_key_; ++i) {
+		KeySlice *key = (KeySlice *)(data_ + index[i]);
+		os << key->ToString();
+	}
+	os << "\n";
+	return os.str();
 }
 
 } // namespace Mushroom
