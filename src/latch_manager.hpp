@@ -18,27 +18,58 @@ namespace Mushroom {
 
 class LatchSet
 {
-
 	public:
 
 		LatchSet():head_(nullptr) { }
 
+		SharedLock* FindLock(page_id page_no);
+
+		void PinLock(SharedLock *lk);
+
+		void UnpinLock(SharedLock *lk);
+
 	private:
-		std::mutex mutex_;
-		SharedLock      *head_;
+		std::mutex  mutex_;
+		SharedLock *head_;
 };
 
 class LatchManager
 {
 	public:
 
-		LatchManager() { }
+		LatchManager();
+
+		void LockShared(page_id page_no);
+
+		void UnlockShared(page_id page_no);
+
+		void Lock(page_id page_no);
+
+		void Unlock(page_id page_no);
+
+		void Upgrade(page_id page_no);
+
+		void Downgrade(page_id page_no);
+
+		~LatchManager() {
+			if (free_)
+				delete [] free_;
+			free_ = nullptr;
+		}
 
 	private:
-		static const int Hash = 16;
+
+		SharedLock* AllocateFree(page_id id);
+
+		static const int Max  = 16;
+		static const int Hash = 8;
 		static const int Mask = Hash - 1;
 
-		LatchSet set_[Hash];
+		std::mutex  mutex_;
+
+		SharedLock *free_;
+
+		LatchSet    latch_set_[Hash];
 };
 
 } // namespace Mushroom

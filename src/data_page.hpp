@@ -17,17 +17,30 @@ namespace Mushroom {
 class DataPage
 {
 	public:
+
+		DataPage() { }
+
 		static const uint16_t PageSize = 4096;
+
+		Status Write(const int fd);
+
+		Status Read(const page_id page_no, int fd);
+
+		page_id PageNo() const { return page_no_; }
 
 		static DataPage* NewPage(page_id page_no);
 
-		page_id GetSlot(uint16_t data_len) const;
+		page_id PutData(const DataSlice *slice);
+
+		const DataSlice* GetData(page_id page_no) const;
+
+		DataPage& operator=(const DataPage &) = delete;
+		DataPage(const DataPage &) = delete;
+
+	private:
 
 		void Reset(page_id page_no);
 
-		void PutDataSlice()
-
-	private:
 		page_id   page_no_;
 		uint16_t  total_;
 		uint16_t  curr_;

@@ -92,6 +92,8 @@ class DataSlice
 	public:
 		DataSlice() { }
 
+		static const int LengthByte = 2;
+
 		uint16_t Length() const { return len_; }
 
 	private:

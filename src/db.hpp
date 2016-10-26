@@ -16,17 +16,11 @@ namespace Mushroom {
 class MushroomDB
 {
 	public:
-		MushroomDB() { }
+		MushroomDB(const char *file, const int key_len);
 
-		Status Open(const char *file, const int key_len);
+		Status Put(const KeySlice *key) { return btree_->Put(key); }
 
-		Status Put(const KeySlice *key) {
-			return btree_->Put(key);
-		}
-
-		bool Get(KeySlice *key) {
-			return btree_->Get(key);
-		}
+		Status Get(KeySlice *key) { return btree_->Get(key); }
 
 		const BTree* Btree() const { return btree_ ; }
 

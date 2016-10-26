@@ -176,7 +176,7 @@ Status BTreePage::Write(const int fd)
 {
 	if (dirty_) {
 		dirty_ = 0;
-		if (pwrite(fd, this, (size_t)PageSize, page_no_ * PageSize) != PageSize)
+		if (pwrite(fd, this, PageSize, page_no_ * PageSize) != PageSize)
 			return Fail;
 	}
 	return Success;

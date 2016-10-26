@@ -22,38 +22,45 @@ class SharedLock
 
 		using lock_id = page_id;
 
-		SharedLock() { }
+		SharedLock():prev_(nullptr), next_(nullptr) { }
 
-		void LockShared() {
-			mutex_.lock_shared();
+		page_id Id() const { return id_; }
+
+		void SetId(page_id id) { id_ = id; }
+
+		void LockShared() { mutex_.lock_shared(); }
+
+		void UnlockShared() { mutex_.unlock_shared(); }
+
+		void Lock() { mutex_.lock(); }
+
+		void Unlock() { mutex_.unlock(); }
+
+		void Upgrade() { mutex_.unlock_shared(); mutex_.lock(); }
+
+		void Downgrade() { mutex_.unlock(); mutex_.lock_shared(); }
+
+		SharedLock* Prev() const { return prev_; }
+		SharedLock* Next() const { return next_; }
+
+		void Link(SharedLock *prev, SharedLock *next) {
+			prev_ = prev;
+			next_ = next;
 		}
 
-		void UnlockShared() {
-			mutex_.unlock_shared();
-		}
-
-		void Lock() {
-			mutex_.lock();
-		}
-
-		void Unlock() {
-			mutex_.unlock();
-		}
-
-		void Upgrade() {
-			mutex_.unlock_shared();
-			mutex_.lock();
-		}
-
-		void Downgrade() {
-			mutex_.unlock();
-			mutex_.lock_shared();
+		void Detach() {
+			prev_->next_ = next_;
+			prev_ = nullptr;
+			next_ = nullptr;
+			id_   = 0;
 		}
 
 	private:
 
-		lock_id           id_;
+		lock_id                 id_;
 		std::shared_timed_mutex mutex_;
+		SharedLock             *prev_;
+		SharedLock             *next_;
 };
 
 } // namespace Mushroom

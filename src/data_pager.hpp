@@ -10,14 +10,27 @@
 #ifndef _DATA_PAGER_HPP_
 #define _DATA_PAGER_HPP_
 
+#include <mutex>
+
+#include "data_page.hpp"
+
 namespace Mushroom {
 
 class DataPager
 {
 	public:
+		DataPager(int fd):fd_(fd) { }
+
+		Status PutData(const DataSlice *slice, page_id &page_no);
+
+		Status GetData(const page_id page_no);
 
 	private:
 
+		int fd_;
+
+		DataPage *
+		DataPage *curr_;
 };
 
 } // namespace Mushroom

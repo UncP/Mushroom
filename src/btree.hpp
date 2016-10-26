@@ -26,9 +26,7 @@ class BTree
 	public:
 		static const int MAX_KEY_LENGTH = 256;
 
-		BTree():btree_pager_(nullptr), root_(nullptr) { }
-
-		Status Init(const int fd, const int key_len);
+		BTree(const int fd, const int key_len);
 
 		Status Close();
 

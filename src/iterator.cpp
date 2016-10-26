@@ -54,7 +54,7 @@ bool Iterator::CheckBtree()
 		memset(pre, 0, sizeof(buf));
 		for (; Next();) {
 			++count;
-			if (Compare(pre, key_, key_len) >= 0)
+			if (CompareKey(pre, key_, key_len) >= 0)
 				return false;
 			memcpy(pre, key_, sizeof(page_id) + key_len);
 		}

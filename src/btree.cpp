@@ -15,14 +15,7 @@
 
 namespace Mushroom {
 
-std::string BTree::ToString() const
-{
-	std::ostringstream os;
-	os << "阶: "<< degree_ << " " << "key_len: " << key_len_ << std::endl;
-	return os.str();
-}
-
-Status BTree::Init(const int fd, const int key_len)
+BTree::BTree(const int fd, const int key_len)
 {
 	assert(key_len <= 256);
 
@@ -43,8 +36,6 @@ Status BTree::Init(const int fd, const int key_len)
 	KeySlice *key = (KeySlice *)buf;
 	memset(key->Data(), 0xFF, key_len_);
 	root_->Insert(key);
-
-	return Success;
 }
 
 Status BTree::Close()
@@ -56,18 +47,18 @@ Status BTree::Close()
 
 BTreePage* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const
 {
-	// LockShared(0);
+	// latch_manager_->LockShared(0);
 	BTreePage *parent = root_, *child = nullptr;
 	for (; parent->Level();) {
 		page_id page_no = parent->Descend(key);
-		// LockShared(page_no);
+		// latch_manager_->LockShared(page_no);
 		assert(child = btree_pager_->GetPage(page_no));
 		// assert(child->Level() != parent->Level());
 		if (child->Level() != parent->Level()) {
 			stack[*depth] = parent->PageNo();
 			++*depth;
 		}
-		// Unlock(parent->PageNo());
+		// latch_manager_->Unlock(parent->PageNo());
 		parent = child;
 	}
 	return parent;
@@ -78,10 +69,10 @@ Status BTree::Put(const KeySlice *key)
 	uint8_t depth = 0;
 	page_id stack[8];
 
-	// std::lock_guard<std::mutex> lock(mutex_);
+	std::lock_guard<std::mutex> lock(mutex_);
 	// Output(key);
 
-	// Upgrade(parent->PageNo));
+	// latch_manager_->Upgrade(leaf->PageNo));
 
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
 	if (!leaf->Insert(key)) {
@@ -90,13 +81,11 @@ Status BTree::Put(const KeySlice *key)
 	}
 
 	if (leaf->KeyNo() < degree_) {
-		// Unlock(left->PageNo());
+		// latch_manager_->Unlock(left->PageNo());
 		return Success;
 	}
 
 	Split(leaf, stack, depth);
-	// Unlock(left->PageNo());
-
 	return Success;
 }
 
@@ -108,7 +97,7 @@ Status BTree::Get(KeySlice *key) const
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
 	bool flag = leaf->Search(key);
 
-	// leaf->UnlockShared();
+	// latch_manager_->UnlockShared(leaf->PageNo());
 
 	return flag ? Success : Fail;
 }
@@ -133,6 +122,7 @@ Status BTree::SplitRoot()
 	new_root->Insert(slice);
 	btree_pager_->PinPage(root_);
 	root_ = new_root;
+	// latch_manager_->Unlock(0);
 	return Success;
 }
 
@@ -148,20 +138,22 @@ Status BTree::Split(BTreePage *left, page_id *stack, uint8_t depth)
 			right = btree_pager_->NewPage(left->Type(), left->KeyLen(), left->Level());
 			left->SetOccupy(false);
 			left->Split(right, slice);
+			// latch_manager_->Downgrade(left->PageNo());
 			if (stack[--depth]) {
-				// Lock(stack[depth]);
+				// latch_manager_->Lock(stack[depth]);
 				parent = btree_pager_->GetPage(stack[depth]);
 			} else {
-				// Lock(0);
+				// latch_manager_->Lock(0);
 				parent = root_;
 			}
 			parent->Insert(slice);
-			// Unlock(left->PageNo());
+			// latch_manager_->UnlockShared(left->PageNo());
 			left = parent;
 		} else {
 			return SplitRoot();
 		}
 	}
+	// latch_manager_->Unlock(left->PageNo());
 	return Success;
 }
 
@@ -219,6 +211,13 @@ bool BTree::KeyCheck(std::ifstream &in, int total) const
 			return false;
 	}
 	return true;
+}
+
+std::string BTree::ToString() const
+{
+	std::ostringstream os;
+	os << "阶: "<< degree_ << " " << "key_len: " << key_len_ << std::endl;
+	return os.str();
 }
 
 } // namespace Mushroom

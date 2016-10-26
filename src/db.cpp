@@ -16,10 +16,8 @@
 
 namespace Mushroom {
 
-Status MushroomDB::Open(const char *file, const int key_len)
-{
+MushroomDB::MushroomDB(const char *file, const int key_len):file_(std::string(file)) {
 	assert(!chdir(".."));
-	file_ = std::string(file);
 	assert(mkdir(file, S_IRUSR | S_IWUSR | S_IROTH) >= 0);
 	assert(!chdir(file));
 
@@ -28,10 +26,7 @@ Status MushroomDB::Open(const char *file, const int key_len)
 	int fd = open("index", O_RDWR);
 	assert(fd > 0);
 
-	assert(btree_ = new BTree());
-	assert(btree_->Init(fd, key_len));
-
-	return Success;
+	assert(btree_ = new BTree(fd, key_len));
 }
 
 Status MushroomDB::Close()

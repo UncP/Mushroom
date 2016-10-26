@@ -7,6 +7,9 @@
  *    > Created Time: 2016-10-10 16:02:16
 **/
 
+#include <cassert>
+#include <unistd.h>
+
 #include "data_page.hpp"
 
 namespace Mushroom {
@@ -27,20 +30,47 @@ DataPage* DataPage::NewPage(page_id page_no)
 	return page;
 }
 
-page_id DataPage::GetSlot(uint16_t data_len) const
+page_id DataPage::PutData(const DataSlice *slice)
 {
-	if ((curr_ + data_len) > PageSize)
+	uint16_t len = slice->Length() + DataSlice::LengthByte;
+	if ((curr_ + len) > PageSize)
 		return 0;
-	page_id res = page_no;
+
+	page_id res = page_no_;
 	res <<= 12;
 	res |= curr_ & 0xFFF;
+
+	memcpy(data_ + curr_, slice, len);
+	curr_ += len;
+
+	++total_;
+	dirty_ = true;
+
 	return res;
 }
 
-void DataPage::PutDataSlice(uint16_t pos, const DataSlice *slice)
+const DataSlice* DataPage::GetData(page_id page_no) const
 {
-	memcpy(data_ + pos, slice, slice->Length() + 2);
-	curr_ += slice->Length();
+	assert(page_no_ == (page_no >> 12));
+	uint16_t pos = page_no & 0xFFF;
+	return (const DataSlice *)(this + pos);
 }
 
+Status DataPage::Read(const page_id page_no, const int fd)
+{
+	if (pread(fd, this, PageSize, page_no * PageSize) != PageSize)
+		return Fail;
+	assert(page_no_ == page_no);
+	return Success;
+}
+
+Status DataPage::Write(const int fd)
+{
+	if (dirty_) {
+		dirty_ = 0;
+		if (pwrite(fd, this, PageSize, page_no_ * PageSize) != PageSize)
+			return Fail;
+	}
+	return Success;
+}
 } // namespace Mushroom
