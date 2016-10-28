@@ -22,6 +22,8 @@ class DataPage
 
 		static const uint16_t PageSize = 4096;
 
+		void Reset(page_id page_no);
+
 		Status Write(const int fd);
 
 		Status Read(const page_id page_no, int fd);
@@ -38,9 +40,6 @@ class DataPage
 		DataPage(const DataPage &) = delete;
 
 	private:
-
-		void Reset(page_id page_no);
-
 		page_id   page_no_;
 		uint16_t  total_;
 		uint16_t  curr_;

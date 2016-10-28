@@ -19,7 +19,8 @@ namespace Mushroom {
 class DataPager
 {
 	public:
-		DataPager(int fd):fd_(fd) { }
+
+		DataPager(int fd);
 
 		Status PutData(const DataSlice *slice, page_id &page_no);
 
@@ -27,9 +28,10 @@ class DataPager
 
 	private:
 
-		int fd_;
+		int       fd_;
 
-		DataPage *
+		std::mutex mutex_;
+
 		DataPage *curr_;
 };
 

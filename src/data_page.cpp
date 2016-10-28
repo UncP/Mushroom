@@ -73,4 +73,5 @@ Status DataPage::Write(const int fd)
 	}
 	return Success;
 }
+
 } // namespace Mushroom

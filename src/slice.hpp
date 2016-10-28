@@ -57,13 +57,12 @@ class KeySlice
 
 		KeySlice() { }
 
+		char* Data() { return data_; }
 		const char* Data() const { return data_; }
 
 		std::string ToString() const {
 			return form_string_(this);
 		}
-
-		char* Data() { return data_; }
 
 		page_id PageNo() const { return page_no_; }
 
@@ -94,7 +93,12 @@ class DataSlice
 
 		static const int LengthByte = 2;
 
+		char* Data() { return data_; }
+		const char* Data() const { return data_; }
+
 		uint16_t Length() const { return len_; }
+
+		void SetLength(uint16_t len) { len_ = len; }
 
 	private:
 		uint16_t len_;

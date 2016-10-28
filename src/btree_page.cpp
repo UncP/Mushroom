@@ -189,17 +189,16 @@ std::string BTreePage::ToString() const
 	if (type_ == LEAF)   os << "leaf  ";
 	if (type_ == BRANCH) os << "branch  ";
 	if (type_ == ROOT)   os << "root  ";
-	os << "page_no: " << page_no_;
-	os << "first: " << first_;
-	os << "tot_key: " << total_key_;
-	os << "level: " << level_;
+	os << "page_no: " << page_no_ << " ";
+	os << "first: " << first_ << " ";
+	os << "tot_key: " << total_key_ << " ";
+	os << "level: " << (int)level_ << " ";
 	if (dirty_)
 		os << "dirty: true\n";
 	else
 		os << "dirty: false\n";
 
 	uint16_t *index = Index();
-	assert(total_key_ < 500);
 	for (uint16_t i = 0; i != total_key_; ++i)
 		os << index[i] << " ";
 	os << "\n";

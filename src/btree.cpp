@@ -69,7 +69,7 @@ Status BTree::Put(const KeySlice *key)
 	uint8_t depth = 0;
 	page_id stack[8];
 
-	std::lock_guard<std::mutex> lock(mutex_);
+	// std::lock_guard<std::mutex> lock(mutex_);
 	// Output(key);
 
 	// latch_manager_->Upgrade(leaf->PageNo));
@@ -206,6 +206,7 @@ bool BTree::KeyCheck(std::ifstream &in, int total) const
 	in.seekg(0);
 	for (int i = 0; !in.eof() && i != total; ++i) {
 		in >> val;
+		val[key_len_-1] = '\0';
 		memcpy(key->Data(), val.c_str(), key_len_);
 		if (!Get(key))
 			return false;
