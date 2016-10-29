@@ -29,7 +29,6 @@ class LatchSet
 		void UnpinLock(SharedLock *lk);
 
 	private:
-		std::mutex  mutex_;
 		SharedLock *head_;
 };
 
@@ -69,6 +68,7 @@ class LatchManager
 
 		SharedLock *free_;
 
+		std::mutex  latch_mutex_[Hash];
 		LatchSet    latch_set_[Hash];
 };
 

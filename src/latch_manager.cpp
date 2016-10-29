@@ -15,7 +15,7 @@ namespace Mushroom {
 
 SharedLock* LatchSet::FindLock(page_id page_no)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	// std::lock_guard<std::mutex> lock(mutex_);
 	for (SharedLock *lk = head_; lk; lk = lk->Next())
 		if (lk->Id() == page_no)
 			return lk;
@@ -24,13 +24,13 @@ SharedLock* LatchSet::FindLock(page_id page_no)
 
 void LatchSet::PinLock(SharedLock *lk)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	// std::lock_guard<std::mutex> lock(mutex_);
 	lk->Link(nullptr, head_);
 }
 
 void LatchSet::UnpinLock(SharedLock *lk)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	// std::lock_guard<std::mutex> lock(mutex_);
 	if (lk == head_) {
 		assert(!head_->Prev());
 		head_ = lk->Next();
@@ -47,6 +47,7 @@ void LatchSet::UnpinLock(SharedLock *lk)
 void LatchManager::LockShared(page_id page_no)
 {
 	int index = page_no & Mask;
+	std::lock_guard<std::mutex> guard(latch_mutex_[index]);
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	if (!lock) {
 		lock = AllocateFree(page_no);
@@ -59,6 +60,7 @@ void LatchManager::LockShared(page_id page_no)
 void LatchManager::UnlockShared(page_id page_no)
 {
 	int index = page_no & Mask;
+	std::lock_guard<std::mutex> guard(latch_mutex_[index]);
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	assert(lock);
 	lock->UnlockShared();
@@ -67,6 +69,7 @@ void LatchManager::UnlockShared(page_id page_no)
 void LatchManager::Lock(page_id page_no)
 {
 	int index = page_no & Mask;
+	std::lock_guard<std::mutex> guard(latch_mutex_[index]);
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	if (!lock) {
 		lock = AllocateFree(page_no);
@@ -79,6 +82,8 @@ void LatchManager::Lock(page_id page_no)
 void LatchManager::Unlock(page_id page_no)
 {
 	int index = page_no & Mask;
+	std::lock_guard<std::mutex> guard(latch_mutex_[index]);
+
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	assert(lock);
 	lock->Unlock();
@@ -88,6 +93,7 @@ void LatchManager::Unlock(page_id page_no)
 void LatchManager::Upgrade(page_id page_no)
 {
 	int index = page_no & Mask;
+	std::lock_guard<std::mutex> guard(latch_mutex_[index]);
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	assert(lock);
 	lock->Upgrade();
@@ -96,6 +102,7 @@ void LatchManager::Upgrade(page_id page_no)
 void LatchManager::Downgrade(page_id page_no)
 {
 	int index = page_no & Mask;
+	std::lock_guard<std::mutex> guard(latch_mutex_[index]);
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	assert(lock);
 	lock->Downgrade();

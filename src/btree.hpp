@@ -52,10 +52,11 @@ class BTree
 		BTree(const BTree &) = delete;
 
 		~BTree() {
-			if (btree_pager_) delete btree_pager_;
-			btree_pager_ = nullptr;
 			if (root_) delete [] root_;
+			if (btree_pager_) delete btree_pager_;
+			if (latch_manager_) delete latch_manager_;
 			root_ = nullptr;
+			btree_pager_ = nullptr;
 		}
 
 	private:
@@ -64,9 +65,9 @@ class BTree
 		Status Split(BTreePage *leaf, page_id *stack, uint8_t depth);
 		Status SplitRoot();
 
-		BTreePager  *btree_pager_;
-
 		LatchManager *latch_manager_;
+
+		BTreePager  *btree_pager_;
 
 		BTreePage   *root_;
 

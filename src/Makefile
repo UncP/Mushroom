@@ -1,8 +1,8 @@
 CPP 		 = g++
 CPPFLAGS = -std=c++14 -Wall -O3 -pthread
 
-OBJ = slice.o shared_lock.o latch_manager.o btree_page.o btree_pager.o data_page.o data_pager.o\
-			btree.o db.o iterator.o queue.o thread_pool.o
+OBJ = slice.o mutex.o shared_lock.o latch_manager.o btree_page.o btree_pager.o data_page.o \
+			data_pager.o btree.o db.o iterator.o queue.o thread_pool.o
 
 Mushroom:$(OBJ) Mushroom.cpp
 	$(CPP) $(CPPFLAGS) -o Mushroom $(OBJ) Mushroom.cpp
