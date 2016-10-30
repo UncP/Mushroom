@@ -37,6 +37,9 @@ data_page_test:$(OBJ) ../test/data_page_test.cpp
 db_test:$(OBJ) ../test/db_test.cpp
 	$(CPP) $(CPPFLAGS) -o db_test $(OBJ) ../test/db_test.cpp
 
+latch_manager_test:$(OBJ) ../test/latch_manager_test.cpp
+	$(CPP) $(CPPFLAGS) -o latch_manager_test $(OBJ) ../test/latch_manager_test.cpp
+
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp
 

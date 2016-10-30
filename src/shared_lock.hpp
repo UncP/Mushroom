@@ -33,36 +33,36 @@ class SharedLock
 
 		void LockShared() {
 			// mutex_.lock_shared();
-			pthread_rwlock_rdlock(&mutex_);
+			assert(!pthread_rwlock_rdlock(&mutex_));
 		}
 
 		void UnlockShared() {
 			// mutex_.unlock_shared();
-			pthread_rwlock_unlock(&mutex_);
+			assert(!pthread_rwlock_unlock(&mutex_));
 		}
 
 		void Lock() {
 			// mutex_.lock();
-			pthread_rwlock_wrlock(&mutex_);
+			assert(!pthread_rwlock_wrlock(&mutex_));
 		}
 
 		void Unlock() {
 			// mutex_.unlock();
-			pthread_rwlock_unlock(&mutex_);
+			assert(!pthread_rwlock_unlock(&mutex_));
 		}
 
 		void Upgrade() {
 			// mutex_.unlock_shared();
 			// mutex_.lock();
-			pthread_rwlock_unlock(&mutex_);
-			pthread_rwlock_wrlock(&mutex_);
+			assert(!pthread_rwlock_unlock(&mutex_));
+			assert(!pthread_rwlock_wrlock(&mutex_));
 		}
 
 		void Downgrade() {
 			// mutex_.unlock();
 			// mutex_.lock_shared();
-			pthread_rwlock_unlock(&mutex_);
-			pthread_rwlock_rdlock(&mutex_);
+			assert(!pthread_rwlock_unlock(&mutex_));
+			assert(!pthread_rwlock_rdlock(&mutex_));
 		}
 
 		SharedLock* Prev() const { return prev_; }

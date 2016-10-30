@@ -4,19 +4,18 @@
  *    > Github:   https://www.github.com/UncP/Mushroom
  *    > Description:
  *
- *    > Created Time: 2016-10-22 13:32:03
+ *    > Created Time: 2016-10-30 15:10:45
 **/
 
 #include <iostream>
-#include <thread>
 #include <vector>
-#include <chrono>
+#include <thread>
 
-#include "../src/shared_lock.hpp"
+#include "../src/latch_manager.hpp"
 
 using namespace Mushroom;
 
-SharedLock lock;
+LatchManager latch_manager;
 int share = 0;
 int upgrade = 0;
 int locked = 0;
@@ -24,32 +23,34 @@ bool on = true;
 std::chrono::milliseconds t1(3000);
 std::chrono::milliseconds t2(1000);
 
+page_id page_no = 1;
+
 void Lock(int i)
 {
 	for (; on;) {
 		switch (i) {
 			case 0:
-				lock.Lock();
+				latch_manager.Lock(page_no);
 				++locked;
-				lock.Unlock();
+				latch_manager.Unlock(page_no);
 				break;
 			case 1:
-				lock.LockShared();
+				latch_manager.LockShared(page_no);
 				++share;
-				lock.UnlockShared();
+				latch_manager.UnlockShared(page_no);
 				break;
 			case 2:
-				lock.LockShared();
-				lock.Upgrade();
-				lock.Downgrade();
-				lock.UnlockShared();
+				latch_manager.LockShared(page_no);
+				latch_manager.Upgrade(page_no);
+				latch_manager.Downgrade(page_no);
+				latch_manager.UnlockShared(page_no);
 				++upgrade;
 				break;
 			case 3:
-				lock.LockShared();
-				lock.Upgrade();
-				lock.Downgrade();
-				lock.UnlockShared();
+				latch_manager.LockShared(page_no);
+				latch_manager.Upgrade(page_no);
+				latch_manager.Downgrade(page_no);
+				latch_manager.UnlockShared(page_no);
 				++upgrade;
 				break;
 		}
@@ -66,9 +67,8 @@ void Show()
 
 int main(int argc, char **argv)
 {
-	// std::cout << sizeof(SharedLock) << std::endl;
 	std::vector<std::thread> threads;
-	for (int i = 0; i != 3; ++i)
+	for (int i = 0; i != 2; ++i)
 		threads.push_back(std::thread(Lock, i % 4));
 	threads.push_back(std::thread(Show));
 	std::this_thread::sleep_for(t1);

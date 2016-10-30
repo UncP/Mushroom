@@ -70,6 +70,7 @@ class LatchManager
 
 		std::mutex  latch_mutex_[Hash];
 		LatchSet    latch_set_[Hash];
+		int         count_ = 0;
 };
 
 } // namespace Mushroom
