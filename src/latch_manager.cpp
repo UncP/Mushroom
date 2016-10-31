@@ -16,7 +16,6 @@ namespace Mushroom {
 
 SharedLock* LatchSet::FindLock(page_id page_no)
 {
-	std::cout << "find lock\n";
 	for (SharedLock *lk = head_; lk; lk = lk->Next())
 		if (lk->Id() == page_no)
 			return lk;
@@ -29,20 +28,11 @@ void LatchSet::PinLock(SharedLock *lk)
 	head_ = lk;
 }
 
-void LatchSet::UnpinLock(SharedLock *lk)
+SharedLock* LatchSet::UnpinLock()
 {
-	if (lk == head_) {
-		assert(!head_->Prev());
-		head_ = lk->Next();
-		lk->SetId(0);
-		return ;
-	}
-	assert(0);
-	for (SharedLock *curr = head_->Next(); curr; curr = curr->Next())
-		if (curr == lk) {
-			lk->Detach();
-			return ;
-		}
+	for (SharedLock *curr = head_; curr; curr = curr->Next())
+		if (!curr->Users())
+			return curr;
 	assert(0);
 }
 
@@ -52,13 +42,23 @@ void LatchManager::LockShared(page_id page_no)
 	latch_mutex_[index].lock();
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	if (!lock) {
-		lock = AllocateFree(page_no);
-		assert(lock->Id() == page_no);
-		latch_set_[index].PinLock(lock);
+		if ((lock = AllocateFree(page_no))) {
+			assert(lock->Id() == page_no);
+			latch_set_[index].PinLock(lock);
+		} else {
+			lock = latch_set_[index].UnpinLock();
+			lock->SetId(page_no);
+			assert(!lock->Users());
+			assert(lock->Id() == page_no);
+		}
 	}
 	latch_mutex_[index].unlock();
+	if (lock->Id() != page_no) {
+		std::cout << lock->Id() << " " << page_no << std::endl;
+	}
+	assert(lock->Id() == page_no);
 	lock->LockShared();
-	std::cout << "lock shared\n";
+	// std::cout << "lock shared\n";
 }
 
 void LatchManager::UnlockShared(page_id page_no)
@@ -66,12 +66,12 @@ void LatchManager::UnlockShared(page_id page_no)
 	int index = page_no & Mask;
 	latch_mutex_[index].lock();
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
-	if (!lock) std::cout << count_;
 	assert(lock);
 	latch_mutex_[index].unlock();
+	assert(lock->Id() == page_no);
+
 	lock->UnlockShared();
-	--count_;
-	std::cout << "unlock shared\n";
+	// std::cout << "unlock shared\n";
 }
 
 void LatchManager::Lock(page_id page_no)
@@ -80,14 +80,20 @@ void LatchManager::Lock(page_id page_no)
 	latch_mutex_[index].lock();
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	if (!lock) {
-		lock = AllocateFree(page_no);
-		assert(lock->Id() == page_no);
-		latch_set_[index].PinLock(lock);
+		if ((lock = AllocateFree(page_no))) {
+			assert(lock->Id() == page_no);
+			latch_set_[index].PinLock(lock);
+		} else {
+			lock = latch_set_[index].UnpinLock();
+			lock->SetId(page_no);
+			assert(!lock->Users());
+			assert(lock->Id() == page_no);
+		}
 	}
 	latch_mutex_[index].unlock();
-	++count_;
+	assert(lock->Id() == page_no);
 	lock->Lock();
-	std::cout << "lock\n";
+	// std::cout << "lock\n";
 }
 
 void LatchManager::Unlock(page_id page_no)
@@ -97,9 +103,11 @@ void LatchManager::Unlock(page_id page_no)
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	assert(lock);
 	lock->Unlock();
-	latch_set_[index].UnpinLock(lock);
+	// latch_set_[index].UnpinLock(lock);
+	assert(lock->Id() == page_no);
+
 	latch_mutex_[index].unlock();
-	std::cout << "unlock\n";
+	// std::cout << "unlock\n";
 }
 
 void LatchManager::Upgrade(page_id page_no)
@@ -109,8 +117,10 @@ void LatchManager::Upgrade(page_id page_no)
 	SharedLock *lock = latch_set_[index].FindLock(page_no);
 	assert(lock);
 	latch_mutex_[index].unlock();
+	assert(lock->Id() == page_no);
+
 	lock->Upgrade();
-	std::cout << "upgrade\n";
+	// std::cout << "upgrade\n";
 }
 
 void LatchManager::Downgrade(page_id page_no)
@@ -121,7 +131,7 @@ void LatchManager::Downgrade(page_id page_no)
 	assert(lock);
 	latch_mutex_[index].unlock();
 	lock->Downgrade();
-	std::cout << "downgrade\n";
+	// std::cout << "downgrade\n";
 }
 
 LatchManager::LatchManager()
@@ -134,12 +144,25 @@ SharedLock* LatchManager::AllocateFree(page_id id)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 	for (int i = 0; i != Max; ++i)
-		if (!free_[i].Id()) {
+		if (free_[i].Id() == 0xFFFFFFFF) {
 			std::cout << i << std::endl;
 			free_[i].SetId(id);
 			return &free_[i];
 		}
-	assert(0);
+	return nullptr;
+}
+
+LatchSet::~LatchSet()
+{
+	std::cout << "latch\n";
+	for (auto lk = head_; lk; lk = lk->Next())
+		std::cout << lk->Id() << std::endl;
+}
+
+LatchManager::~LatchManager()
+{
+	// if (free_) delete [] free_;
+	free_ = nullptr;
 }
 
 } // namespace Mushroom
