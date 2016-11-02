@@ -45,4 +45,4 @@ tag:
 
 clean:
 	rm *.o Mushroom btree_page_test slice_test btree_test key_test thread_pool_test queue_test \
-	shared_lock_test data_page_test db_test ../.tags
+	shared_lock_test data_page_test db_test latch_manager_test ../.tags

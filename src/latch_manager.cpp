@@ -14,48 +14,57 @@
 
 namespace Mushroom {
 
-SharedLock* LatchSet::FindLock(page_id page_no)
+LatchSet::LatchSet()
 {
-	for (SharedLock *lk = head_; lk; lk = lk->Next())
-		if (lk->Id() == page_no)
-			return lk;
-	return nullptr;
+	for (int i = 0; i != Max; ++i) {
+		locks_[i].Link(free_);
+		free_ = &locks_[i];
+	}
 }
 
-void LatchSet::PinLock(SharedLock *lk)
+SharedLock* LatchSet::GetLock(page_id page_no)
 {
-	lk->Link(nullptr, head_);
-	head_ = lk;
+	std::unique_lock<std::mutex> guard(mutex_);
+	SharedLock *lock = nullptr;
+	for (lock = busy_; lock; lock = lock->Next())
+		if (lock->Id() == page_no)
+			return lock;
+	has_free_.wait(guard, [this]() { return free_; });
+	assert(free_);
+	lock = free_;
+	free_ = free_->Next();
+	lock->SetId(page_no);
+	lock->Link(busy_);
+	busy_ = lock;
+	return lock;
 }
 
-SharedLock* LatchSet::UnpinLock()
+void LatchSet::FreeLock(page_id page_no)
 {
-	for (SharedLock *curr = head_; curr; curr = curr->Next())
-		if (!curr->Users())
-			return curr;
-	assert(0);
+	std::unique_lock<std::mutex> guard(mutex_);
+	SharedLock *lock = busy_;
+	for (; lock; lock = lock->Next())
+		if (lock->Id() == page_no) {
+			if (lock->Free())
+				lock->SetFree(false);
+			lock->Unlock();
+			if (busy_ == lock) {
+				busy_ = busy_->Next();
+			} else {
+				lock->Detach();
+			}
+			break;
+		}
+	assert(lock);
+	lock->Link(free_);
+	free_ = lock;
+	has_free_.notify_one();
 }
 
 void LatchManager::LockShared(page_id page_no)
 {
 	int index = page_no & Mask;
-	latch_mutex_[index].lock();
-	SharedLock *lock = latch_set_[index].FindLock(page_no);
-	if (!lock) {
-		if ((lock = AllocateFree(page_no))) {
-			assert(lock->Id() == page_no);
-			latch_set_[index].PinLock(lock);
-		} else {
-			lock = latch_set_[index].UnpinLock();
-			lock->SetId(page_no);
-			assert(!lock->Users());
-			assert(lock->Id() == page_no);
-		}
-	}
-	latch_mutex_[index].unlock();
-	if (lock->Id() != page_no) {
-		std::cout << lock->Id() << " " << page_no << std::endl;
-	}
+	SharedLock *lock = latch_set_[index].GetLock(page_no);
 	assert(lock->Id() == page_no);
 	lock->LockShared();
 	// std::cout << "lock shared\n";
@@ -64,12 +73,8 @@ void LatchManager::LockShared(page_id page_no)
 void LatchManager::UnlockShared(page_id page_no)
 {
 	int index = page_no & Mask;
-	latch_mutex_[index].lock();
-	SharedLock *lock = latch_set_[index].FindLock(page_no);
-	assert(lock);
-	latch_mutex_[index].unlock();
+	SharedLock *lock = latch_set_[index].GetLock(page_no);
 	assert(lock->Id() == page_no);
-
 	lock->UnlockShared();
 	// std::cout << "unlock shared\n";
 }
@@ -77,20 +82,7 @@ void LatchManager::UnlockShared(page_id page_no)
 void LatchManager::Lock(page_id page_no)
 {
 	int index = page_no & Mask;
-	latch_mutex_[index].lock();
-	SharedLock *lock = latch_set_[index].FindLock(page_no);
-	if (!lock) {
-		if ((lock = AllocateFree(page_no))) {
-			assert(lock->Id() == page_no);
-			latch_set_[index].PinLock(lock);
-		} else {
-			lock = latch_set_[index].UnpinLock();
-			lock->SetId(page_no);
-			assert(!lock->Users());
-			assert(lock->Id() == page_no);
-		}
-	}
-	latch_mutex_[index].unlock();
+	SharedLock *lock = latch_set_[index].GetLock(page_no);
 	assert(lock->Id() == page_no);
 	lock->Lock();
 	// std::cout << "lock\n";
@@ -99,70 +91,28 @@ void LatchManager::Lock(page_id page_no)
 void LatchManager::Unlock(page_id page_no)
 {
 	int index = page_no & Mask;
-	latch_mutex_[index].lock();
-	SharedLock *lock = latch_set_[index].FindLock(page_no);
-	assert(lock);
-	lock->Unlock();
-	// latch_set_[index].UnpinLock(lock);
-	assert(lock->Id() == page_no);
-
-	latch_mutex_[index].unlock();
-	// std::cout << "unlock\n";
+	// SharedLock *lock = latch_set_[index].GetLock(page_no);
+	// assert(lock->Id() == page_no);
+	// lock->Unlock();
+	latch_set_[index].FreeLock(page_no);
 }
 
 void LatchManager::Upgrade(page_id page_no)
 {
 	int index = page_no & Mask;
-	latch_mutex_[index].lock();
-	SharedLock *lock = latch_set_[index].FindLock(page_no);
-	assert(lock);
-	latch_mutex_[index].unlock();
+	SharedLock *lock = latch_set_[index].GetLock(page_no);
 	assert(lock->Id() == page_no);
-
 	lock->Upgrade();
 	// std::cout << "upgrade\n";
 }
 
 void LatchManager::Downgrade(page_id page_no)
 {
-	int index = page_no & Mask;
-	latch_mutex_[index].lock();
-	SharedLock *lock = latch_set_[index].FindLock(page_no);
-	assert(lock);
-	latch_mutex_[index].unlock();
-	lock->Downgrade();
+	// int index = page_no & Mask;
+	// SharedLock *lock = latch_set_[index].GetLock(page_no);
+	// assert(lock->Id() == page_no);
+	// lock->Downgrade();
 	// std::cout << "downgrade\n";
-}
-
-LatchManager::LatchManager()
-{
-	free_ = new SharedLock[Max];
-	assert(free_);
-}
-
-SharedLock* LatchManager::AllocateFree(page_id id)
-{
-	std::lock_guard<std::mutex> lock(mutex_);
-	for (int i = 0; i != Max; ++i)
-		if (free_[i].Id() == 0xFFFFFFFF) {
-			std::cout << i << std::endl;
-			free_[i].SetId(id);
-			return &free_[i];
-		}
-	return nullptr;
-}
-
-LatchSet::~LatchSet()
-{
-	std::cout << "latch\n";
-	for (auto lk = head_; lk; lk = lk->Next())
-		std::cout << lk->Id() << std::endl;
-}
-
-LatchManager::~LatchManager()
-{
-	// if (free_) delete [] free_;
-	free_ = nullptr;
 }
 
 } // namespace Mushroom

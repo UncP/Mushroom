@@ -11,6 +11,7 @@
 #define _LATCH_MANAGER_HPP_
 
 #include <mutex>
+#include <condition_variable>
 
 #include "shared_lock.hpp"
 
@@ -20,25 +21,27 @@ class LatchSet
 {
 	public:
 
-		LatchSet():head_(nullptr) { }
+		LatchSet();
 
-		SharedLock* FindLock(page_id page_no);
+		SharedLock* GetLock(page_id page_no);
 
-		void PinLock(SharedLock *lk);
-
-		SharedLock* UnpinLock();
-
-		~LatchSet();
+		void FreeLock(page_id page_no);
 
 	private:
-		SharedLock *head_;
+		static const int Max = 8;
+
+		std::mutex mutex_;
+		std::condition_variable has_free_;
+		SharedLock locks_[Max];
+		SharedLock *busy_ = nullptr;
+		SharedLock *free_ = nullptr;
 };
 
 class LatchManager
 {
 	public:
 
-		LatchManager();
+		LatchManager() { }
 
 		void LockShared(page_id page_no);
 
@@ -52,21 +55,10 @@ class LatchManager
 
 		void Downgrade(page_id page_no);
 
-		~LatchManager();
-
 	private:
-
-		SharedLock* AllocateFree(page_id id);
-
-		static const int Max  = 16;
-		static const int Hash = 4;
+		static const int Hash = 8;
 		static const int Mask = Hash - 1;
 
-		std::mutex  mutex_;
-
-		SharedLock *free_;
-
-		std::mutex  latch_mutex_[Hash];
 		LatchSet    latch_set_[Hash];
 };
 

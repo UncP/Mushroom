@@ -23,9 +23,7 @@ bool on = true;
 std::chrono::milliseconds t1(3000);
 std::chrono::milliseconds t2(1000);
 
-page_id page_no = 1;
-
-void Lock(int i)
+void Lock(int i, uint32_t page_no)
 {
 	for (; on;) {
 		switch (i) {
@@ -42,18 +40,19 @@ void Lock(int i)
 			case 2:
 				latch_manager.LockShared(page_no);
 				latch_manager.Upgrade(page_no);
-				latch_manager.Downgrade(page_no);
-				latch_manager.UnlockShared(page_no);
+				// latch_manager.Downgrade(page_no);
+				latch_manager.Unlock(page_no);
 				++upgrade;
 				break;
 			case 3:
 				latch_manager.LockShared(page_no);
 				latch_manager.Upgrade(page_no);
-				latch_manager.Downgrade(page_no);
-				latch_manager.UnlockShared(page_no);
+				// latch_manager.Downgrade(page_no);
+				latch_manager.Unlock(page_no);
 				++upgrade;
 				break;
 		}
+		// page_no = (page_no + 1) % 1024;
 	}
 }
 
@@ -69,7 +68,7 @@ int main(int argc, char **argv)
 {
 	std::vector<std::thread> threads;
 	for (int i = 0; i != 2; ++i)
-		threads.push_back(std::thread(Lock, i % 4));
+		threads.push_back(std::thread(Lock, i % 4, 0));
 	threads.push_back(std::thread(Show));
 	std::this_thread::sleep_for(t1);
 	on = false;
