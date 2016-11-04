@@ -25,8 +25,6 @@ class LatchSet
 
 		SharedLock* GetLock(page_id page_no);
 
-		void FreeLock(page_id page_no);
-
 	private:
 		static const int Max = 8;
 

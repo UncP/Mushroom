@@ -25,40 +25,16 @@ LatchSet::LatchSet()
 SharedLock* LatchSet::GetLock(page_id page_no)
 {
 	std::unique_lock<std::mutex> guard(mutex_);
-	SharedLock *lock = nullptr;
-	for (lock = busy_; lock; lock = lock->Next())
-		if (lock->Id() == page_no)
-			return lock;
-	has_free_.wait(guard, [this]() { return free_; });
-	assert(free_);
-	lock = free_;
-	free_ = free_->Next();
-	lock->SetId(page_no);
-	lock->Link(busy_);
-	busy_ = lock;
-	return lock;
-}
-
-void LatchSet::FreeLock(page_id page_no)
-{
-	std::unique_lock<std::mutex> guard(mutex_);
-	SharedLock *lock = busy_;
-	for (; lock; lock = lock->Next())
-		if (lock->Id() == page_no) {
-			if (lock->Free())
-				lock->SetFree(false);
-			lock->Unlock();
-			if (busy_ == lock) {
-				busy_ = busy_->Next();
-			} else {
-				lock->Detach();
-			}
-			break;
+	for (int i = 0; i != Max; ++i) {
+		if (locks_[i].Id() == page_no)
+			return &locks_[i];
+	}
+	for (int i = 0; i != Max; ++i)
+		if (!locks_[i].Users()) {
+			locks_.SetId(page_no);
+			return &locks_[i];
 		}
-	assert(lock);
-	lock->Link(free_);
-	free_ = lock;
-	has_free_.notify_one();
+	assert(0);
 }
 
 void LatchManager::LockShared(page_id page_no)
@@ -91,10 +67,10 @@ void LatchManager::Lock(page_id page_no)
 void LatchManager::Unlock(page_id page_no)
 {
 	int index = page_no & Mask;
-	// SharedLock *lock = latch_set_[index].GetLock(page_no);
-	// assert(lock->Id() == page_no);
-	// lock->Unlock();
-	latch_set_[index].FreeLock(page_no);
+	SharedLock *lock = latch_set_[index].GetLock(page_no);
+	assert(lock->Id() == page_no);
+	lock->Unlock();
+	// latch_set_[index].FreeLock(page_no);
 }
 
 void LatchManager::Upgrade(page_id page_no)
@@ -108,10 +84,10 @@ void LatchManager::Upgrade(page_id page_no)
 
 void LatchManager::Downgrade(page_id page_no)
 {
-	// int index = page_no & Mask;
-	// SharedLock *lock = latch_set_[index].GetLock(page_no);
-	// assert(lock->Id() == page_no);
-	// lock->Downgrade();
+	int index = page_no & Mask;
+	SharedLock *lock = latch_set_[index].GetLock(page_no);
+	assert(lock->Id() == page_no);
+	lock->Downgrade();
 	// std::cout << "downgrade\n";
 }
 
