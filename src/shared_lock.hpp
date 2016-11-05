@@ -25,13 +25,20 @@ class SharedLock
 
 		using lock_id = page_id;
 
-		SharedLock():id_(0xFFFFFFFF), prev_(nullptr), next_(nullptr), users_(0) {
+		SharedLock():id_(0xFFFFFFFF), prev_(nullptr), next_(nullptr), users_(0), occupy_(false) {
 			assert(!pthread_rwlock_init(&mutex_, NULL));
 		}
 
 		lock_id Id() const { return id_; }
 
-		void SetId(page_id id) { id_ = id; }
+		bool Occupy() const { return occupy_.load(std::memory_order_relaxed); }
+
+		void SetId(page_id id) {
+			occupy_ = true;
+			id_ = id;
+		}
+
+		void SetOccupy(bool occupy) { occupy_ = occupy; }
 
 		void LockShared() {
 			// mutex_.lock_shared();
@@ -43,6 +50,8 @@ class SharedLock
 			// mutex_.unlock_shared();
 			assert(!pthread_rwlock_unlock(&mutex_));
 			--users_;
+			if (!users_)
+				occupy_ = false;
 		}
 
 		int Users() const { return users_.load(std::memory_order_relaxed); }
@@ -57,6 +66,7 @@ class SharedLock
 			// mutex_.unlock();
 			assert(!pthread_rwlock_unlock(&mutex_));
 			--users_;
+			occupy_ = false;
 		}
 
 		void Upgrade() {
@@ -110,6 +120,7 @@ class SharedLock
 		SharedLock             *prev_;
 		SharedLock             *next_;
 		std::atomic<int>        users_;
+		std::atomic<bool>       occupy_;
 };
 
 } // namespace Mushroom

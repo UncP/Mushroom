@@ -52,7 +52,7 @@ void Lock(int i, uint32_t page_no)
 				++upgrade;
 				break;
 		}
-		// page_no = (page_no + 1) % 1024;
+		page_no = (page_no + 1) % 1024;
 	}
 }
 

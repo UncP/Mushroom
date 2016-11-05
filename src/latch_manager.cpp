@@ -30,8 +30,8 @@ SharedLock* LatchSet::GetLock(page_id page_no)
 			return &locks_[i];
 	}
 	for (int i = 0; i != Max; ++i)
-		if (!locks_[i].Users()) {
-			locks_.SetId(page_no);
+		if (!locks_[i].Users() && !locks_[i].Occupy()) {
+			locks_[i].SetId(page_no);
 			return &locks_[i];
 		}
 	assert(0);
@@ -41,6 +41,10 @@ void LatchManager::LockShared(page_id page_no)
 {
 	int index = page_no & Mask;
 	SharedLock *lock = latch_set_[index].GetLock(page_no);
+	if (lock->Id() != page_no) {
+		std::cout << lock->Id() << " " << page_no << std::endl;
+		std::cout << lock->Users() << std::endl;
+	}
 	assert(lock->Id() == page_no);
 	lock->LockShared();
 	// std::cout << "lock shared\n";
@@ -59,6 +63,10 @@ void LatchManager::Lock(page_id page_no)
 {
 	int index = page_no & Mask;
 	SharedLock *lock = latch_set_[index].GetLock(page_no);
+	if (lock->Id() != page_no) {
+		std::cout << lock->Id() << " " << page_no << std::endl;
+		std::cout << lock->Users() << std::endl;
+	}
 	assert(lock->Id() == page_no);
 	lock->Lock();
 	// std::cout << "lock\n";
