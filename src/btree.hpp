@@ -54,7 +54,7 @@ class BTree
 		~BTree() {
 			if (root_) delete [] root_;
 			if (btree_pager_) delete btree_pager_;
-			if (latch_manager_) delete latch_manager_;
+			// if (latch_manager_) delete latch_manager_;
 			root_ = nullptr;
 			btree_pager_ = nullptr;
 		}
@@ -65,7 +65,7 @@ class BTree
 		Status Split(BTreePage *leaf, page_id *stack, uint8_t depth);
 		Status SplitRoot();
 
-		LatchManager *latch_manager_;
+		// LatchManager *latch_manager_;
 
 		BTreePager  *btree_pager_;
 
@@ -74,7 +74,7 @@ class BTree
 		uint16_t 	  degree_;
 		uint8_t     key_len_;
 
-		std::mutex  mutex_;
+		// std::mutex  mutex_;
 };
 
 } // namespace Mushroom

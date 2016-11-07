@@ -7,20 +7,24 @@
  *    > Created Time: 2016-10-10 15:32:20
 **/
 
+#ifndef _MUSHROOM_DB_HPP_
+#define _MUSHROOM_DB_HPP_
+
 #include <string>
 
 #include "btree.hpp"
+#include "data_pager.hpp"
 
 namespace Mushroom {
 
 class MushroomDB
 {
 	public:
-		MushroomDB(const char *file, const int key_len);
+		MushroomDB(const char *name, const int key_len);
 
-		Status Put(const KeySlice *key) { return btree_->Put(key); }
+		Status Put(const Slice &key, const Slice &val);
 
-		Status Get(KeySlice *key) { return btree_->Get(key); }
+		Status Get(KeySlice *key);
 
 		const BTree* Btree() const { return btree_ ; }
 
@@ -29,9 +33,13 @@ class MushroomDB
 		~MushroomDB() { if (btree_) delete btree_; btree_ = nullptr; }
 
 	private:
-		std::string file_;
+		std::string name_;
 
 		BTree      *btree_;
+
+		DataPager  *data_pager_;
 };
 
 } // namespace Mushroom
+
+#endif /* _MUSHROOM_DB_HPP_ */

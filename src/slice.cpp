@@ -7,17 +7,19 @@
  *    > Created Time: 2016-10-09 15:47:31
 **/
 
+#include <sstream>
+
 #include "slice.hpp"
 
 namespace Mushroom {
 
 std::function<std::string(const KeySlice *)> KeySlice::form_string_ = nullptr;
 
-// std::string Slice::ToString() const
-// {
-// 	char len[16];
-// 	snprintf(len, 16, "%d  :", (int)len_);
-// 	return "len: " + std::string(len) + std::string(data_) + "\n";
-// }
+std::string Slice::ToString() const
+{
+	std::ostringstream os;
+	os << "len: " << len_ << "  :" << data_ << "\n";
+	return os.str();
+}
 
 } // namespace Mushroom

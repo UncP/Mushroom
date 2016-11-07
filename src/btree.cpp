@@ -26,13 +26,13 @@ BTree::BTree(const int fd, const int key_len)
 	degree_ = static_cast<uint16_t>(
 		(BTreePage::PageSize - offset) / (BTreePage::PageByte + BTreePage::IndexByte + key_len));
 
-	latch_manager_ = new LatchManager();
+	// latch_manager_ = new LatchManager();
 
 	btree_pager_ = new BTreePager(fd);
 
 	root_ = btree_pager_->NewPage(BTreePage::ROOT, key_len_, 0, false);
 
-	assert(latch_manager_ && root_ && btree_pager_);
+	assert(root_ && btree_pager_);
 
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
@@ -49,7 +49,7 @@ Status BTree::Close()
 
 BTreePage* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const
 {
-	latch_manager_->LockShared(0);
+	// latch_manager_->LockShared(0);
 	BTreePage *parent = root_, *child = nullptr;
 	for (; parent->Level();) {
 		page_id page_no = parent->Descend(key);
@@ -76,7 +76,7 @@ Status BTree::Put(const KeySlice *key)
 
 	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
 
-	latch_manager_->Upgrade(leaf->PageNo());
+	// latch_manager_->Upgrade(leaf->PageNo());
 
 	if (!leaf->Insert(key)) {
 		std::cout << "key existed ;)\n";
@@ -125,7 +125,7 @@ Status BTree::SplitRoot()
 	new_root->Insert(slice);
 	btree_pager_->PinPage(root_);
 	root_ = new_root;
-	latch_manager_->Unlock(0);
+	// latch_manager_->Unlock(0);
 	return Success;
 }
 
@@ -141,22 +141,22 @@ Status BTree::Split(BTreePage *left, page_id *stack, uint8_t depth)
 			right = btree_pager_->NewPage(left->Type(), left->KeyLen(), left->Level());
 			left->SetOccupy(false);
 			left->Split(right, slice);
-			latch_manager_->Downgrade(left->PageNo());
+			// latch_manager_->Downgrade(left->PageNo());
 			if (stack[--depth]) {
-				latch_manager_->Lock(stack[depth]);
+				// latch_manager_->Lock(stack[depth]);
 				parent = btree_pager_->GetPage(stack[depth]);
 			} else {
-				latch_manager_->Lock(0);
+				// latch_manager_->Lock(0);
 				parent = root_;
 			}
 			parent->Insert(slice);
-			latch_manager_->UnlockShared(left->PageNo());
+			// latch_manager_->UnlockShared(left->PageNo());
 			left = parent;
 		} else {
 			return SplitRoot();
 		}
 	}
-	latch_manager_->Unlock(left->PageNo());
+	// latch_manager_->Unlock(left->PageNo());
 	return Success;
 }
 
@@ -209,7 +209,7 @@ bool BTree::KeyCheck(std::ifstream &in, int total) const
 	in.seekg(0);
 	for (int i = 0; !in.eof() && i != total; ++i) {
 		in >> val;
-		val[key_len_-1] = '\0';
+		// val[key_len_-1] = '\0';
 		memcpy(key->Data(), val.c_str(), key_len_);
 		if (!Get(key))
 			return false;

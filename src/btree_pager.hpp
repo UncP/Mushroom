@@ -43,7 +43,7 @@ class BTreePageBucket
 
 		static const int Max = 8;
 
-		std::mutex mutex_;
+		// std::mutex mutex_;
 		// Mutex      mutex_;
 		BTreePage *pages_[Max];
 		uint32_t   ages_[Max];
@@ -74,7 +74,7 @@ class BTreePager
 		static const uint32_t Hash = 1024;
 		static const page_id  Mask = Hash - 1;
 
-		std::mutex      mutex_;
+		// std::mutex      mutex_;
 		// Mutex           mutex_;
 		int             fd_;
 		page_id         curr_;

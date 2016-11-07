@@ -51,7 +51,6 @@ int main(int argc, char **argv)
 			for (; buf[i] != ' ' && buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len);
-			assert(j == 15);
 			db.Put(key);
 			if (++count == total) {
 				flag = false;

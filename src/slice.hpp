@@ -18,30 +18,27 @@
 
 namespace Mushroom {
 
-class KeySlice;
+class Slice
+{
+	public:
+		Slice():data_(nullptr), len_(0) { }
 
-// class Slice
-// {
-// 	public:
-// 		Slice():data_(nullptr), len_(0) { }
+		Slice(const char *data, size_t len):data_(data), len_(len) { }
 
-// 		Slice(const char *data, size_t len):data_(data), len_(len) { }
+		Slice(const char *data):data_(data), len_(strlen(data)) { }
 
-// 		Slice(const char *data):data_(data), len_(strlen(data)) { }
+		const char* Data() const { return data_; }
 
-// 		const char* Data() const { return data_; }
-// 		size_t      Length()  const { return len_; }
+		size_t Length() const { return len_; }
 
-// 		bool Empty() const { return !len_; }
+		Slice& operator=(const Slice &that) = delete;
 
-// 		Slice& operator=(const Slice &that) = default;
+		std::string ToString() const;
 
-// 		std::string ToString() const;
-
-// 	private:
-// 		const char *data_;
-// 		size_t      len_;
-// };
+	private:
+		const char *data_;
+		size_t      len_;
+};
 
 class KeySlice
 {
