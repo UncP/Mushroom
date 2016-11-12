@@ -12,6 +12,13 @@
 - More Execllent Insertoin Speed
 
 
+###(B link Tree)Performance
+`key length: 16 bytes`
+`key tuples: 10 million`
+
+- Version 0.1.0 sorting time : 16 s
+
+
 ###TODO
 - [x] B link Tree Index Engine
 - [x] Thread Pool

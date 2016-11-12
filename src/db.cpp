@@ -35,9 +35,9 @@ MushroomDB::MushroomDB(const char *name, const int key_len):name_(std::string(na
 	assert(data_pager_ = new DataPager(fd));
 }
 
-Status MushroomDB::Put(const Slice &key, const Slice &val)
+Status MushroomDB::Put(const KeySlice *key)
 {
-
+	return btree_->Put(key);
 }
 
 Status MushroomDB::Close()

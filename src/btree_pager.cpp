@@ -165,6 +165,7 @@ Status BTreePager::Close()
 {
 	for (int i = 0; i != Hash; ++i)
 		assert(bucket_[i].Clear(fd_));
+	std::cout << curr_ << std::endl;
 	if (fd_ > 0)
 		close(fd_);
 	fd_ = -1;

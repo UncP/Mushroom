@@ -22,7 +22,8 @@ class MushroomDB
 	public:
 		MushroomDB(const char *name, const int key_len);
 
-		Status Put(const Slice &key, const Slice &val);
+		// Status Put(const Slice &key, const Slice &val);
+		Status Put(const KeySlice *key);
 
 		Status Get(KeySlice *key);
 

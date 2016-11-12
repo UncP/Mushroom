@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/16.txt";
+	const char *file = "../data/1000.txt";
 	const int key_len = 16;
 	const int total = (argc == 2) ? atoi(argv[1]) : 100;
 

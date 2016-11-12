@@ -52,8 +52,6 @@ class KeySlice
 	public:
 		using StringFormat = std::function<std::string(const KeySlice *)>;
 
-		KeySlice() { }
-
 		char* Data() { return data_; }
 		const char* Data() const { return data_; }
 
@@ -62,8 +60,6 @@ class KeySlice
 		}
 
 		page_id PageNo() const { return page_no_; }
-
-		page_id Valid() const { return page_no_ != 0; }
 
 		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
 
