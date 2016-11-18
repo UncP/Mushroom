@@ -1,8 +1,8 @@
 CPP 		 = g++
 CPPFLAGS = -std=c++14 -Wall -O3 -pthread
 
-OBJ = slice.o mutex.o shared_lock.o latch_manager.o btree_page.o btree_pager.o data_page.o \
-			data_pager.o btree.o db.o iterator.o queue.o thread_pool.o
+OBJ = slice.o mutex.o shared_lock.o latch.o latch_manager.o btree_page.o btree_pager.o \
+			data_page.o data_pager.o btree.o db.o iterator.o queue.o thread_pool.o
 
 Mushroom:$(OBJ) Mushroom.cpp
 	$(CPP) $(CPPFLAGS) -o Mushroom $(OBJ) Mushroom.cpp
@@ -37,8 +37,9 @@ data_page_test:$(OBJ) ../test/data_page_test.cpp
 db_test:$(OBJ) ../test/db_test.cpp
 	$(CPP) $(CPPFLAGS) -o db_test $(OBJ) ../test/db_test.cpp
 
-latch_manager_test:shared_lock.o latch_manager.o ../test/latch_manager_test.cpp
-	$(CPP) $(CPPFLAGS) -o latch_manager_test shared_lock.o latch_manager.o ../test/latch_manager_test.cpp
+latch_manager_test:shared_lock.o latch.o latch_manager.o ../test/latch_manager_test.cpp
+	$(CPP) $(CPPFLAGS) -o latch_manager_test shared_lock.o latch.o latch_manager.o \
+	../test/latch_manager_test.cpp
 
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp

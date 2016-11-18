@@ -12,8 +12,10 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <string>
 
 #include "shared_lock.hpp"
+#include "latch.hpp"
 
 namespace Mushroom {
 
@@ -21,18 +23,17 @@ class LatchSet
 {
 	public:
 
-		LatchSet();
+		LatchSet() { }
 
-		SharedLock* GetLock(page_id page_no);
+		Latch* GetLatch(page_id page_no);
+
+		std::string ToString() const;
 
 	private:
-		static const int Max = 8;
+		static const int Max = 4;
 
-		std::mutex mutex_;
-		std::condition_variable has_free_;
-		SharedLock locks_[Max];
-		SharedLock *busy_ = nullptr;
-		SharedLock *free_ = nullptr;
+		SharedLock lock_;
+		Latch      latches_[Max];
 };
 
 class LatchManager
@@ -41,17 +42,9 @@ class LatchManager
 
 		LatchManager() { }
 
-		void LockShared(page_id page_no);
+		Latch *GetLatch(page_id page_no);
 
-		void UnlockShared(page_id page_no);
-
-		void Lock(page_id page_no);
-
-		void Unlock(page_id page_no);
-
-		void Upgrade(page_id page_no);
-
-		void Downgrade(page_id page_no);
+		std::string ToString() const;
 
 	private:
 		static const int Hash = 8;

@@ -12,7 +12,7 @@
 - More Execllent Insertoin Speed
 
 
-###(B link Tree)Performance
+###B link Tree Performance
 `key length: 16 bytes`
 `key tuples: 10 million`
 
@@ -23,5 +23,5 @@
 - [x] B link Tree Index Engine
 - [x] Thread Pool
 - [x] Thread Safe Queue(Unbounded, Bounded)
-- [ ] Two-Phase Lock Manager
+- [x] Two-Phase Lock Manager
 - [ ] Data Manager

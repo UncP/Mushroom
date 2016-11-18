@@ -37,6 +37,7 @@ class Queue
 
 		virtual ~Queue() { }
 
+	protected:
 		std::mutex              mutex_;
 		std::condition_variable condition_;
 		bool                    clear_;
