@@ -27,35 +27,33 @@ class Latch
 
 		page_id Id() const { return id_; }
 
-		void Pin() { pin_ = true, ++users_; }
+		void Pin();
 
-		void UnPin() {
-			if (!--users_)
-				pin_ = false;
-		}
+		void UnPin();
 
-		bool Busy() const { return pin_.load(std::memory_order_relaxed); }
+		bool Busy() const;
 
-		void LockShared() { shared_lock_.LockShared(); }
+		void LockShared();
 
-		void UnlockShared() { shared_lock_.UnlockShared(); }
+		void UnlockShared();
 
-		void Lock() { shared_lock_.Lock(); }
+		void Lock();
 
-		void Unlock() { shared_lock_.Unlock(); }
+		void Unlock();
 
-		void Upgrade() { shared_lock_.Upgrade(); }
+		void Upgrade();
 
-		void Downgrade() { shared_lock_.Downgrade(); }
+		void Downgrade();
 
 		std::string ToString() const {
 			std::ostringstream os;
-			os << id_ << ": " << (pin_ == true ? "true " : "false ") << users_ << std::endl;
+			// os << id_ << ": " << (pin_ == true ? "true " : "false ") << users_ << std::endl;
+			os << id_ << ": " << users_ << std::endl;
 			return std::move(os.str());
 		}
 
 	private:
-		std::atomic<bool> pin_;
+		// std::atomic<bool> pin_;
 		std::atomic<int>  users_;
 		page_id           id_;
 		SharedLock        shared_lock_;

@@ -82,6 +82,26 @@ bool BTreePage::Insert(const KeySlice *key)
 	return true;
 }
 
+// bool Adopt(const KeySlice *key)
+// {
+// 	uint16_t pos;
+// 	KeySlice *slice = nullptr;
+// 	assert(!Traverse(key, &pos, &slice));
+// 	if (pos == (total_key_ - 1))
+// 		return false;
+
+// 	uint16_t slot_len = PageByte + key_len_, end = total_key_ * slot_len;
+// 	memcpy(data_ + end, key, slot_len);
+
+// 	uint16_t *index = Index();
+// 	--index;
+// 	if (pos) memmove(&index[0], &index[1], pos << 1);
+// 	index[pos] = end;
+// 	++total_key_;
+// 	dirty_ = true;
+// 	return true;
+// }
+
 bool BTreePage::Search(KeySlice *key) const
 {
 	assert(type_ != BRANCH);

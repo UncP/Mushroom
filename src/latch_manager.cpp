@@ -42,8 +42,7 @@ Latch* LatchSet::GetLatch(page_id id)
 
 Latch* LatchManager::GetLatch(page_id id)
 {
-	int index = id & Mask;
-	return latch_set_[index].GetLatch(id);
+	return latch_set_[id & Mask].GetLatch(id);
 }
 
 std::string LatchSet::ToString() const

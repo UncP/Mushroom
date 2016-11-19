@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 #include <mutex>
+#include <map>
 
 #include "status.hpp"
 #include "slice.hpp"
@@ -54,18 +55,20 @@ class BTree
 		~BTree() {
 			if (root_) delete [] root_;
 			if (btree_pager_) delete btree_pager_;
-			// if (latch_manager_) delete latch_manager_;
+			if (latch_manager_) delete latch_manager_;
 			root_ = nullptr;
 			btree_pager_ = nullptr;
+			latch_manager_ = nullptr;
 		}
 
 	private:
 
-		BTreePage* DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const;
-		Status Split(BTreePage *leaf, page_id *stack, uint8_t depth);
+		std::pair<BTreePage*, Latch*> DescendToLeaf(const KeySlice *key, page_id *stack,
+			uint8_t *depth) const;
+		Status Split(BTreePage *leaf, Latch *latch, page_id *stack, uint8_t depth);
 		Status SplitRoot();
 
-		// LatchManager *latch_manager_;
+		LatchManager *latch_manager_;
 
 		BTreePager  *btree_pager_;
 

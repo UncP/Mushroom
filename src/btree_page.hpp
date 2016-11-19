@@ -64,6 +64,8 @@ class BTreePage
 
 		bool Insert(const KeySlice *key);
 
+		bool Adopt(const KeySlice *key);
+
 		bool Search(KeySlice *key) const;
 
 		bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);

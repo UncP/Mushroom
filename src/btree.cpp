@@ -17,8 +17,6 @@ namespace Mushroom {
 
 BTree::BTree(const int fd, const int key_len)
 {
-	assert(key_len <= 256);
-
 	key_len_ = static_cast<uint8_t>(key_len);
 
 	BTreePage *page = nullptr;
@@ -26,13 +24,13 @@ BTree::BTree(const int fd, const int key_len)
 	degree_ = static_cast<uint16_t>(
 		(BTreePage::PageSize - offset) / (BTreePage::PageByte + BTreePage::IndexByte + key_len));
 
-	// latch_manager_ = new LatchManager();
+	latch_manager_ = new LatchManager();
 
 	btree_pager_ = new BTreePager(fd);
 
 	root_ = btree_pager_->NewPage(BTreePage::ROOT, key_len_, 0, false);
 
-	assert(root_ && btree_pager_);
+	assert(latch_manager_ && root_ && btree_pager_);
 
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
@@ -47,23 +45,26 @@ Status BTree::Close()
 	return Success;
 }
 
-BTreePage* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const
+std::pair<BTreePage*, Latch*> BTree::DescendToLeaf(const KeySlice *key, page_id *stack,
+	uint8_t *depth) const
 {
-	// latch_manager_->LockShared(0);
+	Latch *latch = nullptr;
+	// latch->LockShared();
 	BTreePage *parent = root_, *child = nullptr;
 	for (; parent->Level();) {
 		page_id page_no = parent->Descend(key);
-		// latch_manager_->LockShared(page_no);
+		// Latch *pre = latch;
+		// latch = latch_manager_->GetLatch(page_no);
+		// latch->LockShared();
 		assert(child = btree_pager_->GetPage(page_no));
-		// assert(child->Level() != parent->Level());
+		// pre->UnlockShared();
 		if (child->Level() != parent->Level()) {
 			stack[*depth] = parent->PageNo();
 			++*depth;
 		}
-		// latch_manager_->Unlock(parent->PageNo());
 		parent = child;
 	}
-	return parent;
+	return {parent, latch};
 }
 
 Status BTree::Put(const KeySlice *key)
@@ -71,12 +72,13 @@ Status BTree::Put(const KeySlice *key)
 	uint8_t depth = 0;
 	page_id stack[8];
 
-	// std::lock_guard<std::mutex> lock(mutex_);
 	// Output(key);
 
-	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
+	std::pair<BTreePage*, Latch*> pair = DescendToLeaf(key, stack, &depth);
+	BTreePage *leaf = pair.first;
+	Latch *latch = pair.second;
 
-	// latch_manager_->Upgrade(leaf->PageNo());
+	// latch->Upgrade();
 
 	if (!leaf->Insert(key)) {
 		std::cout << "key existed ;)\n";
@@ -84,11 +86,11 @@ Status BTree::Put(const KeySlice *key)
 	}
 
 	if (leaf->KeyNo() < degree_) {
-		// latch_manager_->Unlock(left->PageNo());
+		// latch->Unlock();
 		return Success;
 	}
 
-	Split(leaf, stack, depth);
+	Split(leaf, latch, stack, depth);
 	return Success;
 }
 
@@ -97,10 +99,9 @@ Status BTree::Get(KeySlice *key) const
 	uint8_t depth = 0;
 	page_id stack[8];
 
-	BTreePage *leaf = DescendToLeaf(key, stack, &depth);
-	bool flag = leaf->Search(key);
-
-	// latch_manager_->UnlockShared(leaf->PageNo());
+	std::pair<BTreePage*, Latch*> pair = DescendToLeaf(key, stack, &depth);
+	bool flag = pair.first->Search(key);
+	// pair.second->UnlockShared();
 
 	return flag ? Success : Fail;
 }
@@ -125,11 +126,10 @@ Status BTree::SplitRoot()
 	new_root->Insert(slice);
 	btree_pager_->PinPage(root_);
 	root_ = new_root;
-	// latch_manager_->Unlock(0);
 	return Success;
 }
 
-Status BTree::Split(BTreePage *left, page_id *stack, uint8_t depth)
+Status BTree::Split(BTreePage *left, Latch *latch, page_id *stack, uint8_t depth)
 {
 	BTreePage *right = nullptr, *parent = nullptr;
 	char key[BTreePage::PageByte + key_len_];
@@ -137,26 +137,35 @@ Status BTree::Split(BTreePage *left, page_id *stack, uint8_t depth)
 
 	for (; left->KeyNo() == degree_;) {
 		if (left->Type() != BTreePage::ROOT) {
-			left->SetOccupy(true);
 			right = btree_pager_->NewPage(left->Type(), left->KeyLen(), left->Level());
-			left->SetOccupy(false);
 			left->Split(right, slice);
-			// latch_manager_->Downgrade(left->PageNo());
-			if (stack[--depth]) {
-				// latch_manager_->Lock(stack[depth]);
-				parent = btree_pager_->GetPage(stack[depth]);
+			// latch->Downgrade();
+			// Latch *pre = latch;
+			page_id page_no = stack[--depth];
+			// latch = latch_manager_->GetLatch(stack[--depth]);
+			// latch->Lock();
+			if (page_no) {
+				parent = btree_pager_->GetPage(page_no);
 			} else {
-				// latch_manager_->Lock(0);
 				parent = root_;
 			}
 			parent->Insert(slice);
-			// latch_manager_->UnlockShared(left->PageNo());
+			// if (!parent->Adopt(slice)) {
+			// 	page_id page_no = parent->Next();
+			// 	Latch *next = latch_manager_->GetLatch(page_no);
+			// 	next->Lock();
+			// 	parent = btree_pager_->GetPage(page_no);
+			// 	assert(parent->Adopt(slice));
+			// 	latch->Unlock();
+			// 	latch = next;
+			// }
+			// pre->UnlockShared();
 			left = parent;
 		} else {
-			return SplitRoot();
+			SplitRoot();
 		}
 	}
-	// latch_manager_->Unlock(left->PageNo());
+	// latch->Unlock();
 	return Success;
 }
 
@@ -209,7 +218,6 @@ bool BTree::KeyCheck(std::ifstream &in, int total) const
 	in.seekg(0);
 	for (int i = 0; !in.eof() && i != total; ++i) {
 		in >> val;
-		// val[key_len_-1] = '\0';
 		memcpy(key->Data(), val.c_str(), key_len_);
 		if (!Get(key))
 			return false;
