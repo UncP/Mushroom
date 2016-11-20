@@ -8,6 +8,7 @@
 **/
 
 #include <cassert>
+#include <iostream>
 
 #include "latch_manager.hpp"
 
@@ -28,7 +29,12 @@ Latch* LatchSet::GetLatch(page_id id)
 	if (latch) return latch;
 	lock_.Lock();
 	for (int i = 0; i != Max; ++i) {
-		if (!latches_[i].Busy()) {
+		if (latches_[i].Id() == id) {
+			latches_[i].Pin();
+			latch = &latches_[i];
+			break;
+		}
+		if (latches_[i].Free()) {
 			latches_[i].SetId(id);
 			latches_[i].Pin();
 			latch = &latches_[i];
@@ -57,7 +63,7 @@ std::string LatchManager::ToString() const
 {
 	std::string res;
 	for (int i = 0; i != Hash; ++i)
-		res += latch_set_[i].ToString();
+		res += latch_set_[i].ToString() + "\n";
 	return std::move(res);
 }
 

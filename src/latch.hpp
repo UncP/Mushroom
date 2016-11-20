@@ -31,7 +31,7 @@ class Latch
 
 		void UnPin();
 
-		bool Busy() const;
+		bool Free() const;
 
 		void LockShared();
 
@@ -46,6 +46,7 @@ class Latch
 		void Downgrade();
 
 		std::string ToString() const {
+			if (id_ == 0x7FFFFFFF) return std::string();
 			std::ostringstream os;
 			// os << id_ << ": " << (pin_ == true ? "true " : "false ") << users_ << std::endl;
 			os << id_ << ": " << users_ << std::endl;

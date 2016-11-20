@@ -54,8 +54,6 @@ class ThreadPool
 
 		ThreadPool(Queue<Task> *queue);
 
-		void Init();
-
 		void AddTask(const Task &task);
 
 		void Run();

@@ -1,4 +1,4 @@
-##Mushroom NoSQL Database
+##Mushroom: NoSQL Database
 [中文版 README](./README.md)
 
 ###Mushroom: NoSQL Database based on B link Tree Index
@@ -16,12 +16,15 @@
 `key length: 16 bytes`
 `key tuples: 10 million`
 
-- Version 0.1.0 sorting time : 16 s
+- Version 0.1.0 single thread sorting time : 16 s
+
+- Version 0.2.0 multi thread sorting time :  s
 
 
 ###TODO
 - [x] B link Tree Index Engine
 - [x] Thread Pool
 - [x] Thread Safe Queue(Unbounded, Bounded)
-- [x] Two-Phase Lock Manager
+- [x] Lock Manager
+- [x] Concurrent Index
 - [ ] Data Manager

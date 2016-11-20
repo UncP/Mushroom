@@ -30,7 +30,7 @@ class LatchSet
 		std::string ToString() const;
 
 	private:
-		static const int Max = 4;
+		static const int Max = 8;
 
 		SharedLock lock_;
 		Latch      latches_[Max];
@@ -47,7 +47,7 @@ class LatchManager
 		std::string ToString() const;
 
 	private:
-		static const int Hash = 8;
+		static const int Hash = 16;
 		static const int Mask = Hash - 1;
 
 		LatchSet    latch_set_[Hash];

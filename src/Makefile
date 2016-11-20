@@ -41,6 +41,9 @@ latch_manager_test:shared_lock.o latch.o latch_manager.o ../test/latch_manager_t
 	$(CPP) $(CPPFLAGS) -o latch_manager_test shared_lock.o latch.o latch_manager.o \
 	../test/latch_manager_test.cpp
 
+multi_thread_btree_test:$(OBJ) ../test/multi_thread_btree_test.cpp
+	$(CPP) $(CPPFLAGS) -o multi_thread_btree_test $(OBJ) ../test/multi_thread_btree_test.cpp
+
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp
 

@@ -44,10 +44,10 @@ class Queue
 };
 
 template<typename T>
-class InfinityQueue : public Queue<T>
+class InfiniteQueue : public Queue<T>
 {
 	public:
-		InfinityQueue() { }
+		InfiniteQueue() { }
 
 		void Push(const T &t) override {
 			std::unique_lock<std::mutex> lock(mutex_);
@@ -86,7 +86,7 @@ class InfinityQueue : public Queue<T>
 			return queue_.empty();
 		}
 
-		~InfinityQueue() {
+		~InfiniteQueue() {
 			if (!clear_)
 				Clear();
 			clear_ = true;

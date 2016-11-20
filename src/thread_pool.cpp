@@ -33,11 +33,6 @@ ThreadPool::ThreadPool(Queue<Task> *queue):queue_(queue), working_(false)
 
 	std::vector<std::shared_ptr<Thread>> threads(thread_num);
 	threads_.swap(threads);
-}
-
-void ThreadPool::Init()
-{
-	if (working_) return ;
 
 	for (auto &each : threads_) {
 		each = ThreadPool::CreateThread([this]() { Run(); });

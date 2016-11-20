@@ -26,9 +26,9 @@ void Latch::UnPin()
 	// pin_ = false;
 }
 
-bool Latch::Busy() const
+bool Latch::Free() const
 {
-	return users_.load(std::memory_order_relaxed) > 0;
+	return users_.load(std::memory_order_relaxed) == 0;
 }
 
 void Latch::LockShared()
@@ -64,17 +64,20 @@ void Latch::Lock()
 
 void Latch::Unlock()
 {
+	assert(users_);
 	shared_lock_.Unlock();
 	UnPin();
 }
 
 void Latch::Upgrade()
 {
+	assert(users_);
 	shared_lock_.Upgrade();
 }
 
 void Latch::Downgrade()
 {
+	assert(users_);
 	shared_lock_.Downgrade();
 }
 

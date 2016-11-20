@@ -13,7 +13,6 @@
 #include <string>
 #include <mutex>
 
-#include "mutex.hpp"
 #include "status.hpp"
 #include "btree_page.hpp"
 
@@ -43,8 +42,7 @@ class BTreePageBucket
 
 		static const int Max = 8;
 
-		// std::mutex mutex_;
-		// Mutex      mutex_;
+		std::mutex mutex_;
 		BTreePage *pages_[Max];
 		uint32_t   ages_[Max];
 		int        len_;
@@ -71,11 +69,10 @@ class BTreePager
 		BTreePager(const BTreePager &) = delete;
 
 	private:
-		static const uint32_t Hash = 16384;
+		static const uint32_t Hash = 1024;
 		static const page_id  Mask = Hash - 1;
 
-		// std::mutex      mutex_;
-		// Mutex           mutex_;
+		std::mutex      mutex_;
 		int             fd_;
 		page_id         curr_;
 		BTreePageBucket bucket_[Hash];

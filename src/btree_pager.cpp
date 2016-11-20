@@ -39,7 +39,7 @@ std::string BTreePager::ToString() const
 
 BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 {
-	// std::lock_guard<std::mutex> lock(mutex_);
+	std::lock_guard<std::mutex> lock(mutex_);
 
 	int index = len_;
 	uint32_t fresh = 0xFFFFFFFF;
@@ -74,7 +74,7 @@ BTreePage* BTreePageBucket::GetEmptyPage(page_id page_no, int type, uint8_t key_
 	uint8_t level, int fd)
 {
 	assert(0);
-	// std::lock_guard<std::mutex> lock(mutex_);
+	std::lock_guard<std::mutex> lock(mutex_);
 
 	int index = len_;
 	uint32_t fresh = 0xFFFFFFFF;
@@ -93,7 +93,7 @@ BTreePage* BTreePageBucket::GetEmptyPage(page_id page_no, int type, uint8_t key_
 
 Status BTreePageBucket::PinPage(BTreePage *page, const int fd)
 {
-	// std::lock_guard<std::mutex> lock(mutex_);
+	std::lock_guard<std::mutex> lock(mutex_);
 
 	if (len_ < Max) {
 		ages_[len_] = 0;
@@ -117,15 +117,14 @@ Status BTreePageBucket::PinPage(BTreePage *page, const int fd)
 
 BTreePage* BTreePager::GetPage(const page_id page_no)
 {
-	assert(page_no < curr_);
-	BTreePageBucket &bucket = bucket_[page_no & Mask];
-	BTreePage *page = bucket.GetPage(page_no, fd_);
+	assert(page_no && page_no < curr_);
+	BTreePage *page = bucket_[page_no & Mask].GetPage(page_no, fd_);
 	return page;
 }
 
 BTreePage* BTreePager::NewPage(int type, uint8_t key_len, uint8_t level, bool pin)
 {
-	// std::lock_guard<std::mutex> lock(mutex_);
+	std::lock_guard<std::mutex> lock(mutex_);
 
 	BTreePageBucket &bucket = bucket_[curr_ & Mask];
 	BTreePage *page = BTreePage::NewPage(curr_, type, key_len, level);
@@ -145,8 +144,7 @@ BTreePage* BTreePager::NewPage(int type, uint8_t key_len, uint8_t level, bool pi
 
 Status BTreePager::PinPage(BTreePage *page)
 {
-	BTreePageBucket &bucket = bucket_[page->PageNo() & Mask];
-	assert(bucket.PinPage(page, fd_));
+	assert(bucket_[page->PageNo() & Mask].PinPage(page, fd_));
 	return Success;
 }
 
