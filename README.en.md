@@ -18,7 +18,7 @@
 
 - Version 0.1.0 single thread sorting time : 16 s
 
-- Version 0.2.0 multi thread sorting time :  s
+- Version 0.2.0 multi thread sorting time :  12.32 s
 
 
 ###TODO

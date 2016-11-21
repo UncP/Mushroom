@@ -20,36 +20,40 @@ int share = 0;
 int upgrade = 0;
 int locked = 0;
 bool on = true;
-std::chrono::milliseconds t1(3000);
+std::chrono::milliseconds t1(6000);
 std::chrono::milliseconds t2(1000);
 
 void Lock(int i, uint32_t page_no)
 {
+	Latch *latch = nullptr;
 	for (; on;) {
 		switch (i) {
 			case 0:
-				latch_manager.Lock(page_no);
+				latch = latch_manager.GetLatch(page_no);
+				latch->Lock();
 				++locked;
-				latch_manager.Unlock(page_no);
+				latch->Unlock();
 				break;
 			case 1:
-				latch_manager.LockShared(page_no);
+				latch = latch_manager.GetLatch(page_no);
+				latch->LockShared();
 				++share;
-				latch_manager.UnlockShared(page_no);
+				latch->UnlockShared();
 				break;
 			case 2:
-				latch_manager.LockShared(page_no);
-				latch_manager.Upgrade(page_no);
-				// latch_manager.Downgrade(page_no);
-				latch_manager.Unlock(page_no);
+				latch = latch_manager.GetLatch(page_no);
+				latch->LockShared();
+				latch->Upgrade();
 				++upgrade;
+				latch->Unlock();
 				break;
 			case 3:
-				latch_manager.LockShared(page_no);
-				latch_manager.Upgrade(page_no);
-				// latch_manager.Downgrade(page_no);
-				latch_manager.Unlock(page_no);
+				latch = latch_manager.GetLatch(page_no);
+				latch->LockShared();
+				latch->Upgrade();
 				++upgrade;
+				latch->Downgrade();
+				latch->UnlockShared();
 				break;
 		}
 		page_no = (page_no + 1) % 1024;
@@ -67,12 +71,13 @@ void Show()
 int main(int argc, char **argv)
 {
 	std::vector<std::thread> threads;
-	for (int i = 0; i != 2; ++i)
-		threads.push_back(std::thread(Lock, i % 4, 0));
+	for (int i = 0; i != 4; ++i)
+		threads.push_back(std::thread(Lock, i % 4, i % 2));
 	threads.push_back(std::thread(Show));
 	std::this_thread::sleep_for(t1);
 	on = false;
 	for (auto &e : threads)
 		e.join();
+	// std::cout << latch_manager.ToString();
 	return 0;
 }

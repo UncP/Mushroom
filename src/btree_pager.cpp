@@ -79,7 +79,7 @@ BTreePage* BTreePageBucket::GetEmptyPage(page_id page_no, int type, uint8_t key_
 	int index = len_;
 	uint32_t fresh = 0xFFFFFFFF;
 	for (int i = 0; i != len_; ++i) {
-		if (ages_[i] < fresh && !pages_[i]->Occupy()) {
+		if (ages_[i] < fresh) {
 			index = i;
 			fresh = ages_[i];
 		}
@@ -103,7 +103,7 @@ Status BTreePageBucket::PinPage(BTreePage *page, const int fd)
 	int index = len_;
 	uint32_t fresh = 0xFFFFFFFF;
 	for (int i = 0; i != len_; ++i) {
-		if (ages_[i] < fresh && !pages_[i]->Occupy()) {
+		if (ages_[i] < fresh) {
 			index = i;
 			fresh = ages_[i];
 		}

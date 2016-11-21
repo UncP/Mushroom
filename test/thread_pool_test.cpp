@@ -33,7 +33,6 @@ int main(int argc, char **argv)
 	std::string val;
 
 	ThreadPool pool(new FiniteQueue<Task>());
-	pool.Init();
 
 	char *buf[total];
 	KeySlice *key = nullptr;
@@ -52,8 +51,8 @@ int main(int argc, char **argv)
 	assert(db.Btree()->KeyCheck(in, total));
 
 	in.close();
-	// for (int i = 0; i != total; ++i)
-		// delete [] buf[i];
+	for (int i = 0; i != total; ++i)
+		delete [] buf[i];
 
 	db.Close();
 	return 0;

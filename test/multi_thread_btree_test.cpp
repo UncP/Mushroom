@@ -1,10 +1,10 @@
 /**
  *    > Author:   UncP
  *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
+ *    > Github:   https://www.github.com/UncP
  *    > Description:
  *
- *    > Created Time: 2016-10-28 21:25:06
+ *    > Created Time: 2016-11-20 12:37:41
 **/
 
 #include <iostream>
@@ -18,6 +18,9 @@
 
 #include "../src/iterator.hpp"
 #include "../src/db.hpp"
+#include "../src/thread_pool.hpp"
+
+char *keys[10000000];
 
 int main(int argc, char **argv)
 {
@@ -25,20 +28,14 @@ int main(int argc, char **argv)
 
 	const char *file = "../data/1000.txt";
 	const int key_len = 16;
-	const int val_len = 100;
 	const int total = (argc == 2) ? atoi(argv[1]) : 10;
 
 	MushroomDB db("mushroom", key_len);
+	ThreadPool pool(new FiniteQueue<Task>());
 
-	char buf1[BTreePage::PageByte + key_len] = {0};
-	KeySlice *key = (KeySlice *)buf1;
-	char buf2[DataSlice::LengthByte + val_len] = {0};
-	DataSlice *val = (DataSlice *)buf2;
-	val->SetLength(val_len);
 	KeySlice::SetStringFormat([](const KeySlice *key) {
 		return std::string(key->Data()) + "    ";
 	});
-
 	int fd = open(file, O_RDONLY);
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;
@@ -53,31 +50,41 @@ int main(int argc, char **argv)
 			char *tmp = buf + i;
 			for (; buf[i] != ' ' && buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
+			keys[count] = new char[BTreePage::PageByte + key_len];
+			assert(keys[count]);
+			KeySlice *key = (KeySlice *)keys[count];
 			memcpy(key->Data(), tmp, key_len);
-			db.Put(key);
+			pool.AddTask(Task(&BTree::Put, (BTree *)db.Btree(), key));
 			if (++count == total) {
 				flag = false;
 				break;
+			} else if (count == 1000000) {
+				std::cout << "1000000\n";
 			}
 			++i;
-			// j = 0;
-			// tmp = buf + i;
-			// for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
-			// memcpy(key->Data(), tmp, key_len);
-			// ++i;
 		}
 	}
+	pool.Clear();
+	close(fd);
 	auto end  = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
-	close(fd);
 
-	// std::ifstream in(file);
-	// assert(in.is_open());
-	// assert(db.Btree()->KeyCheck(in, total));
-	// Iterator it(db.Btree());
-	// assert(it.CheckBtree());
-	// in.close();
+	std::ifstream in(file);
+	assert(in.is_open());
+	if (!db.Btree()->KeyCheck(in, total)) {
+		// db.Btree()->Traverse(-1);
+		// db.Btree()->Traverse(0);
+		std::cout << "Error :( -----------------\n";
+	} else {
+		Iterator it(db.Btree());
+		assert(it.CheckBtree());
+		in.close();
+		std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
+	}
+
+	for (int i = 0; i != total; ++i)
+		delete [] keys[i];
 
 	db.Close();
 	return 0;

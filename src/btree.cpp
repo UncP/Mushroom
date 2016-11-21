@@ -74,7 +74,6 @@ Status BTree::Put(const KeySlice *key)
 	uint8_t depth = 0;
 	page_id stack[8];
 	page_id next = 0;
-	// Output(key);
 
 	std::pair<BTreePage*, Latch*> pair = DescendToLeaf(key, stack, &depth);
 	BTreePage *leaf = pair.first;
@@ -230,7 +229,6 @@ void BTree::Traverse(int level) const
 
 bool BTree::KeyCheck(std::ifstream &in, int total) const
 {
-	// std::cout << latch_manager_->ToString();
 	std::string val;
 	char buf[BTreePage::PageByte + key_len_] = { 0 };
 	KeySlice *key = (KeySlice *)buf;

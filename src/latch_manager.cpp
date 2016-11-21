@@ -30,20 +30,17 @@ Latch* LatchSet::GetLatch(page_id id)
 	lock_.Lock();
 	for (int i = 0; i != Max; ++i) {
 		if (latches_[i].Id() == id) {
-			latches_[i].Pin();
 			latch = &latches_[i];
 			break;
 		}
-		if (latches_[i].Free()) {
-			latches_[i].SetId(id);
-			latches_[i].Pin();
+		if (latches_[i].Free() && !latch)
 			latch = &latches_[i];
-			break;
-		}
 	}
+	latch->SetId(id);
+	latch->Pin();
 	lock_.Unlock();
-	if (latch) return latch;
-	assert(0);
+	assert(latch);
+	return latch;
 }
 
 Latch* LatchManager::GetLatch(page_id id)
