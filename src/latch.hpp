@@ -12,9 +12,10 @@
 
 #include <sstream>
 #include <atomic>
+#include <shared_mutex>
+#include <cassert>
 
 #include "status.hpp"
-#include "shared_lock.hpp"
 
 namespace Mushroom {
 
@@ -27,37 +28,63 @@ class Latch
 
 		page_id Id() const { return id_; }
 
-		void Pin();
+		void Pin() {
+			++users_;
+		}
 
-		void UnPin();
+		void UnPin() {
+			--users_;
+		}
 
-		bool Free() const;
+		bool Free() const {
+			return users_.load(std::memory_order_relaxed) == 0;
+		}
 
-		void LockShared();
+		void LockShared() {
+			assert(users_);
+			mutex_.lock_shared();
+		}
 
-		void UnlockShared();
+		void UnlockShared() {
+			assert(users_);
+			mutex_.unlock_shared();
+			UnPin();
+		}
 
-		void Lock();
+		void Lock() {
+			assert(users_);
+			mutex_.lock();
+		}
 
-		void Unlock();
+		void Unlock() {
+			assert(users_);
+			mutex_.unlock();
+			UnPin();
+		}
 
-		void Upgrade();
+		void Upgrade() {
+			assert(users_);
+			mutex_.unlock_shared();
+			mutex_.lock();
+		}
 
-		void Downgrade();
+		void Downgrade() {
+			assert(users_);
+			mutex_.unlock();
+			mutex_.lock_shared();
+		}
 
 		std::string ToString() const {
 			if (id_ == 0x7FFFFFFF) return std::string();
 			std::ostringstream os;
-			// os << id_ << ": " << (pin_ == true ? "true " : "false ") << users_ << std::endl;
 			os << id_ << ": " << users_ << std::endl;
 			return std::move(os.str());
 		}
 
 	private:
-		// std::atomic<bool> pin_;
-		std::atomic<int>  users_;
-		page_id           id_;
-		SharedLock        shared_lock_;
+		std::atomic<int>        users_;
+		page_id                 id_;
+		std::shared_timed_mutex mutex_;
 };
 
 } // namespace Mushroom

@@ -1,7 +1,7 @@
 /**
  *    > Author:   UncP
  *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP
+ *    > Github:   https://www.github.com/UncP/Mushroom
  *    > Description:
  *
  *    > Created Time: 2016-11-20 12:37:41
@@ -73,12 +73,10 @@ int main(int argc, char **argv)
 	std::ifstream in(file);
 	assert(in.is_open());
 	if (!db.Btree()->KeyCheck(in, total)) {
-		// db.Btree()->Traverse(-1);
-		// db.Btree()->Traverse(0);
 		std::cout << "Error :( -----------------\n";
 	} else {
-		Iterator it(db.Btree());
-		assert(it.CheckBtree());
+		// Iterator it(db.Btree());
+		// assert(it.CheckBtree());
 		in.close();
 		std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
 	}

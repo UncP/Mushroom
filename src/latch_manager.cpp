@@ -17,17 +17,7 @@ namespace Mushroom {
 Latch* LatchSet::GetLatch(page_id id)
 {
 	Latch *latch = nullptr;
-	lock_.LockShared();
-	for (int i = 0; i != Max; ++i) {
-		if (latches_[i].Id() == id) {
-			latches_[i].Pin();
-			latch = &latches_[i];
-			break;
-		}
-	}
-	lock_.UnlockShared();
-	if (latch) return latch;
-	lock_.Lock();
+	mutex_.lock();
 	for (int i = 0; i != Max; ++i) {
 		if (latches_[i].Id() == id) {
 			latch = &latches_[i];
@@ -36,10 +26,10 @@ Latch* LatchSet::GetLatch(page_id id)
 		if (latches_[i].Free() && !latch)
 			latch = &latches_[i];
 	}
+	assert(latch);
 	latch->SetId(id);
 	latch->Pin();
-	lock_.Unlock();
-	assert(latch);
+	mutex_.unlock();
 	return latch;
 }
 

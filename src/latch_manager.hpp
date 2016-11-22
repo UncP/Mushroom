@@ -11,10 +11,8 @@
 #define _LATCH_MANAGER_HPP_
 
 #include <mutex>
-#include <condition_variable>
 #include <string>
 
-#include "shared_lock.hpp"
 #include "latch.hpp"
 
 namespace Mushroom {
@@ -32,7 +30,7 @@ class LatchSet
 	private:
 		static const int Max = 8;
 
-		SharedLock lock_;
+		std::mutex mutex_;
 		Latch      latches_[Max];
 };
 

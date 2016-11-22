@@ -20,11 +20,14 @@
 
 - Version 0.2.0 multi thread sorting time :  12.32 s
 
+- Version 0.2.1 multi thread sorting time :  11.28 s
+	+ latch manager optimization
+
 
 ###TODO
 - [x] B link Tree Index Engine
 - [x] Thread Pool
 - [x] Thread Safe Queue(Unbounded, Bounded)
-- [x] Lock Manager
+- [x] Latch Manager
 - [x] Concurrent Index
 - [ ] Data Manager
