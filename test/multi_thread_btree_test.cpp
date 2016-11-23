@@ -15,12 +15,11 @@
 #include <fcntl.h>
 #include <chrono>
 #include <iomanip>
+#include <thread>
 
 #include "../src/iterator.hpp"
 #include "../src/db.hpp"
 #include "../src/thread_pool.hpp"
-
-char *keys[10000000];
 
 int main(int argc, char **argv)
 {
@@ -29,6 +28,7 @@ int main(int argc, char **argv)
 	const char *file = "../data/1000.txt";
 	const int key_len = 16;
 	const int total = (argc == 2) ? atoi(argv[1]) : 10;
+	char *keys[total];
 
 	MushroomDB db("mushroom", key_len);
 	ThreadPool pool(new FiniteQueue<Task>());
@@ -41,6 +41,8 @@ int main(int argc, char **argv)
 	int curr = 0, ptr = 0, count = 0;
 	bool flag = true;
 	auto beg = std::chrono::high_resolution_clock::now();
+	std::thread thread(&BTree::Show, (BTree *)db.Btree());
+
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0' && buf[ptr] != ' ') buf[ptr] = '\0';
 		if (ptr) buf[ptr++] = '\0';
@@ -58,8 +60,6 @@ int main(int argc, char **argv)
 			if (++count == total) {
 				flag = false;
 				break;
-			} else if (count == 1000000) {
-				std::cout << "1000000\n";
 			}
 			++i;
 		}
@@ -70,20 +70,21 @@ int main(int argc, char **argv)
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
 
-	std::ifstream in(file);
-	assert(in.is_open());
-	if (!db.Btree()->KeyCheck(in, total)) {
-		std::cout << "Error :( -----------------\n";
-	} else {
+	// std::ifstream in(file);
+	// assert(in.is_open());
+	// if (!db.Btree()->KeyCheck(in, total)) {
+		// std::cout << "Error :( -----------------\n";
+	// } else {
 		// Iterator it(db.Btree());
 		// assert(it.CheckBtree());
-		in.close();
-		std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
-	}
+	// 	in.close();
+	// 	std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
+	// }
 
 	for (int i = 0; i != total; ++i)
 		delete [] keys[i];
 
 	db.Close();
+	thread.join();
 	return 0;
 }

@@ -9,6 +9,8 @@
 
 #include <cassert>
 #include <sstream>
+#include <thread>
+#include <chrono>
 
 #include "btree.hpp"
 #include "utility.hpp"
@@ -35,11 +37,22 @@ BTree::BTree(const int fd, const int key_len)
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
 	memset(key->Data(), 0xFF, key_len_);
-	root_->DoInsert(key);
+	root_->Insert(key);
+}
+
+void BTree::Show()
+{
+	while (root_) {
+		std::chrono::milliseconds t(1000);
+		std::this_thread::sleep_for(t);
+		if (root_)
+		std::cout << latch_manager_->ToString() << "&&&&&&\n";
+	}
 }
 
 Status BTree::Close()
 {
+	root_ = nullptr;
 	// assert(root_->Write(btree_pager_->fd()));
 	if (btree_pager_) assert(btree_pager_->Close());
 	return Success;
@@ -56,14 +69,12 @@ std::pair<BTreePage*, Latch*> BTree::DescendToLeaf(const KeySlice *key, page_id 
 		Latch *pre = latch;
 		latch = latch_manager_->GetLatch(page_no);
 		latch->LockShared();
-		assert(child = btree_pager_->GetPage(page_no));
 		pre->UnlockShared();
+		assert(child = btree_pager_->GetPage(page_no));
 		if (child->Level() != parent->Level()) {
 			stack[*depth] = parent->PageNo();
 			++*depth;
-		}/* else {
-			assert(0);
-		}*/
+		}
 		parent = child;
 	}
 	return {parent, latch};
@@ -86,9 +97,9 @@ Status BTree::Put(const KeySlice *key)
 			Latch *pre = latch;
 			latch = latch_manager_->GetLatch(next);
 			latch->Lock();
+			pre->Unlock();
 			leaf = btree_pager_->GetPage(next);
 			next = 0;
-			pre->Unlock();
 		} else {
 			latch->Unlock();
 			std::cout << "key existed ;)\n";
@@ -131,14 +142,14 @@ Status BTree::SplitRoot()
 	char key[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *slice = (KeySlice *)key;
 	memset(slice->Data(), 0xFF, key_len_);
-	new_root->DoInsert(slice);
+	new_root->Insert(slice);
 
 	root_->Split(next, slice);
 	root_->AssignType(next->Type());
 	root_->AssignPageNo(new_root->PageNo());
 	new_root->AssignFirst(root_->PageNo());
 	new_root->AssignPageNo(0);
-	new_root->DoInsert(slice);
+	new_root->Insert(slice);
 	btree_pager_->PinPage(root_);
 	root_ = new_root;
 	return Success;
@@ -170,11 +181,9 @@ Status BTree::Split(BTreePage *left, Latch *latch, page_id *stack, uint8_t depth
 					Latch *l = latch;
 					latch = latch_manager_->GetLatch(next);
 					latch->Lock();
+					l->Unlock();
 					parent = btree_pager_->GetPage(next);
 					next = 0;
-					l->Unlock();
-				} else {
-					assert(0);
 				}
 			}
 			pre->UnlockShared();

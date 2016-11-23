@@ -62,7 +62,7 @@ class BTreePage
 
 		page_id Descend(const KeySlice *key) const;
 
-		bool DoInsert(const KeySlice *key);
+		bool Insert(const KeySlice *key);
 
 		bool Insert(const KeySlice *key, page_id &page_no);
 

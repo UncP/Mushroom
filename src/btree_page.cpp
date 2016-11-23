@@ -57,14 +57,13 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 
 page_id BTreePage::Descend(const KeySlice *key) const
 {
-	assert(type_ != LEAF);
 	uint16_t index;
 	KeySlice *slice = nullptr;
 	Traverse(key, &index, &slice, Ge);
 	return index ? slice->PageNo() : first_;
 }
 
-bool BTreePage::DoInsert(const KeySlice *key)
+bool BTreePage::Insert(const KeySlice *key)
 {
 	uint16_t pos;
 	KeySlice *slice = nullptr;
@@ -88,7 +87,7 @@ bool BTreePage::Insert(const KeySlice *key, page_id &page_no)
 	KeySlice *fence = Key(index, total_key_ - 1);
 	int res = CompareKey(key, fence, key_len_);
 	if (res < 0) {
-		if (!DoInsert(key)) {
+		if (!Insert(key)) {
 			std::cout << ToString();
 			std::cout << key->ToString() << std::endl;
 			exit(-1);
@@ -103,7 +102,6 @@ bool BTreePage::Insert(const KeySlice *key, page_id &page_no)
 
 bool BTreePage::Search(KeySlice *key) const
 {
-	assert(type_ != BRANCH);
 	uint16_t index;
 	KeySlice *slice = nullptr;
 	return Traverse(key, &index, &slice);

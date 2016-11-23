@@ -31,6 +31,8 @@ class BTree
 
 		Status Close();
 
+		void Show();
+
 		uint8_t KeyLen() const { return key_len_; }
 
 		Status Put(const KeySlice *key);
