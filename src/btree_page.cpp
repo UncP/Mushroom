@@ -17,7 +17,7 @@ namespace Mushroom {
 
 void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level)
 {
-	assert(!dirty_ && !occupy_);
+	assert(!dirty_);
 	memset(this, 0, PageSize);
 	page_no_ = page_no;
 	type_    = type;

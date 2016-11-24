@@ -31,8 +31,6 @@ class BTree
 
 		Status Close();
 
-		void Show();
-
 		uint8_t KeyLen() const { return key_len_; }
 
 		Status Put(const KeySlice *key);
@@ -55,12 +53,9 @@ class BTree
 		BTree(const BTree &) = delete;
 
 		~BTree() {
-			if (root_) delete [] root_;
-			if (btree_pager_) delete btree_pager_;
-			if (latch_manager_) delete latch_manager_;
-			root_ = nullptr;
-			btree_pager_ = nullptr;
-			latch_manager_ = nullptr;
+			delete [] root_;
+			delete btree_pager_;
+			delete latch_manager_;
 		}
 
 	private:
@@ -78,8 +73,6 @@ class BTree
 
 		uint16_t 	  degree_;
 		uint8_t     key_len_;
-
-		// std::mutex  mutex_;
 };
 
 } // namespace Mushroom

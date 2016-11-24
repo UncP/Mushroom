@@ -41,7 +41,6 @@ int main(int argc, char **argv)
 	int curr = 0, ptr = 0, count = 0;
 	bool flag = true;
 	auto beg = std::chrono::high_resolution_clock::now();
-	// std::thread thread(&BTree::Show, (BTree *)db.Btree());
 
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0' && buf[ptr] != ' ') buf[ptr] = '\0';
@@ -85,6 +84,5 @@ int main(int argc, char **argv)
 		delete [] keys[i];
 
 	db.Close();
-	// thread.join();
 	return 0;
 }

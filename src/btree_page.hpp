@@ -46,18 +46,12 @@ class BTreePage
 			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);
 			return key->PageNo();
 		}
-		bool Occupy() const { return occupy_; }
 
 		void AssignType(int type) { type_ = type; }
 		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
 		void AssignFirst(page_id first) {
 			assert(type_ != LEAF);
 			first_ = first;
-		}
-		void SetOccupy(bool o) {
-			if (o) assert(!occupy_);
-			else assert(occupy_);
-			occupy_ = o;
 		}
 
 		page_id Descend(const KeySlice *key) const;
@@ -92,11 +86,8 @@ class BTreePage
 		uint16_t total_key_;
 		uint8_t  key_len_;
 		uint8_t  level_;
-		unsigned    type_:2;
-		unsigned   dirty_:1;
-		unsigned  occupy_:1;
-		unsigned    lock_:1;
-		unsigned readers_:3;
+		uint8_t  type_;
+		uint8_t  dirty_;
 		char     data_[0];
 };
 

@@ -40,19 +40,8 @@ BTree::BTree(const int fd, const int key_len)
 	root_->Insert(key);
 }
 
-void BTree::Show()
-{
-	while (root_) {
-		std::chrono::milliseconds t(1000);
-		std::this_thread::sleep_for(t);
-		if (root_)
-		std::cout << latch_manager_->ToString() << "&&&&&&\n";
-	}
-}
-
 Status BTree::Close()
 {
-	root_ = nullptr;
 	// assert(root_->Write(btree_pager_->fd()));
 	if (btree_pager_) assert(btree_pager_->Close());
 	return Success;
@@ -67,10 +56,8 @@ std::pair<BTreePage*, Latch*> BTree::DescendToLeaf(const KeySlice *key, page_id 
 	for (; parent->Level();) {
 		page_id page_no = parent->Descend(key);
 		latch->UnlockShared();
-		// Latch *pre = latch;
 		latch = latch_manager_->GetLatch(page_no);
 		latch->LockShared();
-		// pre->UnlockShared();
 		assert(child = btree_pager_->GetPage(page_no));
 		if (child->Level() != parent->Level()) {
 			stack[*depth] = parent->PageNo();
@@ -126,10 +113,6 @@ Status BTree::Get(KeySlice *key) const
 	bool flag = pair.first->Search(key);
 	pair.second->UnlockShared();
 
-	if (flag == Fail) {
-		std::cout << pair.first->ToString();
-		std::cout << latch_manager_->ToString();
-	}
 	return flag ? Success : Fail;
 }
 
@@ -162,12 +145,11 @@ Status BTree::Split(BTreePage *left, Latch *latch, page_id *stack, uint8_t depth
 	char key[BTreePage::PageByte + key_len_];
 	KeySlice *slice = (KeySlice *)key;
 
-	for (; left->KeyNo() == degree_;) {
+	for (; left->KeyNo() == degree_; ) {
 		if (left->Type() != BTreePage::ROOT) {
 			right = btree_pager_->NewPage(left->Type(), left->KeyLen(), left->Level());
 			left->Split(right, slice);
 			latch->Downgrade();
-			// latch->Unlock();
 			Latch *pre = latch;
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);
@@ -217,10 +199,8 @@ bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 {
 	BTreePage *leaf = *page_no ? btree_pager_->GetPage(*page_no) : root_;
 	bool flag = leaf->Ascend(key, page_no, index);
-	if (flag)
-		return true;
-	if (!*page_no)
-		return false;
+	if (flag) return true;
+	if (!*page_no) return false;
 	leaf = btree_pager_->GetPage(*page_no);
 	return leaf->Ascend(key, page_no, index);
 }

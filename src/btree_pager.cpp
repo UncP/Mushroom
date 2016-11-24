@@ -48,7 +48,7 @@ BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 			++ages_[i];
 			return pages_[i];
 		}
-		if (ages_[i] < fresh && !pages_[i]->Occupy()) {
+		if (ages_[i] < fresh) {
 			index = i;
 			fresh = ages_[i];
 		}
