@@ -66,10 +66,11 @@ std::pair<BTreePage*, Latch*> BTree::DescendToLeaf(const KeySlice *key, page_id 
 	BTreePage *parent = root_, *child = nullptr;
 	for (; parent->Level();) {
 		page_id page_no = parent->Descend(key);
-		Latch *pre = latch;
+		latch->UnlockShared();
+		// Latch *pre = latch;
 		latch = latch_manager_->GetLatch(page_no);
 		latch->LockShared();
-		pre->UnlockShared();
+		// pre->UnlockShared();
 		assert(child = btree_pager_->GetPage(page_no));
 		if (child->Level() != parent->Level()) {
 			stack[*depth] = parent->PageNo();
@@ -166,6 +167,7 @@ Status BTree::Split(BTreePage *left, Latch *latch, page_id *stack, uint8_t depth
 			right = btree_pager_->NewPage(left->Type(), left->KeyLen(), left->Level());
 			left->Split(right, slice);
 			latch->Downgrade();
+			// latch->Unlock();
 			Latch *pre = latch;
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);

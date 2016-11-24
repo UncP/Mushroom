@@ -41,35 +41,29 @@ class Latch
 		}
 
 		void LockShared() {
-			assert(users_);
 			mutex_.lock_shared();
 		}
 
 		void UnlockShared() {
-			assert(users_);
 			mutex_.unlock_shared();
 			UnPin();
 		}
 
 		void Lock() {
-			assert(users_);
 			mutex_.lock();
 		}
 
 		void Unlock() {
-			assert(users_);
 			mutex_.unlock();
 			UnPin();
 		}
 
 		void Upgrade() {
-			assert(users_);
 			mutex_.unlock_shared();
 			mutex_.lock();
 		}
 
 		void Downgrade() {
-			assert(users_);
 			mutex_.unlock();
 			mutex_.lock_shared();
 		}

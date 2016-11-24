@@ -23,12 +23,8 @@ Latch* LatchSet::GetLatch(page_id id)
 			latch = &latches_[i];
 			break;
 		}
-		if (!latch) {
-			if (latches_[i].Id() == 0x7FFFFFFF)
-				latch = &latches_[i];
-			else if (latches_[i].Free())
-				latch = &latches_[i];
-		}
+		if (!latch && latches_[i].Free())
+			latch = &latches_[i];
 	}
 	assert(latch);
 	latch->SetId(id);

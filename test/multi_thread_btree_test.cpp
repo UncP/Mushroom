@@ -25,8 +25,8 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/1000.txt";
-	const int key_len = 16;
+	const char *file = "../data/10.txt";
+	const int key_len = 10;
 	const int total = (argc == 2) ? atoi(argv[1]) : 10;
 	char *keys[total];
 
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 	int curr = 0, ptr = 0, count = 0;
 	bool flag = true;
 	auto beg = std::chrono::high_resolution_clock::now();
-	std::thread thread(&BTree::Show, (BTree *)db.Btree());
+	// std::thread thread(&BTree::Show, (BTree *)db.Btree());
 
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0' && buf[ptr] != ' ') buf[ptr] = '\0';
@@ -70,21 +70,21 @@ int main(int argc, char **argv)
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
 
-	// std::ifstream in(file);
-	// assert(in.is_open());
-	// if (!db.Btree()->KeyCheck(in, total)) {
-		// std::cout << "Error :( -----------------\n";
-	// } else {
-		// Iterator it(db.Btree());
-		// assert(it.CheckBtree());
-	// 	in.close();
-	// 	std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
-	// }
+	std::ifstream in(file);
+	assert(in.is_open());
+	if (!db.Btree()->KeyCheck(in, total)) {
+		std::cout << "Error :( -----------------\n";
+	} else {
+		Iterator it(db.Btree());
+		assert(it.CheckBtree());
+		in.close();
+		std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
+	}
 
 	for (int i = 0; i != total; ++i)
 		delete [] keys[i];
 
 	db.Close();
-	thread.join();
+	// thread.join();
 	return 0;
 }
