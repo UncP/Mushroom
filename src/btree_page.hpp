@@ -58,17 +58,17 @@ class BTreePage
 
 		page_id Descend(const KeySlice *key) const;
 
-		bool Insert(const KeySlice *key);
-
 		bool Insert(const KeySlice *key, page_id &page_no);
 
 		bool Search(KeySlice *key) const;
 
-		// bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
+		bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
 
-		void Split(BTreePage *that, KeySlice *slice = nullptr);
+		void Split(BTreePage *that, KeySlice *slice);
 
-		bool NeedSplit() const { return total_key_ >= degree_; }
+		bool NeedSplit() const { return total_key_ == degree_; }
+
+		bool Compact();
 
 		void Analyze() const;
 
@@ -82,8 +82,6 @@ class BTreePage
 			return (KeySlice *)(data_ + index[pos]);
 		}
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = Eq) const;
-
-		void Compact();
 
 		static enum { Eq, Ge } TraverseType;
 

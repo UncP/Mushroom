@@ -13,6 +13,7 @@
 #include <cstring>
 #include <string>
 #include <functional>
+#include <cassert>
 
 #include "status.hpp"
 
@@ -47,10 +48,19 @@ class KeySlice
 	};
 	friend inline int CompareSuffix(const KeySlice *a, const KeySlice *b, size_t pre, size_t len)
 	{
-		return memcmp(a->data_ + pre, b->data_, len - pre);
+		return memcmp(a->data_ + pre, b->data_, len);
 	};
-	friend inline void CopyKey(KeySlice *a, const KeySlice *b, size_t len) {
-		memcpy(a, b, len);
+	friend inline void CopyPrefix(KeySlice *a, const char *prefix, size_t len) {
+		memcpy(a->data_, prefix, len);
+	};
+	friend inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
+		if (!pre) {
+			memcpy(a, b, len + sizeof(page_id));
+		} else {
+			assert(0);
+			a->page_no_ = b->page_no_;
+			memcpy(a->data_ + pre, b->data_, len);
+		}
 	};
 
 	public:
