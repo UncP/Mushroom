@@ -60,11 +60,6 @@ int main(int argc, char **argv)
 				break;
 			}
 			++i;
-			// j = 0;
-			// tmp = buf + i;
-			// for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
-			// memcpy(key->Data(), tmp, key_len);
-			// ++i;
 		}
 	}
 	auto end  = std::chrono::high_resolution_clock::now();
@@ -74,10 +69,14 @@ int main(int argc, char **argv)
 
 	// std::ifstream in(file);
 	// assert(in.is_open());
-	// assert(db.Btree()->KeyCheck(in, total));
-	// Iterator it(db.Btree());
-	// assert(it.CheckBtree());
-	// in.close();
+	// if (!db.Btree()->KeyCheck(in, total)) {
+	// 	std::cout << "Error :( -----------------\n";
+	// } else {
+	// 	Iterator it(db.Btree());
+	// 	assert(it.CheckBtree());
+	// 	in.close();
+	// 	std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
+	// }
 
 	db.Close();
 	return 0;

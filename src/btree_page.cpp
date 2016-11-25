@@ -9,17 +9,27 @@
 
 #include <unistd.h>
 #include <sstream>
+#include <set>
 
 #include "btree_page.hpp"
 #include "utility.hpp"
 
 namespace Mushroom {
 
-void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level)
+uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
+{
+	BTreePage *page = nullptr;
+	uint16_t offset = (char *)page->data_ - (char *)page + pre_len;
+	return (PageSize - offset) / (PageByte + IndexByte + key_len);
+}
+
+void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level,
+	uint16_t degree)
 {
 	assert(!dirty_);
 	memset(this, 0, PageSize);
 	page_no_ = page_no;
+	degree_  = degree;
 	type_    = type;
 	key_len_ = key_len;
 	level_   = level;
@@ -30,10 +40,19 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 	int low = 0, high = total_key_, mid = 0;
 	uint16_t *index = Index();
 	KeySlice *curr = nullptr;
+	if (pre_len_) {
+		int res = ComparePrefix(key, data_, pre_len_);
+		if (res < 0) {
+			*idx = 0;
+			return false;
+		} else if (res > 0) {
+			assert(0);
+		}
+	}
 	while (low != high) {
 		mid = low + ((high - low) >> 1);
 		curr = Key(index, mid);
-		int res = CompareKey(key, curr, key_len_);
+		int res = CompareSuffix(key, curr, pre_len_, key_len_);
 		if (res < 0) {
 			high = mid;
 		} else if (res > 0) {
@@ -50,8 +69,7 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 		}
 	}
 	*idx = high;
-	if (type == Ge && high)
-		*slice = Key(index, high - 1);
+	if (high) *slice = Key(index, high - 1);
 	return false;
 }
 
@@ -85,13 +103,17 @@ bool BTreePage::Insert(const KeySlice *key, page_id &page_no)
 {
 	uint16_t *index = Index();
 	KeySlice *fence = Key(index, total_key_ - 1);
-	int res = CompareKey(key, fence, key_len_);
-	if (res < 0) {
-		if (!Insert(key)) {
-			std::cout << ToString();
-			std::cout << key->ToString() << std::endl;
-			exit(-1);
+	if (pre_len_) {
+		int res = ComparePrefix(key, data_, pre_len_);
+		if (res < 0) {
+			// TODO
+		} else if (res > 0) {
+			assert(0);
 		}
+	}
+	int res = CompareSuffix(key, fence, pre_len_, key_len_);
+	if (res < 0) {
+		assert(Insert(key));
 		return true;
 	} else if (res > 0) {
 		page_no = fence->PageNo();
@@ -107,19 +129,19 @@ bool BTreePage::Search(KeySlice *key) const
 	return Traverse(key, &index, &slice);
 }
 
-bool BTreePage::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
-{
-	uint16_t *index = Index();
-	if (*idx < (total_key_ - 1)) {
-		CopyKey(key, Key(index, *idx), PageByte + key_len_);
-		++*idx;
-		return true;
-	} else {
-		*page_no = Key(index, *idx)->PageNo();
-		*idx = 0;
-		return false;
-	}
-}
+// bool BTreePage::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
+// {
+// 	uint16_t *index = Index();
+// 	if (*idx < (total_key_ - 1)) {
+// 		CopyKey(key, Key(index, *idx), PageByte + key_len_);
+// 		++*idx;
+// 		return true;
+// 	} else {
+// 		*page_no = Key(index, *idx)->PageNo();
+// 		*idx = 0;
+// 		return false;
+// 	}
+// }
 
 void BTreePage::Split(BTreePage *that, KeySlice *slice)
 {
@@ -173,11 +195,12 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 	that->dirty_ = true;
 }
 
-BTreePage* BTreePage::NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level)
+BTreePage* BTreePage::NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level,
+	uint16_t degree)
 {
 	BTreePage *page = (BTreePage *)new char[PageSize];
 	if (!page) return page;
-	page->Reset(page_no, type, key_len, level);
+	page->Reset(page_no, type, key_len, level, degree);
 	return page;
 }
 
@@ -225,6 +248,31 @@ std::string BTreePage::ToString() const
 	}
 	os << "\n";
 	return os.str();
+}
+
+void BTreePage::Analyze() const
+{
+	std::set<uint16_t> offsets;
+	std::set<std::string> keys;
+	uint16_t *index = Index();
+	for (uint16_t i = 0; i != total_key_; ++i)
+		if (offsets.find(index[i]) == offsets.end())
+			offsets.insert(index[i]);
+		else
+			std::cout << "repeated index " << index[i] << std::endl;
+	for (uint16_t i = 0; i != total_key_; ++i) {
+		KeySlice *key = (KeySlice *)(data_ + index[i]);
+		std::string tmp(key->Data(), key_len_);
+		if (keys.find(tmp) == keys.end())
+			keys.insert(tmp);
+		else
+			std::cout << "repeated key " << tmp << std::endl;
+	}
+}
+
+void BTreePage::Compact()
+{
+
 }
 
 } // namespace Mushroom

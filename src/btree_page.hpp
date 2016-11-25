@@ -27,9 +27,12 @@ class BTreePage
 		static const uint16_t PageByte  = sizeof(page_id);
 		static const uint16_t IndexByte = 2;
 
-		static BTreePage* NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level);
+		static BTreePage* NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level,
+			uint16_t degree);
 
-		void Reset(page_id page_no, int type, uint8_t key_len, uint8_t level);
+		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0);
+
+		void Reset(page_id page_no, int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		Status Read(const page_id page_no, const int fd);
 
@@ -37,7 +40,6 @@ class BTreePage
 
 		page_id PageNo() const { return page_no_; }
 		page_id First() const { return first_; }
-		uint16_t KeyNo() const { return total_key_; }
 		uint8_t KeyLen() const { return key_len_; }
 		uint8_t Level() const { return level_; }
 		int Type() const { return type_; }
@@ -60,13 +62,15 @@ class BTreePage
 
 		bool Insert(const KeySlice *key, page_id &page_no);
 
-		bool Adopt(const KeySlice *key);
-
 		bool Search(KeySlice *key) const;
 
-		bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
+		// bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
 
 		void Split(BTreePage *that, KeySlice *slice = nullptr);
+
+		bool NeedSplit() const { return total_key_ >= degree_; }
+
+		void Analyze() const;
 
 		std::string ToString() const;
 
@@ -79,14 +83,18 @@ class BTreePage
 		}
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = Eq) const;
 
+		void Compact();
+
 		static enum { Eq, Ge } TraverseType;
 
 		page_id  page_no_;
 		page_id  first_;
 		uint16_t total_key_;
-		uint8_t  key_len_;
-		uint8_t  level_;
+		uint16_t degree_;
 		uint8_t  type_;
+		uint8_t  level_;
+		uint8_t  key_len_;
+		uint8_t  pre_len_;
 		uint8_t  dirty_;
 		char     data_[0];
 };

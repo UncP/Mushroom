@@ -55,7 +55,7 @@ BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 	}
 	assert(index != len_);
 	if (len_ != Max) {
-		BTreePage *page = BTreePage::NewPage(page_no, 0, 0, 0);
+		BTreePage *page = BTreePage::NewPage(page_no, 0, 0, 0, 0);
 		if (page) {
 			assert(page->Read(page_no, fd));
 			pages_[index] = page;
@@ -71,7 +71,7 @@ BTreePage* BTreePageBucket::GetPage(const page_id page_no, const int fd)
 }
 
 BTreePage* BTreePageBucket::GetEmptyPage(page_id page_no, int type, uint8_t key_len,
-	uint8_t level, int fd)
+	uint8_t level, uint16_t degree, int fd)
 {
 	assert(0);
 	std::lock_guard<std::mutex> lock(mutex_);
@@ -87,7 +87,7 @@ BTreePage* BTreePageBucket::GetEmptyPage(page_id page_no, int type, uint8_t key_
 	assert(index != len_);
 	assert(pages_[index]->Write(fd));
 	ages_[index] = 0;
-	pages_[index]->Reset(page_no, type, key_len, level);
+	pages_[index]->Reset(page_no, type, key_len, level, degree);
 	return pages_[index];
 }
 
@@ -122,12 +122,13 @@ BTreePage* BTreePager::GetPage(const page_id page_no)
 	return page;
 }
 
-BTreePage* BTreePager::NewPage(int type, uint8_t key_len, uint8_t level, bool pin)
+BTreePage* BTreePager::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree,
+	bool pin)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
 	BTreePageBucket &bucket = bucket_[curr_ & Mask];
-	BTreePage *page = BTreePage::NewPage(curr_, type, key_len, level);
+	BTreePage *page = BTreePage::NewPage(curr_, type, key_len, level, degree);
 	if (!pin) {
 		assert(page);
 		++curr_;
@@ -137,7 +138,7 @@ BTreePage* BTreePager::NewPage(int type, uint8_t key_len, uint8_t level, bool pi
 	if (page)
 		assert(bucket.PinPage(page, fd_));
 	else
-		page = bucket.GetEmptyPage(curr_, type, key_len, level, fd_);
+		page = bucket.GetEmptyPage(curr_, type, key_len, level, degree, fd_);
 	++curr_;
 	return page;
 }
@@ -163,7 +164,6 @@ Status BTreePager::Close()
 {
 	for (int i = 0; i != Hash; ++i)
 		assert(bucket_[i].Clear(fd_));
-	std::cout << curr_ << std::endl;
 	if (fd_ > 0)
 		close(fd_);
 	fd_ = -1;

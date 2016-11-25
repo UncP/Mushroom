@@ -42,8 +42,12 @@ class Slice
 
 class KeySlice
 {
-	friend inline int CompareKey(const KeySlice *a, const KeySlice *b, size_t len) {
-		return memcmp(a->data_, b->data_, len);
+	friend inline int ComparePrefix(const KeySlice *key, const char *prefix, size_t len) {
+		return memcmp(key->data_, prefix, len);
+	};
+	friend inline int CompareSuffix(const KeySlice *a, const KeySlice *b, size_t pre, size_t len)
+	{
+		return memcmp(a->data_ + pre, b->data_, len - pre);
 	};
 	friend inline void CopyKey(KeySlice *a, const KeySlice *b, size_t len) {
 		memcpy(a, b, len);
@@ -54,10 +58,6 @@ class KeySlice
 
 		char* Data() { return data_; }
 		const char* Data() const { return data_; }
-
-		std::string ToString() const {
-			return form_string_(this);
-		}
 
 		page_id PageNo() const { return page_no_; }
 
@@ -70,6 +70,10 @@ class KeySlice
 
 		static void SetStringFormat(const StringFormat &from_string) {
 			form_string_ = from_string;
+		}
+
+		std::string ToString() const {
+			return form_string_(this);
 		}
 
 		static StringFormat form_string_;

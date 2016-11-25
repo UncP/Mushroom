@@ -27,7 +27,8 @@ class BTreePageBucket
 
 		Status PinPage(BTreePage *page, const int fd);
 
-		BTreePage* GetEmptyPage(page_id page_no, int type, uint8_t key_len, uint8_t level, int fd);
+		BTreePage* GetEmptyPage(page_id page_no, int type, uint8_t key_len, uint8_t level,
+			uint16_t degree, int fd);
 
 		Status Clear(const int fd);
 
@@ -57,7 +58,7 @@ class BTreePager
 
 		BTreePage* GetPage(const page_id page_no);
 
-		BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, bool pin = true);
+		BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree, bool pin=true);
 
 		Status PinPage(BTreePage *page);
 
