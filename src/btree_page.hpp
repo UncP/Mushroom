@@ -81,9 +81,7 @@ class BTreePage
 		KeySlice* Key(const uint16_t *index, int pos) const {
 			return (KeySlice *)(data_ + index[pos]);
 		}
-		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = Eq) const;
-
-		static enum { Eq, Ge } TraverseType;
+		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
 		page_id  page_no_;
 		page_id  first_;

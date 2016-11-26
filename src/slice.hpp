@@ -73,11 +73,6 @@ class KeySlice
 
 		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
 
-		void Assign(page_id page_no, const char *data, size_t len) {
-			page_no_ = page_no;
-			memcpy(data_, data, len);
-		}
-
 		static void SetStringFormat(const StringFormat &from_string) {
 			form_string_ = from_string;
 		}

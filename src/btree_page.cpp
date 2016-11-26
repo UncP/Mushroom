@@ -37,8 +37,8 @@ void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level,
 
 bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type) const
 {
+	assert(!pre_len_);
 	if (pre_len_) {
-		assert(0);
 		int res = ComparePrefix(key, data_, pre_len_);
 		if (res < 0) {
 			*idx = 0;
@@ -59,7 +59,8 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 		} else if (res > 0) {
 			low = mid + 1;
 		} else {
-			if (type == Eq) {
+			if (type) {
+				*idx = mid;
 				return true;
 			} else {
 				low = mid + 1;
@@ -75,7 +76,7 @@ page_id BTreePage::Descend(const KeySlice *key) const
 {
 	uint16_t index;
 	KeySlice *slice = nullptr;
-	Traverse(key, &index, &slice, Ge);
+	Traverse(key, &index, &slice, 0);
 	return index ? slice->PageNo() : first_;
 }
 
@@ -84,16 +85,17 @@ bool BTreePage::Insert(const KeySlice *key, page_id &page_no)
 	uint16_t pos;
 	KeySlice *slice = nullptr;
 	bool flag = Traverse(key, &pos, &slice);
+	// existed
 	if (flag) return false;
+	// greater than fence key
 	if (pos == total_key_ && pos) {
-		uint16_t *index = Index();
-		KeySlice *fence = Key(index, total_key_ - 1);
-		assert(CompareSuffix(key, fence, 0, key_len_) >= 0);
-		std::cout << ToString();
-		std::cout << key->ToString() << std::endl;
 		page_no = Next();
 		assert(page_no);
 		return false;
+	}
+	// less than first, with prefix
+	if (!pos && pre_len_ && memcmp(key->Data(), data_, pre_len_)) {
+		// expand or split
 	}
 
 	uint16_t slot_len = PageByte + key_len_, end = total_key_ * slot_len;
@@ -119,7 +121,10 @@ bool BTreePage::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
 {
 	uint16_t *index = Index();
 	if (*idx < (total_key_ - 1)) {
-		if (pre_len_) CopyPrefix(key, data_, pre_len_);
+		if (pre_len_) {
+			assert(0);
+			CopyPrefix(key, data_, pre_len_);
+		}
 		CopyKey(key, Key(index, *idx), pre_len_, key_len_);
 		++*idx;
 		return true;
@@ -136,10 +141,16 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 	uint16_t left = total_key_ >> 1, right = total_key_ - left, index = left;
 	uint16_t *l_idx = this->Index();
 	uint16_t *r_idx = that->Index();
-	uint16_t slot_len = PageByte + key_len_;
 	KeySlice *fence = (KeySlice *)(this->data_ + l_idx[left++]);
 
-	slice->Assign(that->PageNo(), fence->Data(), key_len_);
+	if (pre_len_) {
+		memcpy(that->data_, this->data_, pre_len_);
+		that->pre_len_ = this->pre_len_;
+		CopyPrefix(slice, data_, pre_len_);
+	}
+
+	slice->AssignPageNo(that->PageNo());
+	memcpy(slice->Data() + pre_len_, fence->Data(), key_len_);
 
 	if (level_) {
 		that->AssignFirst(fence->PageNo());
@@ -151,12 +162,12 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 	}
 
 	fence->AssignPageNo(that->PageNo());
-
+	uint16_t slot_len = PageByte + key_len_;
 	for (uint16_t i = index, j = 0; i != total_key_; ++i, ++j) {
-		r_idx[j] = j * slot_len;
+		r_idx[j] = that->pre_len_ + j * slot_len;
 		KeySlice *l = this->Key(l_idx, i);
 		KeySlice *r = that->Key(r_idx, j);
-		CopyKey(r, l, 0, slot_len);
+		CopyKey(r, l, 0, key_len_);
 	}
 	uint16_t limit = left * slot_len, j = 0;
 	for (uint16_t i = left; i < total_key_ && j < left; ++i) {
@@ -166,7 +177,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 					KeySlice *o = this->Key(l_idx, i);
 					KeySlice *n = this->Key(l_idx, j);
 					l_idx[j] = l_idx[i];
-					CopyKey(o, n, 0, slot_len);
+					CopyKey(o, n, 0, key_len_);
 					++j;
 					break;
 				}
@@ -226,6 +237,11 @@ std::string BTreePage::ToString() const
 	else
 		os << "dirty: false\n";
 
+	if (pre_len_) {
+		os << "pre_len: " << (int)pre_len_ << " ";
+		os << "prefix: " << std::string(data_, pre_len_) << "\n";
+	}
+
 	uint16_t *index = Index();
 	for (uint16_t i = 0; i != total_key_; ++i)
 		os << index[i] << " ";
@@ -269,6 +285,8 @@ bool BTreePage::Compact()
 	for (; first[pre_len] == last[pre_len]; ++pre_len)
 		prefix[pre_len] = first[pre_len];
 	if (!pre_len) return false;
+	uint16_t degree = CalculateDegree(key_len_, pre_len_);
+	if (degree <= degree_) return false;
 	char buf[PageSize];
 	BTreePage *copy = (BTreePage *)buf;
 	memcpy(copy, this, PageSize);
@@ -287,7 +305,7 @@ bool BTreePage::Compact()
 	}
 	pre_len_ = pre_len;
 	key_len_ = suf_len;
-	degree_ = CalculateDegree(key_len_, pre_len_);
+	degree_  = degree;
 	return true;
 }
 
