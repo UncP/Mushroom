@@ -17,6 +17,8 @@
 
 namespace Mushroom {
 
+enum InsertStatus { InsertOk, ExistedKey , MoveRight, NeedExpand };
+
 class BTreePage
 {
 	public:
@@ -58,9 +60,9 @@ class BTreePage
 
 		page_id Descend(const KeySlice *key) const;
 
-		bool Insert(const KeySlice *key, page_id &page_no);
-
 		bool Search(KeySlice *key) const;
+
+		InsertStatus Insert(const KeySlice *key, page_id &page_no);
 
 		bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
 

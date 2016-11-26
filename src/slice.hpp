@@ -57,7 +57,6 @@ class KeySlice
 		if (!pre) {
 			memcpy(a, b, len + sizeof(page_id));
 		} else {
-			assert(0);
 			a->page_no_ = b->page_no_;
 			memcpy(a->data_ + pre, b->data_, len);
 		}

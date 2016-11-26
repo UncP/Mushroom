@@ -64,6 +64,7 @@ class BTree
 			uint8_t *depth) const;
 		Status Split(BTreePage *leaf, Latch *latch, page_id *stack, uint8_t depth);
 		Status SplitRoot();
+		Status InsertKey(BTreePage *page, Latch *latch, const KeySlice *key);
 
 		LatchManager *latch_manager_;
 

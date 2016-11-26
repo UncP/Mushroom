@@ -23,8 +23,8 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/1000.txt";
-	const int key_len = 16;
+	const char *file = "../data/10.txt";
+	const int key_len = 10;
 	const int val_len = 100;
 	const int total = (argc == 2) ? atoi(argv[1]) : 10;
 
@@ -67,16 +67,16 @@ int main(int argc, char **argv)
 	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
 	close(fd);
 
-	// std::ifstream in(file);
-	// assert(in.is_open());
-	// if (!db.Btree()->KeyCheck(in, total)) {
-	// 	std::cout << "Error :( -----------------\n";
-	// } else {
-	// 	Iterator it(db.Btree());
-	// 	assert(it.CheckBtree());
-	// 	in.close();
-	// 	std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
-	// }
+	std::ifstream in(file);
+	assert(in.is_open());
+	if (!db.Btree()->KeyCheck(in, total)) {
+		std::cout << "Error :( -----------------\n";
+	} else {
+		Iterator it(db.Btree());
+		assert(it.CheckBtree());
+		in.close();
+		std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
+	}
 
 	db.Close();
 	return 0;

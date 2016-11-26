@@ -17,7 +17,7 @@
 #include <iomanip>
 #include <thread>
 
-// #include "../src/iterator.hpp"
+#include "../src/iterator.hpp"
 #include "../src/db.hpp"
 #include "../src/thread_pool.hpp"
 
@@ -74,8 +74,8 @@ int main(int argc, char **argv)
 	if (!db.Btree()->KeyCheck(in, total)) {
 		std::cout << "Error :( -----------------\n";
 	} else {
-		// Iterator it(db.Btree());
-		// assert(it.CheckBtree());
+		Iterator it(db.Btree());
+		assert(it.CheckBtree());
 		std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
 	}
 	in.close();

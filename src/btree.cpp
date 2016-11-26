@@ -66,11 +66,37 @@ std::pair<BTreePage*, Latch*> BTree::DescendToLeaf(const KeySlice *key, page_id 
 	return {parent, latch};
 }
 
+Status BTree::InsertKey(BTreePage *page, Latch *latch, const KeySlice *key)
+{
+	InsertStatus status;
+	page_id next = 0;
+	for (; status = page->Insert(key, next); ) {
+		switch (status) {
+			case MoveRight:
+				Latch *pre = latch;
+				latch = latch_manager_->GetLatch(next);
+				latch->Lock();
+				pre->Unlock();
+				page = btree_pager_->GetPage(next);
+				next = 0;
+				break;
+			case NeedSplit;
+				new_page = btree_pager_->NewPage(page->Type(), root_->KeyLen(), left->Level(), degree_);
+				page->SplitInsert(new_page, key);
+				break;
+			case ExistedKey:
+				latch->Unlock();
+				std::cout << "key existed ;)\n";
+				return Fail;
+		}
+	}
+	return Success;
+}
+
 Status BTree::Put(const KeySlice *key)
 {
 	uint8_t depth = 0;
 	page_id stack[8];
-	page_id next = 0;
 
 	std::pair<BTreePage*, Latch*> pair = DescendToLeaf(key, stack, &depth);
 	BTreePage *leaf = pair.first;
@@ -78,20 +104,7 @@ Status BTree::Put(const KeySlice *key)
 
 	latch->Upgrade();
 
-	while (!leaf->Insert(key, next)) {
-		if (next) {
-			Latch *pre = latch;
-			latch = latch_manager_->GetLatch(next);
-			latch->Lock();
-			pre->Unlock();
-			leaf = btree_pager_->GetPage(next);
-			next = 0;
-		} else {
-			latch->Unlock();
-			std::cout << "key existed ;)\n";
-			return Fail;
-		}
-	}
+	assert(InsertKey(leaf, latch, key));
 
 	if (!leaf->NeedSplit()) {
 		latch->Unlock();
@@ -161,20 +174,12 @@ Status BTree::Split(BTreePage *left, Latch *latch, page_id *stack, uint8_t depth
 				parent = btree_pager_->GetPage(page_no);
 			else
 				parent = root_;
-			page_id next = 0;
-			while (!parent->Insert(slice, next)) {
-				assert(next);
-				Latch *l = latch;
-				latch = latch_manager_->GetLatch(next);
-				latch->Lock();
-				l->Unlock();
-				parent = btree_pager_->GetPage(next);
-				next = 0;
-			}
+			assert(InsertKey(parent, latch, slice));
 			pre->UnlockShared();
 			left = parent;
 		} else {
 			SplitRoot();
+			break;
 		}
 	}
 	latch->Unlock();

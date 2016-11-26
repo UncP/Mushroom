@@ -80,26 +80,31 @@ page_id BTreePage::Descend(const KeySlice *key) const
 	return index ? slice->PageNo() : first_;
 }
 
-bool BTreePage::Insert(const KeySlice *key, page_id &page_no)
+bool BTreePage::Search(KeySlice *key) const
+{
+	uint16_t index;
+	KeySlice *slice = nullptr;
+	return Traverse(key, &index, &slice);
+}
+
+InsertStatus BTreePage::Insert(const KeySlice *key, page_id &page_no)
 {
 	uint16_t pos;
 	KeySlice *slice = nullptr;
 	bool flag = Traverse(key, &pos, &slice);
-	// existed
-	if (flag) return false;
-	// greater than fence key
+	if (flag) return ExistedKey;
 	if (pos == total_key_ && pos) {
 		page_no = Next();
 		assert(page_no);
-		return false;
+		return MoveRight;
 	}
-	// less than first, with prefix
-	if (!pos && pre_len_ && memcmp(key->Data(), data_, pre_len_)) {
-		// expand or split
-	}
+	// if (!pos && pre_len_ && memcmp(key->Data(), data_, pre_len_))
+	// 	return NeedExpand;
 
-	uint16_t slot_len = PageByte + key_len_, end = total_key_ * slot_len;
-	memcpy(data_ + end, key, slot_len);
+	uint16_t end = total_key_ * (PageByte + key_len_) + pre_len_;
+	page_id num = key->PageNo();
+	memcpy(data_ + end, &num, PageByte);
+	memcpy(data_ + end + PageByte, key->Data() + pre_len_, key_len_);
 
 	uint16_t *index = Index();
 	--index;
@@ -107,14 +112,7 @@ bool BTreePage::Insert(const KeySlice *key, page_id &page_no)
 	index[pos] = end;
 	++total_key_;
 	dirty_ = true;
-	return true;
-}
-
-bool BTreePage::Search(KeySlice *key) const
-{
-	uint16_t index;
-	KeySlice *slice = nullptr;
-	return Traverse(key, &index, &slice);
+	return InsertOk;
 }
 
 bool BTreePage::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
@@ -162,6 +160,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 	}
 
 	fence->AssignPageNo(that->PageNo());
+
 	uint16_t slot_len = PageByte + key_len_;
 	for (uint16_t i = index, j = 0; i != total_key_; ++i, ++j) {
 		r_idx[j] = that->pre_len_ + j * slot_len;
