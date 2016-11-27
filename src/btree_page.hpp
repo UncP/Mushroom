@@ -17,7 +17,7 @@
 
 namespace Mushroom {
 
-enum InsertStatus { InsertOk, ExistedKey , MoveRight, NeedExpand };
+typedef enum { InsertOk, ExistedKey , MoveRight, NeedExpand } InsertStatus;
 
 class BTreePage
 {
@@ -44,6 +44,7 @@ class BTreePage
 		page_id First() const { return first_; }
 		uint8_t KeyLen() const { return key_len_; }
 		uint8_t Level() const { return level_; }
+		uint16_t Degree() const { return degree_; }
 		int Type() const { return type_; }
 		const char* Data() const { return data_; }
 		page_id Next() const {
@@ -64,13 +65,13 @@ class BTreePage
 
 		InsertStatus Insert(const KeySlice *key, page_id &page_no);
 
+		void Insert(BTreePage *that, KeySlice *key);
+
 		bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
 
 		void Split(BTreePage *that, KeySlice *slice);
 
-		bool NeedSplit() const { return total_key_ == degree_; }
-
-		bool Compact();
+		bool NeedSplit();
 
 		void Analyze() const;
 

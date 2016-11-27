@@ -66,69 +66,78 @@ std::pair<BTreePage*, Latch*> BTree::DescendToLeaf(const KeySlice *key, page_id 
 	return {parent, latch};
 }
 
-Status BTree::InsertKey(BTreePage *page, Latch *latch, const KeySlice *key)
+bool BTree::Insert(BTreePage *page, Latch **latch, KeySlice *key)
 {
 	InsertStatus status;
 	page_id next = 0;
-	for (; status = page->Insert(key, next); ) {
+	for (; (status = page->Insert(key, next)); ) {
 		switch (status) {
-			case MoveRight:
-				Latch *pre = latch;
-				latch = latch_manager_->GetLatch(next);
-				latch->Lock();
+			case MoveRight: {
+				Latch *pre = *latch;
+				*latch = latch_manager_->GetLatch(next);
+				(*latch)->Lock();
 				pre->Unlock();
 				page = btree_pager_->GetPage(next);
 				next = 0;
 				break;
-			case NeedSplit;
-				new_page = btree_pager_->NewPage(page->Type(), root_->KeyLen(), left->Level(), degree_);
-				page->SplitInsert(new_page, key);
+			}
+			case NeedExpand: {
+				BTreePage *npage = btree_pager_->NewPage(page->Type(), root_->KeyLen(), page->Level(),
+					page->Degree());
+				page->Insert(npage, key);
+				return true;
 				break;
-			case ExistedKey:
-				latch->Unlock();
+			}
+			default: {
 				std::cout << "key existed ;)\n";
-				return Fail;
+				assert(0);
+			}
 		}
 	}
-	return Success;
+	return false;
 }
 
-Status BTree::Put(const KeySlice *key)
+Status BTree::Put(KeySlice *key)
 {
 	uint8_t depth = 0;
 	page_id stack[8];
 
 	std::pair<BTreePage*, Latch*> pair = DescendToLeaf(key, stack, &depth);
-	BTreePage *leaf = pair.first;
+	BTreePage *left = pair.first;
 	Latch *latch = pair.second;
 
 	latch->Upgrade();
 
-	assert(InsertKey(leaf, latch, key));
+	bool split = Insert(left, &latch, key);
 
-	if (!leaf->NeedSplit()) {
-		latch->Unlock();
-		return Success;
+	BTreePage *right = nullptr, *parent = nullptr;
+
+	for (; left->NeedSplit() || split; ) {
+		if (left->Type() != BTreePage::ROOT) {
+			if (!split) {
+				right = btree_pager_->NewPage(left->Type(), left->KeyLen(), left->Level(),
+					left->Degree());
+				left->Split(right, key);
+			}
+			latch->Downgrade();
+			Latch *pre = latch;
+			page_id page_no = stack[--depth];
+			latch = latch_manager_->GetLatch(page_no);
+			latch->Lock();
+			if (page_no)
+				parent = btree_pager_->GetPage(page_no);
+			else
+				parent = root_;
+			split = Insert(parent, &latch, key);
+			pre->UnlockShared();
+			left = parent;
+		} else {
+			SplitRoot();
+			break;
+		}
 	}
-
-	Split(leaf, latch, stack, depth);
+	latch->Unlock();
 	return Success;
-}
-
-Status BTree::Get(KeySlice *key) const
-{
-	uint8_t depth = 0;
-	page_id stack[8];
-
-	std::pair<BTreePage*, Latch*> pair = DescendToLeaf(key, stack, &depth);
-	bool flag = pair.first->Search(key);
-	pair.second->UnlockShared();
-	if (!flag) {
-		std::cout << pair.first->ToString();
-		std::cout << key->ToString() << std::endl;
-		pair.first->Analyze();
-	}
-	return flag ? Success : Fail;
 }
 
 Status BTree::SplitRoot()
@@ -155,35 +164,20 @@ Status BTree::SplitRoot()
 	return Success;
 }
 
-Status BTree::Split(BTreePage *left, Latch *latch, page_id *stack, uint8_t depth)
+Status BTree::Get(KeySlice *key) const
 {
-	BTreePage *right = nullptr, *parent = nullptr;
-	char key[BTreePage::PageByte + key_len_];
-	KeySlice *slice = (KeySlice *)key;
+	uint8_t depth = 0;
+	page_id stack[8];
 
-	for (; left->NeedSplit(); ) {
-		if (left->Type() != BTreePage::ROOT) {
-			right = btree_pager_->NewPage(left->Type(), left->KeyLen(), left->Level(), degree_);
-			left->Split(right, slice);
-			latch->Downgrade();
-			Latch *pre = latch;
-			page_id page_no = stack[--depth];
-			latch = latch_manager_->GetLatch(page_no);
-			latch->Lock();
-			if (page_no)
-				parent = btree_pager_->GetPage(page_no);
-			else
-				parent = root_;
-			assert(InsertKey(parent, latch, slice));
-			pre->UnlockShared();
-			left = parent;
-		} else {
-			SplitRoot();
-			break;
-		}
+	std::pair<BTreePage*, Latch*> pair = DescendToLeaf(key, stack, &depth);
+	bool flag = pair.first->Search(key);
+	pair.second->UnlockShared();
+	if (!flag) {
+		std::cout << pair.first->ToString();
+		std::cout << key->ToString() << std::endl;
+		pair.first->Analyze();
 	}
-	latch->Unlock();
-	return Success;
+	return flag ? Success : Fail;
 }
 
 BTreePage* BTree::First(page_id *page_no, int level) const

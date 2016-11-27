@@ -33,9 +33,7 @@ class BTree
 
 		uint8_t KeyLen() const { return key_len_; }
 
-		Status Put(const KeySlice *key);
-
-		Status Delete(const KeySlice *key);
+		Status Put(KeySlice *key);
 
 		Status Get(KeySlice *key) const;
 
@@ -62,9 +60,10 @@ class BTree
 
 		std::pair<BTreePage*, Latch*> DescendToLeaf(const KeySlice *key, page_id *stack,
 			uint8_t *depth) const;
-		Status Split(BTreePage *leaf, Latch *latch, page_id *stack, uint8_t depth);
+
 		Status SplitRoot();
-		Status InsertKey(BTreePage *page, Latch *latch, const KeySlice *key);
+
+		bool Insert(BTreePage *page, Latch **latch, KeySlice *key);
 
 		LatchManager *latch_manager_;
 

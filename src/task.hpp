@@ -21,7 +21,7 @@ class Task
 	public:
 		Task():fun_(nullptr), btree_(nullptr), key_(nullptr) { }
 
-		Task(Status (BTree::*(fun))(const KeySlice *), BTree *btree, const KeySlice *key)
+		Task(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
 		:fun_(fun), btree_(btree), key_(key) { }
 
 		Status operator()() {
@@ -32,9 +32,9 @@ class Task
 		}
 
 	private:
-		Status         (BTree::*(fun_))(const KeySlice *);
+		Status         (BTree::*(fun_))(KeySlice *);
 		BTree          *btree_;
-		const KeySlice *key_;
+		KeySlice       *key_;
 };
 
 } // namespace Mushroom
