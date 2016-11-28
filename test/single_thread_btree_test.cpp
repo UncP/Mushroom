@@ -23,27 +23,27 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/10.txt";
+	const char *file = "../data/seq10_pre1.txt";
 	const int key_len = 10;
-	const int val_len = 100;
-	const int total = (argc == 2) ? atoi(argv[1]) : 10;
+	const int total = (argc == 2) ? atoi(argv[1]) : 1;
 
 	MushroomDB db("mushroom", key_len);
 
-	char buf1[BTreePage::PageByte + key_len] = {0};
-	KeySlice *key = (KeySlice *)buf1;
-	char buf2[DataSlice::LengthByte + val_len] = {0};
-	DataSlice *val = (DataSlice *)buf2;
-	val->SetLength(val_len);
+	char tmp[BTreePage::PageByte + key_len] = {0};
+	KeySlice *key = (KeySlice *)tmp;
 	KeySlice::SetStringFormat([](const KeySlice *key) {
-		return std::string(key->Data()) + "    ";
+		size_t len = 13 - strlen(key->Data());
+		std::string tail;
+		for (size_t i = 0; i < len; ++i)
+			tail += ' ';
+		return std::string(key->Data()) + tail;
 	});
 
 	int fd = open(file, O_RDONLY);
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;
 	bool flag = true;
-	auto beg = std::chrono::high_resolution_clock::now();
+	// auto beg = std::chrono::high_resolution_clock::now();
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0' && buf[ptr] != ' ') buf[ptr] = '\0';
 		if (ptr) buf[ptr++] = '\0';
@@ -62,11 +62,12 @@ int main(int argc, char **argv)
 			++i;
 		}
 	}
-	auto end  = std::chrono::high_resolution_clock::now();
-	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
+	// auto end  = std::chrono::high_resolution_clock::now();
+	// auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	// std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
 	close(fd);
 
+	db.Btree()->Traverse(0);
 	std::ifstream in(file);
 	assert(in.is_open());
 	if (!db.Btree()->KeyCheck(in, total)) {
