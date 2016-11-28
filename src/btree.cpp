@@ -82,6 +82,7 @@ bool BTree::Insert(BTreePage *page, Latch **latch, KeySlice *key)
 				break;
 			}
 			case NeedExpand: {
+				assert(0);
 				BTreePage *npage = btree_pager_->NewPage(page->Type(), root_->KeyLen(), page->Level(),
 					page->Degree());
 				page->Insert(npage, key);
