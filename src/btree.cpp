@@ -90,6 +90,7 @@ bool BTree::Insert(BTreePage *page, Latch **latch, KeySlice *key)
 				break;
 			}
 			default: {
+				std::cout << key->ToString() << std::endl;
 				std::cout << "key existed ;)\n";
 				assert(0);
 			}
@@ -173,11 +174,6 @@ Status BTree::Get(KeySlice *key) const
 	std::pair<BTreePage*, Latch*> pair = DescendToLeaf(key, stack, &depth);
 	bool flag = pair.first->Search(key);
 	pair.second->UnlockShared();
-	if (!flag) {
-		std::cout << pair.first->ToString();
-		std::cout << key->ToString() << std::endl;
-		pair.first->Analyze();
-	}
 	return flag ? Success : Fail;
 }
 

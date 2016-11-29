@@ -14,13 +14,14 @@
 
 #include "btree.hpp"
 #include "data_pager.hpp"
+#include "thread_pool.hpp"
 
 namespace Mushroom {
 
 class MushroomDB
 {
 	public:
-		MushroomDB(const char *name, const int key_len);
+		MushroomDB(const char *name, const int key_len, bool multi = false);
 
 		Status Put(KeySlice *key);
 
@@ -30,7 +31,13 @@ class MushroomDB
 
 		Status Close();
 
-		~MushroomDB() { if (btree_) delete btree_; btree_ = nullptr; }
+		void ClearTask() { if (pool_) pool_->Clear(); }
+
+		~MushroomDB() {
+			delete btree_;
+			delete data_pager_;
+			delete pool_;
+		}
 
 	private:
 		std::string name_;
@@ -38,6 +45,9 @@ class MushroomDB
 		BTree      *btree_;
 
 		DataPager  *data_pager_;
+
+		ThreadPool *pool_;
+
 };
 
 } // namespace Mushroom

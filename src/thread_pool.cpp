@@ -25,9 +25,8 @@ void Thread::Stop()
 		thread_.join();
 }
 
-ThreadPool::ThreadPool(Queue<Task> *queue):queue_(queue), working_(false)
+ThreadPool::ThreadPool(Queue *queue):queue_(queue), working_(false)
 {
-	assert(queue_);
 	int thread_num = std::thread::hardware_concurrency();
 	assert(thread_num > 0);
 
@@ -38,20 +37,21 @@ ThreadPool::ThreadPool(Queue<Task> *queue):queue_(queue), working_(false)
 		each = ThreadPool::CreateThread([this]() { Run(); });
 		each->Start();
 	}
+
 	working_ = true;
 }
 
-void ThreadPool::AddTask(const Task &task)
+void ThreadPool::AddTask(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
 {
-	queue_->Push(task);
+	queue_->Push(fun, btree, key);
 }
 
 void ThreadPool::Run()
 {
 	for (;;) {
-		Task task(queue_->Pull());
+		Task *task = queue_->Pull();
 		if (!working_) break;
-		task();
+		if (task) (*task)();
 	}
 }
 
@@ -64,7 +64,8 @@ void ThreadPool::Clear()
 		e->Stop();
 }
 
-ThreadPool::~ThreadPool() {
+ThreadPool::~ThreadPool()
+{
 	if (working_)
 		Clear();
 	working_ = false;

@@ -166,6 +166,7 @@ Status BTreePager::Close()
 		assert(bucket_[i].Clear(fd_));
 	if (fd_ > 0)
 		close(fd_);
+	std::cout << "total page: " << curr_ << std::endl;
 	fd_ = -1;
 	return Success;
 }

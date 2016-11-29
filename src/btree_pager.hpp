@@ -70,7 +70,7 @@ class BTreePager
 		BTreePager(const BTreePager &) = delete;
 
 	private:
-		static const uint32_t Hash = 1024;
+		static const uint32_t Hash = 16384;
 		static const page_id  Mask = Hash - 1;
 
 		std::mutex      mutex_;

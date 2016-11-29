@@ -16,8 +16,10 @@
 
 namespace Mushroom {
 
-MushroomDB::MushroomDB(const char *name, const int key_len):name_(std::string(name))
+MushroomDB::MushroomDB(const char *name, const int key_len, bool multi)
+:name_(std::string(name)), pool_(nullptr)
 {
+	assert(key_len <= 256);
 	assert(!chdir(".."));
 	assert(mkdir(name, S_IRUSR | S_IWUSR | S_IROTH) >= 0);
 	assert(!chdir(name));
@@ -26,18 +28,26 @@ MushroomDB::MushroomDB(const char *name, const int key_len):name_(std::string(na
 	assert(creat("index", O_RDWR) > 0);
 	int fd = open("index", O_RDWR);
 	assert(fd > 0);
-	assert(btree_ = new BTree(fd, key_len));
+	btree_ = new BTree(fd, key_len);
 
 	assert(access("data", F_OK));
 	assert(creat("data", O_RDWR) > 0);
 	fd = open("data", O_RDWR);
 	assert(fd > 0);
-	assert(data_pager_ = new DataPager(fd));
+	data_pager_ = new DataPager(fd);
+
+	if (multi)
+		pool_ = new ThreadPool(new Queue(2, key_len));
 }
 
 Status MushroomDB::Put(KeySlice *key)
 {
-	return btree_->Put(key);
+	if (pool_) {
+		pool_->AddTask(&BTree::Put, btree_, key);
+		return Success;
+	} else {
+		return btree_->Put(key);
+	}
 }
 
 Status MushroomDB::Close()

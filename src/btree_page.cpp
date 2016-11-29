@@ -37,7 +37,7 @@ void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level,
 
 bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type) const
 {
-	int low = 0, high = total_key_, mid = 0;
+	uint16_t low = 0, high = total_key_, mid = 0;
 	uint16_t *index = Index();
 	if (pre_len_) {
 		int res = ComparePrefix(key, data_, pre_len_);
@@ -45,7 +45,7 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 			*idx = 0;
 			return false;
 		} else if (res > 0) {
-			*idx = --high;
+			*idx = high--;
 			*slice = Key(index, high);
 			return false;
 		}
@@ -99,7 +99,6 @@ InsertStatus BTreePage::Insert(const KeySlice *key, page_id &page_no)
 		assert(page_no);
 		return MoveRight;
 	}
-	assert(!memcmp(key->Data(), data_, pre_len_));
 	if (!pos && pre_len_ && memcmp(key->Data(), data_, pre_len_))
 		return NeedExpand;
 
@@ -195,7 +194,6 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 void BTreePage::Insert(BTreePage *that, KeySlice *key)
 {
 	assert(pre_len_ && ComparePrefix(key, data_, pre_len_) < 0);
-	assert(0);
 	char buf[PageByte + key_len_ + pre_len_];
 	KeySlice *slice = (KeySlice *)buf;
 	CopyKey(slice, key, 0, key_len_ + pre_len_);
@@ -233,6 +231,7 @@ bool BTreePage::NeedSplit()
 {
 	if (total_key_ < degree_)
 		return false;
+	return true;
 	uint16_t *index = Index();
 	const char *first = Key(index, 0)->Data();
 	const char *last  = Key(index, total_key_ - 1)->Data();
@@ -242,8 +241,6 @@ bool BTreePage::NeedSplit()
 		prefix[pre_len] = first[pre_len];
 	if (!pre_len)
 		return true;
-	std::cout << first << " " << last << std::endl;
-	std::cout << "prefix " << std::string(prefix, pre_len) << std::endl;
 	uint16_t degree = CalculateDegree(key_len_ - pre_len, pre_len + pre_len_);
 	if (degree <= degree_)
 		return true;

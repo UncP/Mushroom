@@ -19,22 +19,24 @@ namespace Mushroom {
 class Task
 {
 	public:
-		Task():fun_(nullptr), btree_(nullptr), key_(nullptr) { }
+		Task(uint8_t key_len);
 
-		Task(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
-		:fun_(fun), btree_(btree), key_(key) { }
+		void Assign(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
 
-		Status operator()() {
-			if (fun_)
-				return (btree_->*fun_)(key_);
-			else
-				return Success;
-		}
+		Status operator()() { return (btree_->*fun_)(key_); }
+
+		Task(const Task &) = delete;
+		Task(const Task &&) = delete;
+		Task& operator=(const Task &) = delete;
+		Task& operator=(const Task &&) = delete;
+
+		~Task();
 
 	private:
 		Status         (BTree::*(fun_))(KeySlice *);
 		BTree          *btree_;
 		KeySlice       *key_;
+		uint8_t         key_len_;
 };
 
 } // namespace Mushroom
