@@ -21,21 +21,23 @@
 #include "../src/db.hpp"
 #include "../src/thread_pool.hpp"
 
+
 int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/10.txt";
-	const int key_len = 10;
+	const char *file = "../data/1000.txt";
+	const int key_len = 16;
 	const int total = (argc == 2) ? atoi(argv[1]) : 10;
-	char *keys[total];
 
-	MushroomDB db("mushroom", key_len);
-	ThreadPool pool(new FiniteQueue<Task>());
+	MushroomDB db("mushroom", key_len, true);
 
 	KeySlice::SetStringFormat([](const KeySlice *key) {
 		return std::string(key->Data()) + "    ";
 	});
+
+	char tmp[BTreePage::PageByte + key_len] = {0};
+	KeySlice *key = (KeySlice *)tmp;
 	int fd = open(file, O_RDONLY);
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;
@@ -51,11 +53,8 @@ int main(int argc, char **argv)
 			char *tmp = buf + i;
 			for (; buf[i] != ' ' && buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
-			keys[count] = new char[BTreePage::PageByte + key_len];
-			assert(keys[count]);
-			KeySlice *key = (KeySlice *)keys[count];
 			memcpy(key->Data(), tmp, key_len);
-			pool.AddTask(Task(&BTree::Put, (BTree *)db.Btree(), key));
+			db.Put(key);
 			if (++count == total) {
 				flag = false;
 				break;
@@ -63,11 +62,12 @@ int main(int argc, char **argv)
 			++i;
 		}
 	}
-	pool.Clear();
 	close(fd);
 	auto end  = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
+
+	db.ClearTask();
 
 	std::ifstream in(file);
 	assert(in.is_open());
@@ -79,9 +79,6 @@ int main(int argc, char **argv)
 		std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
 	}
 	in.close();
-
-	for (int i = 0; i != total; ++i)
-		delete [] keys[i];
 
 	db.Close();
 	return 0;

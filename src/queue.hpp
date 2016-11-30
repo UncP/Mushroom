@@ -31,7 +31,7 @@ class Queue
 
 		void Push(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
 
-		Task* Pull();
+		void Pull();
 
 		void Clear();
 
@@ -39,19 +39,17 @@ class Queue
 
 	private:
 
-		bool Empty();
-
-		bool Empty(int);
-
-		bool Full();
-
 		bool                    clear_;
-		std::mutex              mutex_;
-		std::condition_variable condition_;
-		std::vector<Task *>     queue_;
 		int                     capacity_;
+		std::vector<Task *>     queue_;
+		std::vector<int>        avail_;
+		std::vector<int>        work_;
 		int                     front_;
-		int                     back_;
+		int                     avail_back_;
+		int                     work_back_;
+		std::mutex              mutex_;
+		std::condition_variable ready_;
+		std::condition_variable empty_;
 };
 
 } // namespace Mushroom

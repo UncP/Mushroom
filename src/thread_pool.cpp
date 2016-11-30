@@ -49,9 +49,8 @@ void ThreadPool::AddTask(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySl
 void ThreadPool::Run()
 {
 	for (;;) {
-		Task *task = queue_->Pull();
+		queue_->Pull();
 		if (!working_) break;
-		if (task) (*task)();
 	}
 }
 

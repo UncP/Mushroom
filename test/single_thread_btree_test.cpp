@@ -23,8 +23,8 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/seq10_pre1.txt";
-	const int key_len = 10;
+	const char *file = "../data/1000.txt";
+	const int key_len = 16;
 	const int total = (argc == 2) ? atoi(argv[1]) : 1;
 
 	MushroomDB db("mushroom", key_len);
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;
 	bool flag = true;
-	// auto beg = std::chrono::high_resolution_clock::now();
+	auto beg = std::chrono::high_resolution_clock::now();
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0' && buf[ptr] != ' ') buf[ptr] = '\0';
 		if (ptr) buf[ptr++] = '\0';
@@ -62,12 +62,12 @@ int main(int argc, char **argv)
 			++i;
 		}
 	}
-	// auto end  = std::chrono::high_resolution_clock::now();
-	// auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	// std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
+	auto end  = std::chrono::high_resolution_clock::now();
+	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
 	close(fd);
 
-	db.Btree()->Traverse(0);
+	// db.Btree()->Traverse(0);
 	std::ifstream in(file);
 	assert(in.is_open());
 	if (!db.Btree()->KeyCheck(in, total)) {

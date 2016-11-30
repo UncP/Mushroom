@@ -3,7 +3,7 @@
 
 ###蘑菇：基于 B link 树索引的非关系型数据库
 
-####这是[Up Database](http://www.github.com/UncP/Up_Database)以及[pear Database](http://www.github.com/UncP/pear)的升级版本
+####这是 [Up Database](http://www.github.com/UncP/Up_Database) 以及 [pear Database](http://www.github.com/UncP/pear) 的升级版本
 
 
 ###特点
@@ -23,11 +23,17 @@
 - 版本 0.2.1 多线程排序用时 11.28 秒
 	+ 锁管理器优化
 
+- 版本 0.3.0 多线程排序用时 10.94 秒
+	+ 前缀压缩，索引占用内存减少约 9.1 %
+
+- 版本 0.4.0 多线程排序用时 11.44 秒
+	+ 二次映射多线程工作队列，减小程序整体内存超过 50 %
+
 
 ###TODO
 - [x] B link 树索引管理器
 - [x] 线程池
-- [x] 多线程工作队列(无界，有界)
+- [x] 多线程工作队列(有界，二次映射)
 - [x] 锁管理器
 - [x] 并发索引
 - [ ] 数据管理器

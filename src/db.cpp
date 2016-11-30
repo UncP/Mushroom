@@ -37,7 +37,7 @@ MushroomDB::MushroomDB(const char *name, const int key_len, bool multi)
 	data_pager_ = new DataPager(fd);
 
 	if (multi)
-		pool_ = new ThreadPool(new Queue(2, key_len));
+		pool_ = new ThreadPool(new Queue(1024, key_len));
 }
 
 Status MushroomDB::Put(KeySlice *key)
