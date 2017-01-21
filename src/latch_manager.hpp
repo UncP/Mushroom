@@ -1,10 +1,8 @@
 /**
- *    > Author:   UncP
- *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
- *    > Description:
- *
- *    > Created Time: 2016-10-21 16:50:18
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
+ *    > Created Time:  2016-10-21 16:50:18
 **/
 
 #ifndef _LATCH_MANAGER_HPP_
@@ -48,6 +46,8 @@ class LatchManager
 		static const int Hash = 16;
 		static const int Mask = Hash - 1;
 
+		int         fd_;
+		page_id     curr_;
 		LatchSet    latch_set_[Hash];
 };
 

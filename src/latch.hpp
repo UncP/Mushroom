@@ -1,10 +1,8 @@
 /**
- *    > Author:   UncP
- *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
- *    > Description:
- *
- *    > Created Time: 2016-11-18 10:10:03
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
+ *    > Created Time:  2016-11-18 10:10:03
 **/
 
 #ifndef _LATCH_HPP_
@@ -28,45 +26,23 @@ class Latch
 
 		page_id Id() const { return id_; }
 
-		void Pin() {
-			++users_;
-		}
+		void Pin() { ++users_; }
 
-		void UnPin() {
-			--users_;
-		}
+		void UnPin() { --users_; }
 
-		bool Free() const {
-			return users_.load(std::memory_order_relaxed) == 0;
-		}
+		bool Free() const { return users_.load(std::memory_order_relaxed) == 0; }
 
-		void LockShared() {
-			mutex_.lock_shared();
-		}
+		void LockShared() { mutex_.lock_shared(); }
 
-		void UnlockShared() {
-			mutex_.unlock_shared();
-			UnPin();
-		}
+		void UnlockShared() { mutex_.unlock_shared(); UnPin(); }
 
-		void Lock() {
-			mutex_.lock();
-		}
+		void Lock() { mutex_.lock(); }
 
-		void Unlock() {
-			mutex_.unlock();
-			UnPin();
-		}
+		void Unlock() { mutex_.unlock(); UnPin(); }
 
-		void Upgrade() {
-			mutex_.unlock_shared();
-			mutex_.lock();
-		}
+		void Upgrade() { mutex_.unlock_shared(); mutex_.lock(); }
 
-		void Downgrade() {
-			mutex_.unlock();
-			mutex_.lock_shared();
-		}
+		void Downgrade() { mutex_.unlock(); mutex_.lock_shared(); }
 
 		std::string ToString() const {
 			if (id_ == 0x7FFFFFFF) return std::string();
@@ -74,6 +50,8 @@ class Latch
 			os << id_ << ": " << users_ << std::endl;
 			return std::move(os.str());
 		}
+
+		BTreePage *page_;
 
 	private:
 		std::atomic<int>        users_;

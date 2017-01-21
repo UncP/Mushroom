@@ -1,10 +1,8 @@
 /**
- *    > Author:   UncP
- *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
- *    > Description:
- *
- *    > Created Time: 2016-10-07 20:10:30
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
+ *    > Created Time:  2016-10-07 20:10:30
 **/
 
 #ifndef _BTREE_HPP_
@@ -12,12 +10,10 @@
 
 #include <fstream>
 #include <string>
-#include <mutex>
-#include <map>
 
 #include "status.hpp"
 #include "slice.hpp"
-#include "btree_pager.hpp"
+#include "btree_page.hpp"
 #include "latch_manager.hpp"
 
 namespace Mushroom {
@@ -58,16 +54,13 @@ class BTree
 
 	private:
 
-		std::pair<BTreePage*, Latch*> DescendToLeaf(const KeySlice *key, page_id *stack,
-			uint8_t *depth) const;
+		Latch* DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const;
 
 		Status SplitRoot();
 
-		bool Insert(BTreePage *page, Latch **latch, KeySlice *key);
+		bool Insert(Latch **latch, KeySlice *key);
 
 		LatchManager *latch_manager_;
-
-		BTreePager  *btree_pager_;
 
 		BTreePage   *root_;
 
