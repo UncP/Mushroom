@@ -28,12 +28,6 @@ MushroomDB::MushroomDB(const char *name, const int key_len, bool multi)
 	assert(fd > 0);
 	btree_ = new BTree(fd, key_len);
 
-	assert(access("data", F_OK));
-	assert(creat("data", O_RDWR) > 0);
-	fd = open("data", O_RDWR);
-	assert(fd > 0);
-	data_pager_ = new DataPager(fd);
-
 	if (multi)
 		pool_ = new ThreadPool(new Queue(1024, key_len));
 }

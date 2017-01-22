@@ -17,6 +17,8 @@
 
 namespace Mushroom {
 
+class BTreePage;
+
 class Latch
 {
 	public:

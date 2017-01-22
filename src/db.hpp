@@ -13,7 +13,6 @@
 #include <string>
 
 #include "btree.hpp"
-#include "data_pager.hpp"
 #include "thread_pool.hpp"
 
 namespace Mushroom {
@@ -35,7 +34,6 @@ class MushroomDB
 
 		~MushroomDB() {
 			delete btree_;
-			delete data_pager_;
 			delete pool_;
 		}
 
@@ -43,8 +41,6 @@ class MushroomDB
 		std::string name_;
 
 		BTree      *btree_;
-
-		DataPager  *data_pager_;
 
 		ThreadPool *pool_;
 

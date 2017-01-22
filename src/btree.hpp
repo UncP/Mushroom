@@ -46,23 +46,17 @@ class BTree
 		BTree& operator=(const BTree &) = delete;
 		BTree(const BTree &) = delete;
 
-		~BTree() {
-			delete [] root_;
-			delete btree_pager_;
-			delete latch_manager_;
-		}
+		~BTree() { delete latch_manager_; }
 
 	private:
 
 		Latch* DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const;
 
-		Status SplitRoot();
+		Status SplitRoot(BTreePage *root);
 
 		bool Insert(Latch **latch, KeySlice *key);
 
 		LatchManager *latch_manager_;
-
-		BTreePage   *root_;
 
 		uint16_t 	  degree_;
 		uint8_t     key_len_;

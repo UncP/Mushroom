@@ -14,6 +14,10 @@
 
 namespace Mushroom {
 
+uint64_t BTreePage::ZERO;
+
+std::atomic<uint32_t> BTreePage::current(0);
+
 uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 {
 	BTreePage *page = nullptr;
@@ -24,7 +28,7 @@ uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level,
 	uint16_t degree)
 {
-	assert(!dirty_);
+	// assert(!dirty_);
 	memset(this, 0, PageSize);
 	page_no_ = page_no;
 	degree_  = degree;
@@ -263,12 +267,11 @@ bool BTreePage::NeedSplit()
 	return false;
 }
 
-BTreePage* BTreePage::NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level,
-	uint16_t degree)
+BTreePage* BTreePage::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
 	BTreePage *page = (BTreePage *)new char[PageSize];
-	if (!page) return page;
-	page->Reset(page_no, type, key_len, level, degree);
+	assert(page);
+	page->Reset(current++, type, key_len, level, degree);
 	return page;
 }
 

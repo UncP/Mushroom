@@ -8,6 +8,7 @@
 #ifndef _BTREE_PAGE_HPP_
 #define _BTREE_PAGE_HPP_
 
+#include <atomic>
 #include <cassert>
 
 #include "status.hpp"
@@ -27,10 +28,21 @@ class BTreePage
 		static const uint16_t PageByte  = sizeof(page_id);
 		static const uint16_t IndexByte = 2;
 
-		static BTreePage* NewPage(page_id page_no, int type, uint8_t key_len, uint8_t level,
-			uint16_t degree);
+		static uint64_t ZERO;
+
+		static std::atomic<uint32_t> current;
+
+		static void SetZero(uint64_t offset) { ZERO = offset; }
+
+		static BTreePage* GetPage(page_id page_no) {
+			return (BTreePage *)(ZERO + page_no * 0x1010);
+		}
+
+		static BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0);
+
+		void Copy(const BTreePage *that) { memcpy(this, that, PageSize); }
 
 		void Reset(page_id page_no, int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
@@ -52,6 +64,7 @@ class BTreePage
 
 		void AssignType(int type) { type_ = type; }
 		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
+		void AssignLevel(uint8_t level) { level_ = level; }
 		void AssignFirst(page_id first) {
 			assert(type_ != LEAF);
 			first_ = first;

@@ -33,7 +33,9 @@ Latch* LatchSet::GetLatch(page_id id)
 
 Latch* LatchManager::GetLatch(page_id id)
 {
-	return latch_set_[id & Mask].GetLatch(id);
+	Latch *latch = latch_set_[id & Mask].GetLatch(id);
+	latch->page_ = BTreePage::GetPage(id);
+	return latch;
 }
 
 std::string LatchSet::ToString() const

@@ -12,6 +12,7 @@
 #include <string>
 
 #include "latch.hpp"
+#include "btree_page.hpp"
 
 namespace Mushroom {
 
@@ -46,8 +47,6 @@ class LatchManager
 		static const int Hash = 16;
 		static const int Mask = Hash - 1;
 
-		int         fd_;
-		page_id     curr_;
 		LatchSet    latch_set_[Hash];
 };
 
