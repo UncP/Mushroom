@@ -1,10 +1,8 @@
 /**
- *    > Author:   UncP
- *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
- *    > Description:
- *
- *    > Created Time: 2016-11-20 12:37:41
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
+ *    > Created Time:  2016-11-20 12:37:41
 **/
 
 #include <iostream>
@@ -26,8 +24,8 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/1000.txt";
-	const int key_len = 16;
+	const char *file = "../data/10.txt";
+	const int key_len = 10;
 	const int total = (argc == 2) ? atoi(argv[1]) : 10;
 
 	MushroomDB db("mushroom", key_len, true);
@@ -69,6 +67,8 @@ int main(int argc, char **argv)
 
 	db.ClearTask();
 
+	db.Btree()->Traverse(0);
+	std::cout << "check\n";
 	std::ifstream in(file);
 	assert(in.is_open());
 	if (!db.Btree()->KeyCheck(in, total)) {

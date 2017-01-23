@@ -35,7 +35,8 @@ class BTreePage
 		static void SetZero(uint64_t offset) { ZERO = offset; }
 
 		static BTreePage* GetPage(page_id page_no) {
-			return (BTreePage *)(ZERO + page_no * 0x1010);
+			assert(page_no < 3);
+			return (BTreePage *)(ZERO + page_no * (PageSize/* + 0x10*/));
 		}
 
 		static BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
@@ -55,6 +56,7 @@ class BTreePage
 		uint8_t KeyLen() const { return key_len_; }
 		uint8_t Level() const { return level_; }
 		uint16_t Degree() const { return degree_; }
+		uint16_t KeyNum() const { return total_key_; }
 		int Type() const { return type_; }
 		const char* Data() const { return data_; }
 		page_id Next() const {

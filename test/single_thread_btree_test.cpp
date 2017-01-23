@@ -1,10 +1,8 @@
 /**
- *    > Author:   UncP
- *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
- *    > Description:
- *
- *    > Created Time: 2016-10-28 21:25:06
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
+ *    > Created Time:  2016-10-28 21:25:06
 **/
 
 #include <iostream>
@@ -67,7 +65,6 @@ int main(int argc, char **argv)
 	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
 	close(fd);
 
-	// db.Btree()->Traverse(0);
 	std::ifstream in(file);
 	assert(in.is_open());
 	if (!db.Btree()->KeyCheck(in, total)) {
