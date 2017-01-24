@@ -52,7 +52,7 @@ class BTree
 
 		Latch* DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const;
 
-		Status SplitRoot(BTreePage *root);
+		Status SplitRoot(Latch *latch);
 
 		bool Insert(Latch **latch, KeySlice *key);
 

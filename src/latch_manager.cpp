@@ -49,8 +49,10 @@ std::string LatchSet::ToString() const
 std::string LatchManager::ToString() const
 {
 	std::string res;
-	for (int i = 0; i != Hash; ++i)
-		res += latch_set_[i].ToString() + "\n";
+	for (int i = 0; i != Hash; ++i) {
+		auto str = latch_set_[i].ToString();
+		if (str != "") res += str + "\n";
+	}
 	return std::move(res);
 }
 

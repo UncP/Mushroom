@@ -67,16 +67,15 @@ int main(int argc, char **argv)
 
 	db.ClearTask();
 
-	db.Btree()->Traverse(0);
-	std::cout << "check\n";
+	// db.Btree()->Traverse(0);
 	std::ifstream in(file);
 	assert(in.is_open());
 	if (!db.Btree()->KeyCheck(in, total)) {
-		std::cout << "Error :( -----------------\n";
+		std::cout << "\033[31mError :(\033[0m\n";
 	} else {
 		Iterator it(db.Btree());
 		assert(it.CheckBtree());
-		std::cout << "!!!!!!!!!!  Success :)  !!!!!!!!!!!!\n";
+		std::cout << "\033[32mSuccess :)\033[0m\n";
 	}
 	in.close();
 
