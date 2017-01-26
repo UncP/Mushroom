@@ -193,42 +193,6 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 	that->dirty_ = true;
 }
 
-void BTreePage::Insert(BTreePage *that, KeySlice *key)
-{
-	assert(pre_len_ && ComparePrefix(key, data_, pre_len_) < 0);
-	char buf[PageByte + key_len_ + pre_len_];
-	KeySlice *slice = (KeySlice *)buf;
-	CopyKey(slice, key, 0, key_len_ + pre_len_);
-	Split(that, key);
-	char prefix[pre_len_];
-	memcpy(prefix, data_, pre_len_);
-	char tmp[PageSize];
-	BTreePage *copy = (BTreePage *)tmp;
-	memcpy(copy, this, PageSize);
-	uint16_t *index = Index();
-	char *curr = data_;
-	--index;
-	*index++ = 0;
-	memcpy(curr, slice, PageByte + key_len_ + pre_len_);
-	curr += PageByte + key_len_ + pre_len_;
-	uint16_t *cindex = copy->Index();
-	for (uint16_t i = 0; i != total_key_; ++i, ++index) {
-		KeySlice *k = Key(cindex, i);
-		page_id page_no = k->PageNo();
-		*index = curr - data_;
-		memcpy(curr, &page_no, PageByte);
-		curr += PageByte;
-		memcpy(curr, prefix, pre_len_);
-		curr += pre_len_;
-		memcpy(curr, k->Data(), key_len_);
-		curr += key_len_;
-	}
-	key_len_ += pre_len_;
-	pre_len_ = 0;
-	degree_ = CalculateDegree(key_len_);
-	++total_key_;
-}
-
 bool BTreePage::NeedSplit()
 {
 	if (total_key_ < degree_)
@@ -269,13 +233,8 @@ bool BTreePage::NeedSplit()
 
 BTreePage* BTreePage::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
-	BTreePage *page = nullptr;
-	if (!current) {
-		page = (BTreePage *)new char[10 * PageSize];
-		assert(page);
-	} else {
-		page = (BTreePage*)(ZERO + (current * PageSize));
-	}
+	BTreePage *page = (BTreePage *)new char[PageSize];
+	assert(page);
 	page->Reset(current++, type, key_len, level, degree);
 	return page;
 }

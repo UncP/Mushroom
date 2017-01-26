@@ -48,14 +48,6 @@ Latch* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth)
 		page_id page_no = latch->page_->Descend(key);
 		assert(page_no);
 		page_id pre_no = latch->page_->PageNo();
-		// if (!page_no) {
-		// 	Traverse(0);
-		// 	std::cout << latch->page_->ToString() << std::endl;
-		// 	std::cout << page_no << " " << pre_no << std::endl;
-		// 	std::cout << key->ToString() << std::endl;
-		// 	std::cout << latch << std::endl;
-		// 	std::cin.get();
-		// }
 		uint8_t pre_le = latch->page_->Level();
 		latch->UnlockShared();
 		latch = latch_manager_->GetLatch(page_no);
@@ -85,11 +77,6 @@ bool BTree::Insert(Latch **latch, KeySlice *key)
 			}
 			case NeedExpand: {
 				assert(0);
-			// BTreePage *npage = btree_pager_->NewPage(page->Type(), root_->KeyLen(), page->Level(),
-			// 	page->Degree());
-			// page->Insert(npage, key);
-			// return true;
-			// break;
 			}
 			default: {
 				// std::cout << (*latch)->page_->ToString();
@@ -111,7 +98,18 @@ Status BTree::Put(KeySlice *key)
 
 	latch->Upgrade();
 
-	assert(latch->page_->Level() == 0);
+	if (latch->page_->Level()) {
+		assert(latch->page_->Type() == BTreePage::ROOT);
+		page_id page_no = latch->page_->Descend(key);
+		assert(page_no);
+		latch->Unlock();
+		latch = latch_manager_->GetLatch(page_no);
+		latch->Lock();
+		stack[depth++] = 0;
+		assert(latch->page_->Level() == 0);
+	}
+
+	// assert(latch->page_->Level() == 0);
 
 	// std::cout << key->ToString() << std::endl;
 	bool split = Insert(&latch, key);
@@ -143,8 +141,6 @@ Status BTree::Put(KeySlice *key)
 
 Status BTree::SplitRoot(Latch *latch)
 {
-	// std::cout << "split\n";
-	// std::cout << latch << std::endl;
 	auto root = latch->page_;
 	auto level = root->Level();
 	BTreePage *left = BTreePage::NewPage(level ? BTreePage::BRANCH : BTreePage::LEAF,
@@ -174,9 +170,6 @@ Status BTree::SplitRoot(Latch *latch)
 	root->Insert(limit, page_no);
 	root->Insert(slice, page_no);
 
-	// std::cout << root->ToString() << std::endl;
-	// std::cout << left->ToString() << std::endl;
-	// std::cout << right->ToString() << std::endl;
 	return Success;
 }
 
@@ -243,7 +236,7 @@ bool BTree::KeyCheck(std::ifstream &in, int total) const
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
 
-	std::cout << latch_manager_->ToString() << std::endl;
+	// std::cout << latch_manager_->ToString() << std::endl;
 
 	in.seekg(0);
 	for (int i = 0; !in.eof() && i != total; ++i) {

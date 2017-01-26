@@ -10,7 +10,6 @@
 
 #include <sstream>
 #include <atomic>
-// #include <shared_mutex>
 #include <cassert>
 #include <pthread.h>
 
@@ -33,38 +32,38 @@ class Latch
 
 		void LockShared() {
 			// mutex_.lock_shared();
-			assert(pthread_rwlock_rdlock(&mutex_) == 0);
+			pthread_rwlock_rdlock(&mutex_);
 		}
 
 		void UnlockShared() {
 			// mutex_.unlock_shared();
-			assert(pthread_rwlock_unlock(&mutex_) == 0);
+			pthread_rwlock_unlock(&mutex_);
 			UnPin();
 		}
 
 		void Lock() {
 			// mutex_.lock();
-			assert(pthread_rwlock_wrlock(&mutex_) == 0);
+			pthread_rwlock_wrlock(&mutex_);
 		}
 
 		void Unlock() {
 			// mutex_.unlock();
-			assert(pthread_rwlock_unlock(&mutex_) == 0);
+			pthread_rwlock_unlock(&mutex_);
 			UnPin();
 		}
 
 		void Upgrade() {
 			// mutex_.unlock_shared();
 			// mutex_.lock();
-			assert(pthread_rwlock_unlock(&mutex_) == 0);
-			assert(pthread_rwlock_wrlock(&mutex_) == 0);
+			pthread_rwlock_unlock(&mutex_);
+			pthread_rwlock_wrlock(&mutex_);
 		}
 
 		void Downgrade() {
 			// mutex_.unlock();
 			// mutex_.lock_shared();
-			assert(pthread_rwlock_unlock(&mutex_) == 0);
-			assert(pthread_rwlock_rdlock(&mutex_) == 0);
+			pthread_rwlock_unlock(&mutex_);
+			pthread_rwlock_rdlock(&mutex_);
 		}
 
 		std::string ToString() const {
@@ -73,6 +72,8 @@ class Latch
 			os << id_ << ": " << users_ << std::endl;
 			return std::move(os.str());
 		}
+
+		~Latch() { assert(pthread_rwlock_destroy(&mutex_) == 0); }
 
 		BTreePage *page_;
 
