@@ -46,6 +46,7 @@ Latch* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth)
 	latch->LockShared();
 	for (; latch->page_->Level();) {
 		page_id page_no = latch->page_->Descend(key);
+		// std::cout << page_no << std::endl;
 		assert(page_no);
 		page_id pre_no = latch->page_->PageNo();
 		uint8_t pre_le = latch->page_->Level();
@@ -67,7 +68,6 @@ bool BTree::Insert(Latch **latch, KeySlice *key)
 	for (; (status = (*latch)->page_->Insert(key, next)); ) {
 		switch (status) {
 			case MoveRight: {
-				assert(0);
 				Latch *pre = *latch;
 				*latch = latch_manager_->GetLatch(next);
 				(*latch)->Lock();
@@ -79,6 +79,7 @@ bool BTree::Insert(Latch **latch, KeySlice *key)
 				assert(0);
 			}
 			default: {
+				// std::cout << (*latch)->page_ << std::endl;
 				// std::cout << (*latch)->page_->ToString();
 				// std::cout << key->ToString() << std::endl;
 				std::cout << "key existed ;)\n";
@@ -99,12 +100,15 @@ Status BTree::Put(KeySlice *key)
 	latch->Upgrade();
 
 	if (latch->page_->Level()) {
+		// std::cout << latch->page_->ToString();
 		assert(latch->page_->Type() == BTreePage::ROOT);
 		page_id page_no = latch->page_->Descend(key);
 		assert(page_no);
 		latch->Unlock();
 		latch = latch_manager_->GetLatch(page_no);
 		latch->Lock();
+		// std::cout << page_no << std::endl;
+		// std::cout << latch->page_->ToString();
 		stack[depth++] = 0;
 		assert(latch->page_->Level() == 0);
 	}
@@ -122,13 +126,14 @@ Status BTree::Put(KeySlice *key)
           left->Degree());
 				left->Split(right, key);
 			}
-			latch->Downgrade();
+			// latch->Downgrade();
 			Latch *pre = latch;
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);
 			latch->Lock();
 			split = Insert(&latch, key);
-			pre->UnlockShared();
+			// pre->UnlockShared();
+			pre->Unlock();
 			left = latch->page_;
 		} else {
 			SplitRoot(latch);
@@ -170,6 +175,9 @@ Status BTree::SplitRoot(Latch *latch)
 	root->Insert(limit, page_no);
 	root->Insert(slice, page_no);
 
+	// std::cout << root->ToString();
+	// std::cout << left->ToString();
+	// std::cout << right->ToString();
 	return Success;
 }
 

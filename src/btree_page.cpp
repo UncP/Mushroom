@@ -233,9 +233,15 @@ bool BTreePage::NeedSplit()
 
 BTreePage* BTreePage::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
-	BTreePage *page = (BTreePage *)new char[PageSize];
-	assert(page);
-	page->Reset(current++, type, key_len, level, degree);
+	BTreePage *page = nullptr;
+	if (!current) {
+		page = (BTreePage *)new char[80000 * PageSize];
+		assert(page);
+		page->Reset(current++, type, key_len, level, degree);
+	} else {
+		page = GetPage(current);
+		page->Reset(current++, type, key_len, level, degree);
+	}
 	return page;
 }
 
@@ -279,6 +285,7 @@ std::string BTreePage::ToString() const
 		os << "prefix: " << std::string(data_, pre_len_) << "\n";
 	}
 
+	assert(total_key_ < 255);
 	uint16_t *index = Index();
 	for (uint16_t i = 0; i != total_key_; ++i)
 		os << index[i] << " ";

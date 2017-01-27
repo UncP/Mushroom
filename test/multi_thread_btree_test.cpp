@@ -24,8 +24,8 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/10.txt";
-	const int key_len = 10;
+	const char *file = "../data/1000.txt";
+	const int key_len = 16;
 	const int total = (argc == 2) ? atoi(argv[1]) : 10;
 
 	MushroomDB db("mushroom", key_len, true);
