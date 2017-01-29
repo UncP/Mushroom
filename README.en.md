@@ -17,7 +17,7 @@
 | 0.2.1  |  Multi  |    11.28    |         latch manager optimization         |
 | 0.3.0  |  Multi  |    10.94    |  prefix compaction, reducing index memory about 9.1 % |
 | 0.4.0  |  Multi  |    11.44    |  second-time mapping mulit-thread queue, reducing total program memory up to 50 %|
-| 0.4.1  |  Multi  |    1.01(1 million)    | adapt concurrency protocol, merge latch manager and page manager，reduce 1 lock per insertion by memory hacking | 
+| 0.4.1  |  Multi  |    1.01(1M)    | adapt concurrency protocol, merge latch manager and page manager，reduce 1 lock per insertion by memory hacking | 
 
 
 ###TODO
