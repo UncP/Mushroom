@@ -7,5 +7,7 @@ thread_pool_test
 queue_test
 shared_lock_test
 data_page_test
+single_thread_btree_test
+multi_thread_btree_test
 *.o
 run
