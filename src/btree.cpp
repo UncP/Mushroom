@@ -65,7 +65,7 @@ bool BTree::Insert(Latch **latch, KeySlice *key)
 {
 	InsertStatus status;
 	page_id next = 0;
-	for (; (status = (*latch)->page_->Insert(key, next)); ) {
+	for (; (status = (*latch)->page_->Insert(key, next));) {
 		switch (status) {
 			case MoveRight: {
 				Latch *pre = *latch;

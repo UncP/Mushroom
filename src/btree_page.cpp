@@ -101,8 +101,11 @@ InsertStatus BTreePage::Insert(const KeySlice *key, page_id &page_no)
 		assert(page_no);
 		return MoveRight;
 	}
-	if (!pos && pre_len_ && memcmp(key->Data(), data_, pre_len_))
+	if (!pos && pre_len_ && memcmp(key->Data(), data_, pre_len_)) {
+		// std::cout << key->ToString() << std::endl;
+		// std::cout << this->ToString();
 		return NeedExpand;
+	}
 
 	uint16_t end = total_key_ * (PageByte + key_len_) + pre_len_;
 	page_id num = key->PageNo();

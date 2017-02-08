@@ -35,7 +35,7 @@ class BTreePage
 		static void SetZero(uint64_t offset) { ZERO = offset; }
 
 		static BTreePage* GetPage(page_id page_no) {
-			return (BTreePage *)(ZERO + page_no * (PageSize + 0x10));
+			return (BTreePage *)(ZERO + page_no * (PageSize/* + 0x10*/));
 		}
 
 		static BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
