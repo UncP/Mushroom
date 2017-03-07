@@ -43,7 +43,7 @@ std::string LatchSet::ToString() const
 	std::string res;
 	for (int i = 0; i != Max; ++i)
 		res += latches_[i].ToString();
-	return std::move(res);
+	return res;
 }
 
 std::string LatchManager::ToString() const
@@ -53,7 +53,7 @@ std::string LatchManager::ToString() const
 		auto str = latch_set_[i].ToString();
 		if (str != "") res += str + "\n";
 	}
-	return std::move(res);
+	return res;
 }
 
 } // namespace Mushroom

@@ -298,7 +298,7 @@ std::string BTreePage::ToString() const
 		os << key->ToString();
 	}
 	os << "\nnext: " << Key(index, total_key_-1)->PageNo() << "\n";
-	return std::move(os.str());
+	return os.str();
 }
 
 void BTreePage::Analyze() const

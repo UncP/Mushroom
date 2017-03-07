@@ -70,7 +70,7 @@ class Latch
 			if (id_ == 0x7FFFFFFF) return std::string();
 			std::ostringstream os;
 			os << id_ << ": " << users_ << std::endl;
-			return std::move(os.str());
+			return os.str();
 		}
 
 		~Latch() { assert(pthread_rwlock_destroy(&mutex_) == 0); }
