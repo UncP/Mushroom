@@ -75,9 +75,6 @@ bool BTree::Insert(Latch **latch, KeySlice *key)
 				next = 0;
 				break;
 			}
-			case NeedExpand: {
-				assert(0);
-			}
 			default: {
 				// std::cout << (*latch)->page_ << std::endl;
 				// std::cout << (*latch)->page_->ToString();

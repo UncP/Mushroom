@@ -1,11 +1,3 @@
-Mushroom
-btree_page_test
-slice_test
-btree_test
-db_test
-thread_pool_test
-queue_test
-shared_lock_test
-data_page_test
+*_test
 *.o
 run

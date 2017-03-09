@@ -16,7 +16,7 @@
 
 namespace Mushroom {
 
-typedef enum { InsertOk, ExistedKey , MoveRight, NeedExpand } InsertStatus;
+typedef enum { InsertOk, ExistedKey , MoveRight} InsertStatus;
 
 class BTreePage
 {

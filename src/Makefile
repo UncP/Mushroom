@@ -14,4 +14,4 @@ tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp
 
 clean:
-	rm *.o single_thread_btree_test multi_thread_btree_test ../.tags
+	rm *.o *_test ../.tags

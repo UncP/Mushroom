@@ -45,18 +45,21 @@ void Queue::Pull()
 {
 	std::unique_lock<std::mutex> lock(mutex_);
 	ready_.wait(lock, [this]{ return work_[work_back_] >= 0 || clear_; });
-	if (clear_) return ;
+	if (clear_)
+		return ;
 	int seq = work_[work_back_];
 	Task *task = queue_[seq];
 	work_[work_back_++] = -1;
-	if (work_back_ == capacity_) work_back_ = 0;
+	if (work_back_ == capacity_)
+		work_back_ = 0;
 	lock.unlock();
 
 	(*task)();
 
 	lock.lock();
 	avail_[avail_back_++] = seq;
-	if (avail_back_ == capacity_) avail_back_ = 0;
+	if (avail_back_ == capacity_)
+		avail_back_ = 0;
 	if (avail_back_ == work_back_)
 		empty_.notify_one();
 }
