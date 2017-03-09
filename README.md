@@ -1,10 +1,11 @@
 ##Mushroom：非关系型数据库
 [English Version of README](./README.en.md)
 
-###蘑菇：基于 B link 树索引的非关系型数据库
+###蘑菇：基于 B link 树索引的多线程非关系型数据库
 
 ####这是 [Up Database](http://www.github.com/UncP/Up_Database) 以及 [pear Database](http://www.github.com/UncP/pear) 的升级版本
 
+####你可以在[这里](https://zhuanlan.zhihu.com/p/24800198)找到B link树的并发控制协议介绍
 
 ###B link 树性能信息
 `关键值长度： 16 字节`  
