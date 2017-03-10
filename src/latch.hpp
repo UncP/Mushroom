@@ -67,7 +67,7 @@ class Latch
 		}
 
 		std::string ToString() const {
-			if (id_ == 0x7FFFFFFF) return std::string();
+			if (id_ == 0x7FFFFFFF || users_ == 0) return std::string();
 			std::ostringstream os;
 			os << id_ << ": " << users_ << std::endl;
 			return os.str();

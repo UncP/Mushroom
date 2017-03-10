@@ -15,7 +15,7 @@
 
 namespace Mushroom {
 
-BTree::BTree(const int fd, const int key_len)
+BTree::BTree(const int fd, const int key_len):inserted_(0)
 {
 	key_len_ = static_cast<uint8_t>(key_len);
 
@@ -47,7 +47,7 @@ Latch* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth)
 	for (; latch->page_->Level();) {
 		page_id page_no = latch->page_->Descend(key);
 		// std::cout << page_no << std::endl;
-		assert(page_no);
+		assert(page_no != 0);
 		page_id pre_no = latch->page_->PageNo();
 		uint8_t pre_le = latch->page_->Level();
 		latch->UnlockShared();
@@ -123,13 +123,11 @@ Status BTree::Put(KeySlice *key)
           left->Degree());
 				left->Split(right, key);
 			}
-			// latch->Downgrade();
 			Latch *pre = latch;
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);
 			latch->Lock();
 			split = Insert(&latch, key);
-			// pre->UnlockShared();
 			pre->Unlock();
 			left = latch->page_;
 		} else {
@@ -138,6 +136,7 @@ Status BTree::Put(KeySlice *key)
 		}
 	}
 	latch->Unlock();
+	++inserted_;
 	return Success;
 }
 

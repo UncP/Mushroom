@@ -19,12 +19,11 @@
 #include "../src/db.hpp"
 #include "../src/thread_pool.hpp"
 
-
 int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/1000000";
+	const char *file = "../data/10000000";
 	const int key_len = 10;
 	const int total = (argc == 2) ? atoi(argv[1]) : 1;
 
@@ -39,7 +38,15 @@ int main(int argc, char **argv)
 	int fd = open(file, O_RDONLY);
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;
-	bool flag = true;
+	bool flag = true, stop = false;
+	std::thread check([&]() {
+		using namespace std::chrono_literals;
+		while (!stop) {
+			std::this_thread::sleep_for(1s);
+			std::cout << db.Btree()->inserted_ << std::endl;
+			std::cout << db.Btree()->LM()->ToString();
+		}
+	});
 	auto beg = std::chrono::high_resolution_clock::now();
 
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
@@ -66,6 +73,9 @@ int main(int argc, char **argv)
 	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
 
 	db.ClearTask();
+
+	stop = true;
+	check.join();
 
 	// db.Btree()->Traverse(0);
 	std::ifstream in(file);

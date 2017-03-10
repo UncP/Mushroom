@@ -10,6 +10,7 @@
 
 #include <fstream>
 #include <string>
+#include <atomic>
 
 #include "status.hpp"
 #include "slice.hpp"
@@ -48,6 +49,10 @@ class BTree
 
 		~BTree() { delete latch_manager_; }
 
+		std::atomic<int> inserted_;
+
+		const LatchManager* LM() const { return latch_manager_; }
+
 	private:
 
 		Latch* DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const;
@@ -58,8 +63,8 @@ class BTree
 
 		LatchManager *latch_manager_;
 
-		uint16_t 	  degree_;
-		uint8_t     key_len_;
+		uint16_t degree_;
+		uint8_t  key_len_;
 };
 
 } // namespace Mushroom

@@ -43,7 +43,6 @@ class MushroomDB
 		BTree      *btree_;
 
 		ThreadPool *pool_;
-
 };
 
 } // namespace Mushroom
