@@ -22,7 +22,7 @@ if __name__ == '__main__':
 		os.mkdir('./data')
 	os.chdir('./data')
 	# total string
-	tot = 1000000
+	tot = 10000000
 	# size of each string
 	size = 10
 	generate_data(tot, size, str(tot))
