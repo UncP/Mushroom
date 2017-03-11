@@ -17,8 +17,8 @@
 | 0.2.1  |  Multi  |    11.28    |         latch manager optimization         |
 | 0.3.0  |  Multi  |    10.94    |  prefix compaction, reducing index memory about 9.1 % |
 | 0.4.0  |  Multi  |    11.44    |  second-time mapping mulit-thread queue, reducing total program memory up to 50 %|
-| 0.4.1  |  Multi  |    Unfinished    | Merge Latch Manager and Page Manager，Reduce 1 lock per insertion by memory hacking | 
-
+| 0.4.1  |  Multi  |    \    | Merge Latch Manager and Page Manager，Reduce 1 lock per insertion by memory hacking | 
+| 0.4.2  | Multi   |    \    | Change the way B link Tree root split |
 
 ###TODO
 - [x] B link Tree Index Engine
