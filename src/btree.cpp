@@ -98,14 +98,12 @@ Status BTree::Put(KeySlice *key)
 			auto right = BTreePage::NewPage(left->Type(), left->KeyLen(), left->Level(),
         left->Degree());
 			left->Split(right, key);
-			Latch *pre = latch;
-			pre->Unlock();
+			latch->Unlock();
 			assert(depth != 0);
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);
 			latch->Lock();
 			Insert(&latch, key);
-			// pre->Unlock();
 			left = latch->page_;
 		} else {
 			SplitRoot(latch);
