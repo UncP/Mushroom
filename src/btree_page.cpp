@@ -98,7 +98,7 @@ InsertStatus BTreePage::Insert(const KeySlice *key, page_id &page_no)
 	if (flag) return ExistedKey;
 	if (pos == total_key_ && pos) {
 		page_no = Next();
-		assert(page_no);
+		// assert(page_no);
 		return MoveRight;
 	}
 	// if (!pos && pre_len_ && memcmp(key->Data(), data_, pre_len_)) {
