@@ -90,17 +90,6 @@ Status BTree::Put(KeySlice *key)
 
 	latch->Upgrade();
 
-	if (latch->page_->Level()) {
-		assert(latch->page_->Type() == BTreePage::ROOT);
-		page_id page_no = latch->page_->Descend(key);
-		assert(page_no);
-		latch->Unlock();
-		latch = latch_manager_->GetLatch(page_no);
-		latch->Lock();
-		stack[depth++] = 0;
-		assert(latch->page_->Level() == 0);
-	}
-
 	Insert(&latch, key);
 
 	BTreePage *left = latch->page_;
@@ -110,12 +99,13 @@ Status BTree::Put(KeySlice *key)
         left->Degree());
 			left->Split(right, key);
 			Latch *pre = latch;
+			pre->Unlock();
 			assert(depth != 0);
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);
 			latch->Lock();
 			Insert(&latch, key);
-			pre->Unlock();
+			// pre->Unlock();
 			left = latch->page_;
 		} else {
 			SplitRoot(latch);
