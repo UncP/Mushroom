@@ -72,8 +72,6 @@ void BTree::Insert(Latch **latch, KeySlice *key)
 				break;
 			}
 			default: {
-				std::cout << (*latch)->page_->ToString();
-				// std::cout << key->ToString() << std::endl;
 				std::cout << "key existed ;)\n";
 				assert(0);
 			}
@@ -136,7 +134,7 @@ Status BTree::SplitRoot(Latch *latch)
 	left->AssignFirst(page_no);
 	assert(left->Insert(limit, page_no) == InsertOk);
 	assert(left->Insert(slice, page_no) == InsertOk);
-	root_ = left;
+	assert(__sync_bool_compare_and_swap(&root_, root_, left) == true);
 	return Success;
 }
 

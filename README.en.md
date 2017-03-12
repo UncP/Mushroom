@@ -13,7 +13,7 @@
 |  Version  |  Thread  |  Sorting Time(s) |           Improvements            |
 |--------|:-------:|:-----------:|:--------------------------:|
 | 0.1.0  |  Single |    16.00    ||
-| 0.2.0  |  Multi  |    12.32    ||
+| 0.2.0  |  Multi  |    12.32    |   two-phased lock based concurrent index   |
 | 0.2.1  |  Multi  |    11.28    |         latch manager optimization         |
 | 0.3.0  |  Multi  |    10.94    |  prefix compaction, reducing index memory about 9.1 % |
 | 0.4.0  |  Multi  |    11.44    |  second-time mapping mulit-thread queue, reducing total program memory up to 50 %|

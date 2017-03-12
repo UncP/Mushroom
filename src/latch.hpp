@@ -31,39 +31,26 @@ class Latch
 		bool Free() const { return users_.load(std::memory_order_relaxed) == 0; }
 
 		void LockShared() {
-			// mutex_.lock_shared();
 			pthread_rwlock_rdlock(&mutex_);
 		}
 
 		void UnlockShared() {
-			// mutex_.unlock_shared();
 			pthread_rwlock_unlock(&mutex_);
 			UnPin();
 		}
 
 		void Lock() {
-			// mutex_.lock();
 			pthread_rwlock_wrlock(&mutex_);
 		}
 
 		void Unlock() {
-			// mutex_.unlock();
 			pthread_rwlock_unlock(&mutex_);
 			UnPin();
 		}
 
 		void Upgrade() {
-			// mutex_.unlock_shared();
-			// mutex_.lock();
 			pthread_rwlock_unlock(&mutex_);
 			pthread_rwlock_wrlock(&mutex_);
-		}
-
-		void Downgrade() {
-			// mutex_.unlock();
-			// mutex_.lock_shared();
-			pthread_rwlock_unlock(&mutex_);
-			pthread_rwlock_rdlock(&mutex_);
 		}
 
 		std::string ToString() const {
@@ -78,10 +65,9 @@ class Latch
 		BTreePage *page_;
 
 	private:
-		std::atomic<int>        users_;
-		page_id                 id_;
-		// std::shared_timed_mutex mutex_;
-		pthread_rwlock_t        mutex_;
+		std::atomic<int> users_;
+		page_id          id_;
+		pthread_rwlock_t mutex_;
 };
 
 } // namespace Mushroom
