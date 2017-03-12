@@ -20,7 +20,7 @@ namespace Mushroom {
 class MushroomDB
 {
 	public:
-		MushroomDB(const char *name, const int key_len, bool multi = false);
+		MushroomDB(const char *name, const int key_len);
 
 		Status Put(KeySlice *key);
 

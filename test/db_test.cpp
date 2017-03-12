@@ -13,7 +13,9 @@
 #include <fcntl.h>
 #include <chrono>
 #include <iomanip>
+#ifndef SingleThread
 #include <thread>
+#endif
 
 #include "../src/iterator.hpp"
 #include "../src/db.hpp"
@@ -23,11 +25,15 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/10000000";
+	#ifdef Sequential
+		const char *file = "../data/10000000_sequential";
+	#else
+		const char *file = "../data/10000000_random";
+	#endif
 	const int key_len = 10;
 	const int total = (argc == 2) ? atoi(argv[1]) : 1;
 
-	MushroomDB db("mushroom", key_len, true);
+	MushroomDB db("mushroom", key_len);
 
 	KeySlice::SetStringFormat([](const KeySlice *key) {
 		return std::string(key->Data()) + "    ";
@@ -38,7 +44,9 @@ int main(int argc, char **argv)
 	int fd = open(file, O_RDONLY);
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;
-	bool flag = true, stop = false;
+	bool flag = true;
+	#ifndef SingleThread
+	bool stop = false;
 	std::thread check([&]() {
 		using namespace std::chrono_literals;
 		while (!stop) {
@@ -47,6 +55,7 @@ int main(int argc, char **argv)
 			std::cout << db.Btree()->LM()->ToString();
 		}
 	});
+	#endif
 	auto beg = std::chrono::high_resolution_clock::now();
 
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
@@ -74,10 +83,11 @@ int main(int argc, char **argv)
 
 	db.ClearTask();
 
+	#ifndef SingleThread
 	stop = true;
 	check.join();
+	#endif
 
-	// db.Btree()->Traverse(0);
 	std::ifstream in(file);
 	assert(in.is_open());
 	if (!db.Btree()->KeyCheck(in, total)) {

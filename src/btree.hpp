@@ -15,6 +15,7 @@
 #include "status.hpp"
 #include "slice.hpp"
 #include "btree_page.hpp"
+
 #include "latch_manager.hpp"
 
 namespace Mushroom {
@@ -47,7 +48,11 @@ class BTree
 		BTree& operator=(const BTree &) = delete;
 		BTree(const BTree &) = delete;
 
-		~BTree() { delete latch_manager_; }
+		~BTree() {
+			#ifndef SingleThread
+				delete latch_manager_;
+			#endif
+		}
 
 		std::atomic<int> inserted_;
 

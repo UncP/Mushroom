@@ -28,7 +28,7 @@ class Latch
 		void SetId(page_id id) { id_ = id; }
 		void Pin()   { ++users_; }
 		void UnPin() { --users_; }
-		bool Free() const { return users_.load(std::memory_order_relaxed) == 0; }
+		bool Free() const { return users_ == 0; }
 
 		void LockShared() {
 			pthread_rwlock_rdlock(&mutex_);

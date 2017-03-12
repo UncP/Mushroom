@@ -14,6 +14,7 @@ namespace Mushroom {
 
 Latch* LatchSet::GetLatch(page_id id)
 {
+	#ifndef SingleThread
 	Latch *latch = nullptr;
 	mutex_.lock();
 	for (int i = 0; i != Max; ++i) {
@@ -24,16 +25,23 @@ Latch* LatchSet::GetLatch(page_id id)
 		if (!latch && latches_[i].Free())
 			latch = &latches_[i];
 	}
-	assert(latch);
+	assert(latch && (latch->Id() == id || latch->Free()));
 	latch->SetId(id);
 	latch->Pin();
 	mutex_.unlock();
 	return latch;
+	#else
+	return &latches_[0];
+	#endif
 }
 
 Latch* LatchManager::GetLatch(page_id id)
 {
+	#ifndef SingleThread
 	Latch *latch = latch_set_[id & Mask].GetLatch(id);
+	#else
+	Latch *latch = latch_set_[0].GetLatch(0);
+	#endif
 	latch->page_ = BTreePage::GetPage(id);
 	return latch;
 }

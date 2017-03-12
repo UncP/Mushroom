@@ -41,14 +41,20 @@ Status BTree::Close()
 Latch* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const
 {
 	Latch *latch = latch_manager_->GetLatch(root_->PageNo());
+	#ifndef SingleThread
 	latch->LockShared();
+	#endif
 	for (; latch->page_->Level();) {
 		page_id page_no = latch->page_->Descend(key);
 		page_id pre_no = latch->page_->PageNo();
 		uint8_t pre_le = latch->page_->Level();
+		#ifndef SingleThread
 		latch->UnlockShared();
+		#endif
 		latch = latch_manager_->GetLatch(page_no);
+		#ifndef SingleThread
 		latch->LockShared();
+		#endif
 		if (latch->page_->Level() != pre_le) {
 			stack[*depth] = pre_no;
 			++*depth;
@@ -64,10 +70,14 @@ void BTree::Insert(Latch **latch, KeySlice *key)
 	for (; (status = (*latch)->page_->Insert(key, next));) {
 		switch (status) {
 			case MoveRight: {
+				#ifndef SingleThread
 				Latch *pre = *latch;
+				#endif
 				*latch = latch_manager_->GetLatch(next);
+				#ifndef SingleThread
 				(*latch)->Lock();
 				pre->Unlock();
+				#endif
 				next = 0;
 				break;
 			}
@@ -85,8 +95,9 @@ Status BTree::Put(KeySlice *key)
 	page_id stack[8];
 
 	auto latch = DescendToLeaf(key, stack, &depth);
-
+	#ifndef SingleThread
 	latch->Upgrade();
+	#endif
 
 	Insert(&latch, key);
 
@@ -96,11 +107,15 @@ Status BTree::Put(KeySlice *key)
 			auto right = BTreePage::NewPage(left->Type(), left->KeyLen(), left->Level(),
         left->Degree());
 			left->Split(right, key);
+			#ifndef SingleThread
 			latch->Unlock();
+			#endif
 			assert(depth != 0);
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);
+			#ifndef SingleThread
 			latch->Lock();
+			#endif
 			Insert(&latch, key);
 			left = latch->page_;
 		} else {
@@ -108,8 +123,10 @@ Status BTree::Put(KeySlice *key)
 			break;
 		}
 	}
+	#ifndef SingleThread
 	latch->Unlock();
 	++inserted_;
+	#endif
 	return Success;
 }
 
@@ -134,7 +151,11 @@ Status BTree::SplitRoot(Latch *latch)
 	left->AssignFirst(page_no);
 	assert(left->Insert(limit, page_no) == InsertOk);
 	assert(left->Insert(slice, page_no) == InsertOk);
+	#ifndef SingleThread
 	assert(__sync_bool_compare_and_swap(&root_, root_, left) == true);
+	#else
+	root_ = left;
+	#endif
 	return Success;
 }
 
@@ -145,7 +166,9 @@ Status BTree::Get(KeySlice *key) const
 
 	auto latch = DescendToLeaf(key, stack, &depth);
 	bool flag = latch->page_->Search(key);
+	#ifndef SingleThread
 	latch->UnlockShared();
+	#endif
 	return flag ? Success : Fail;
 }
 

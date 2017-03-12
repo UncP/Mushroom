@@ -14,7 +14,7 @@
 
 namespace Mushroom {
 
-MushroomDB::MushroomDB(const char *name, const int key_len, bool multi)
+MushroomDB::MushroomDB(const char *name, const int key_len)
 :name_(std::string(name)), pool_(nullptr)
 {
 	assert(key_len <= 256);
@@ -28,18 +28,19 @@ MushroomDB::MushroomDB(const char *name, const int key_len, bool multi)
 	assert(fd > 0);
 	btree_ = new BTree(fd, key_len);
 
-	if (multi)
+	#ifndef SingleThread
 		pool_ = new ThreadPool(new Queue(1024, key_len));
+	#endif
 }
 
 Status MushroomDB::Put(KeySlice *key)
 {
-	if (pool_) {
-		pool_->AddTask(&BTree::Put, btree_, key);
-		return Success;
-	} else {
-		return btree_->Put(key);
-	}
+	#ifndef SingleThread
+	pool_->AddTask(&BTree::Put, btree_, key);
+	return Success;
+	#else
+	return btree_->Put(key);
+	#endif
 }
 
 Status MushroomDB::Close()

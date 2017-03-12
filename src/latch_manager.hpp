@@ -19,7 +19,6 @@ namespace Mushroom {
 class LatchSet
 {
 	public:
-
 		LatchSet() { }
 
 		Latch* GetLatch(page_id page_no);
@@ -36,7 +35,6 @@ class LatchSet
 class LatchManager
 {
 	public:
-
 		LatchManager() { }
 
 		Latch *GetLatch(page_id page_no);
