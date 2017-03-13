@@ -26,11 +26,12 @@ int main(int argc, char **argv)
 	using namespace Mushroom;
 
 	#ifdef Sequential
+		const int key_len = 10;
 		const char *file = "../data/10000000_sequential";
 	#else
-		const char *file = "../data/10000000_random";
+		const int key_len = 16;
+		const char *file = "../data/16_10000000_random";
 	#endif
-	const int key_len = 10;
 	const int total = (argc == 2) ? atoi(argv[1]) : 1;
 
 	MushroomDB db("mushroom", key_len);

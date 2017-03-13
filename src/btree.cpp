@@ -35,6 +35,8 @@ BTree::BTree(const int fd, const int key_len):inserted_(0)
 
 Status BTree::Close()
 {
+	std::cout << BTreePage::current << std::endl;
+	delete [] (char *)BTreePage::ZERO;
 	return Success;
 }
 
