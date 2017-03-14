@@ -25,9 +25,8 @@ Latch* LatchSet::GetLatch(page_id id)
 		if (!latch && latches_[i].Free())
 			latch = &latches_[i];
 	}
-	assert(latch && (latch->Id() == id || latch->Free()));
-	latch->SetId(id);
-	latch->Pin();
+	assert(latch);
+	latch->Pin(id);
 	mutex_.unlock();
 	return latch;
 	#else

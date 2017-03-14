@@ -44,18 +44,21 @@ Latch* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth)
 {
 	Latch *latch = latch_manager_->GetLatch(root_->PageNo());
 	#ifndef SingleThread
-	latch->LockShared();
+	// latch->LockShared();
+	latch->Lock();
 	#endif
 	for (; latch->page_->Level();) {
 		page_id page_no = latch->page_->Descend(key);
 		page_id pre_no = latch->page_->PageNo();
 		uint8_t pre_le = latch->page_->Level();
 		#ifndef SingleThread
-		latch->UnlockShared();
+		// latch->UnlockShared();
+		latch->Unlock();
 		#endif
 		latch = latch_manager_->GetLatch(page_no);
 		#ifndef SingleThread
-		latch->LockShared();
+		// latch->LockShared();
+		latch->Lock();
 		#endif
 		if (latch->page_->Level() != pre_le) {
 			stack[*depth] = pre_no;
@@ -98,7 +101,7 @@ Status BTree::Put(KeySlice *key)
 
 	auto latch = DescendToLeaf(key, stack, &depth);
 	#ifndef SingleThread
-	latch->Upgrade();
+	// latch->Upgrade();
 	#endif
 
 	Insert(&latch, key);
@@ -154,7 +157,7 @@ Status BTree::SplitRoot(Latch *latch)
 	assert(left->Insert(limit, page_no) == InsertOk);
 	assert(left->Insert(slice, page_no) == InsertOk);
 	#ifndef SingleThread
-	assert(__sync_bool_compare_and_swap(&root_, root_, left) == true);
+	__sync_bool_compare_and_swap(&root_, root_, left);
 	#else
 	root_ = left;
 	#endif

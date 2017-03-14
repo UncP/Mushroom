@@ -28,7 +28,6 @@ void Thread::Stop()
 ThreadPool::ThreadPool(Queue *queue):queue_(queue), working_(false)
 {
 	int thread_num = std::thread::hardware_concurrency();
-	assert(thread_num > 0);
 
 	std::vector<std::shared_ptr<Thread>> threads(thread_num);
 	threads_.swap(threads);
