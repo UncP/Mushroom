@@ -42,7 +42,7 @@ class LatchManager
 		std::string ToString() const;
 
 	private:
-		static const int Hash = 16;
+		static const int Hash = 64;
 		static const int Mask = Hash - 1;
 
 		LatchSet    latch_set_[Hash];

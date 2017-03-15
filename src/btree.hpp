@@ -64,7 +64,7 @@ class BTree
 
 		Status SplitRoot(Latch *latch);
 
-		void Insert(Latch **latch, KeySlice *key);
+		void Insert(Latch **latch, KeySlice *key, Latch *pre = nullptr);
 
 		BTreePage    *root_;
 

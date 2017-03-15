@@ -25,7 +25,7 @@ class Latch
 		Latch():id_(0x7FFFFFFF) { assert(pthread_rwlock_init(&mutex_, NULL) == 0); }
 
 		page_id Id() const { return id_; }
-		void Pin(page_id id)   { id_ = id; ++users_; }
+		void Pin(page_id id)   { ++users_; id_ = id; }
 		void UnPin() { --users_; }
 		bool Free() const { return users_ == 0; }
 
