@@ -1,4 +1,5 @@
-*_test
+btree_test_single
+btree_test_multiple
 *.o
 run
 .tags*
