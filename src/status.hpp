@@ -14,7 +14,7 @@ namespace Mushroom {
 
 typedef uint32_t page_id;
 
-enum Status {Fail = 0, Success, Fatal };
+enum Status { Fail = 0, Success, Fatal };
 
 } // namespace Mushroom
 

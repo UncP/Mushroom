@@ -25,7 +25,7 @@ class BTree
 	public:
 		static const int MAX_KEY_LENGTH = 256;
 
-		BTree(const int fd, const int key_len);
+		BTree(const int fd, const int key_len, LatchManager *latch_manager);
 
 		Status Close();
 
@@ -48,12 +48,6 @@ class BTree
 		BTree& operator=(const BTree &) = delete;
 		BTree(const BTree &) = delete;
 
-		~BTree() {
-			#ifndef SingleThread
-				delete latch_manager_;
-			#endif
-		}
-
 		std::atomic<int> inserted_;
 
 		const LatchManager* LM() const { return latch_manager_; }
@@ -66,9 +60,9 @@ class BTree
 
 		void Insert(Latch **latch, KeySlice *key, Latch *pre = nullptr);
 
-		BTreePage    *root_;
-
 		LatchManager *latch_manager_;
+
+		BTreePage    *root_;
 
 		uint16_t degree_;
 		uint8_t  key_len_;

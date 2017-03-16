@@ -1,17 +1,17 @@
 CPP 		 = g++
 CPPFLAGS = -std=c++14 -Wall -O3 -pthread
-DFLAGS   =
 
-OBJ = slice latch latch_manager btree_page btree task queue iterator thread_pool db
+OBJ = slice.o latch.o latch_manager.o btree_page.o btree.o task.o queue.o iterator.o \
+	thread_pool.o db.o
 
-db_test:
-	for e in $(OBJ); do \
-		$(CPP) $(CPPFLAGS) -c $$e.cpp -o $$e.o $(DFLAGS) || exit; \
-	done
-	$(CPP) $(CPPFLAGS) -o db_test *.o $(DFLAGS) ../test/db_test.cpp
+btree_test_single:$(OBJ) ../test/btree_test_single.cpp
+	$(CPP) $(CPPFLAGS) -o btree_test_single $(OBJ) ../test/btree_test_single.cpp
+
+btree_test_multiple:$(OBJ) ../test/btree_test_multiple.cpp
+	$(CPP) $(CPPFLAGS) -o btree_test_multiple $(OBJ) ../test/btree_test_multiple.cpp
 
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp
 
 clean:
-	rm *.o *_test ../.tags
+	rm *.o btree_test_single btree_test_multiple ../.tags

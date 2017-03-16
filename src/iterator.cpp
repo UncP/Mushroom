@@ -52,9 +52,7 @@ bool Iterator::CheckBtree()
 		memset(pre, 0, sizeof(buf));
 		for (; Next();) {
 			++count;
-			// std::cout << key_->ToString() << std::endl;
 			if (CompareSuffix(pre, key_, 0, key_len) >= 0) {
-				// std::cout << pre->ToString() << std::endl;
 				return false;
 			}
 			memcpy(pre, key_, sizeof(page_id) + key_len);
