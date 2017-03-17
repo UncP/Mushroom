@@ -1,12 +1,13 @@
 ## Mushroom：非关系型数据库
 [English Version of README](./README.en.md)
 
-### 蘑菇：基于 B link 树索引的多线程非关系型数据库
+### 蘑菇：基于 B<sup>link</sup>树索引的多线程非关系型数据库
 
 #### 这是 [Up Database](http://www.github.com/UncP/Up_Database) 以及 [pear Database](http://www.github.com/UncP/pear) 的升级版本
 
 #### 你可以在[这里](https://zhuanlan.zhihu.com/p/24800198)找到B link树的并发控制协议介绍
 
+***
 
 ### B<sup>link</sup> 树 Benchfuck
 `关键值长度： 16 字节`  
@@ -23,10 +24,11 @@
 | 0.4.2  |  多线程  |    \   |  修改根节点分裂方式 |
 | 0.4.3  |  多线程  |    \   |  多线程不经过队列直接进行任务 |
 | 0.4.4  |  多线程  |    \   |  重构锁管理器 |
+| 0.5.0  |  多线程  |    11.70   |  修复版本0.4.0到0.4.4一直存在的`bug` |
 
 
 ### TODO
-- [x] B link 树索引管理器
+- [x] B<sup>link</sup> 树索引管理器
 - [x] 线程池
 - [x] 多线程工作队列(有界，二次映射)
 - [x] 锁管理器

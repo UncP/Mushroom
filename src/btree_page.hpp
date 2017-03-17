@@ -8,7 +8,6 @@
 #ifndef _BTREE_PAGE_HPP_
 #define _BTREE_PAGE_HPP_
 
-#include <atomic>
 #include <cassert>
 
 #include "status.hpp"
@@ -86,11 +85,10 @@ class BTreePage
 
 		std::string ToString() const;
 
-	private:
 		static uint64_t ZERO;
+		static uint32_t current;
 
-		static std::atomic<uint32_t> current;
-
+	private:
 		uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 		}

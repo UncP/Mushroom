@@ -89,6 +89,9 @@ Status MushroomDB::IndexSingle(const char *file, const int total)
 				flag = false;
 				break;
 			}
+			if (!(count % 1000000)) {
+				std::cout << count << " " << BTreePage::current << std::endl;
+			}
 			++i;
 		}
 	}

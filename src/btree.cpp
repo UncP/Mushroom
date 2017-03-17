@@ -63,17 +63,13 @@ Latch* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth)
 	return latch;
 }
 
-void BTree::Insert(Latch **latch, KeySlice *key, Latch *child)
+void BTree::Insert(Latch **latch, KeySlice *key)
 {
 	InsertStatus status;
 	page_id next = 0;
 	for (; (status = (*latch)->page_->Insert(key, next));) {
 		switch (status) {
 			case MoveRight: {
-				if (child) {
-					child->Unlock();
-					child = nullptr;
-				}
 				Latch *pre = *latch;
 				(*latch) = latch_manager_->GetLatch(next);
 				(*latch)->Lock();
@@ -87,7 +83,6 @@ void BTree::Insert(Latch **latch, KeySlice *key, Latch *child)
 			}
 		}
 	}
-	if (child) child->Unlock();
 }
 
 Status BTree::Put(KeySlice *key)
@@ -111,7 +106,8 @@ Status BTree::Put(KeySlice *key)
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);
 			latch->Lock();
-			Insert(&latch, key, pre);
+			pre->Unlock();
+			Insert(&latch, key);
 			left = latch->page_;
 		} else {
 			SplitRoot(latch);

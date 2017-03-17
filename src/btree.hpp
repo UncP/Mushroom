@@ -56,7 +56,7 @@ class BTree
 
 		Status SplitRoot(Latch *latch);
 
-		void Insert(Latch **latch, KeySlice *key, Latch *pre = nullptr);
+		void Insert(Latch **latch, KeySlice *key);
 
 		LatchManager *latch_manager_;
 

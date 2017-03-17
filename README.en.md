@@ -1,10 +1,11 @@
 ## Mushroom: NoSQL Database
 [中文版 README](./README.md)
 
-### Mushroom: Multi-Thread NoSQL Database based on B link Tree Index
+### Mushroom: Multi-Thread NoSQL Database based on B<sup>link</sup> Tree Index
 
 #### This is an upgrade of [Up Database](http://www.github.com/UncP/Up_Database) and [pear Database](http://www.github.com/UncP/pear)
 
+***
 
 ### B<sup>link</sup> Tree Benchfuck
 `key length: 16 bytes`  
@@ -21,10 +22,11 @@
 | 0.4.2  |  Multi  |    \    | change the way B link tree root split |
 | 0.4.3  |  Multi  |    \   |  threads conduct operations without going through the queue |
 | 0.4.4  |  Multi  |    \   |  latch manager refactoring |
+| 0.5.0  |  Multi  |    11.70   | fix BUG that exists from 0.4.0 to 0.4.4 |
 
 
 ### TODO
-- [x] B link Tree Index Engine
+- [x] B<sup>link</sup> Tree Index Engine
 - [x] Thread Pool
 - [x] Thread Safe Queue(Bounded)
 - [x] Latch Manager
