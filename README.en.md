@@ -10,6 +10,9 @@
 ### B<sup>link</sup> Tree Benchfuck
 `key length: 16 bytes`  
 `key tuples: 10 million`
+`two sorting time means two strategies`
+1. one thread arrange task, multi threads excute
+2. multi threads excute directly
 
 |  Version  |  Thread  |  Sorting Time(s) |           Improvements            |
 |--------|:-------:|:-----------:|:--------------------------:|
