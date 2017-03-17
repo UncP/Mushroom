@@ -6,7 +6,7 @@
 #### This is an upgrade of [Up Database](http://www.github.com/UncP/Up_Database) and [pear Database](http://www.github.com/UncP/pear)
 
 
-### B link Tree Performance
+### B<sup>link</sup> Tree Benchfuck
 `key length: 16 bytes`  
 `key tuples: 10 million`
 
@@ -17,9 +17,10 @@
 | 0.2.1  |  Multi  |    11.28    |         latch manager optimization         |
 | 0.3.0  |  Multi  |    10.94    |  prefix compaction, reducing index memory about 9.1 % |
 | 0.4.0  |  Multi  |    11.44    |  second-time mapping mulit-thread queue, reducing total program memory up to 50 %|
-| 0.4.1  |  Multi  |    \    | Merge Latch Manager and Page Manager，Reduce 1 lock per insertion |
-| 0.4.2  |  Multi  |    \    | Change the way B link Tree root split |
-| 0.4.3  |  Multi  |    \   |  Threads conduct operations without going through the queue |
+| 0.4.1  |  Multi  |    \    | merge latch manager and page manager，reduce 1 lock per insertion |
+| 0.4.2  |  Multi  |    \    | change the way B link tree root split |
+| 0.4.3  |  Multi  |    \   |  threads conduct operations without going through the queue |
+| 0.4.4  |  Multi  |    \   |  latch manager refactoring |
 
 
 ### TODO

@@ -7,22 +7,22 @@
 
 #include <cassert>
 #include <sstream>
-#include <thread>
-#include <chrono>
 
 #include "btree.hpp"
 #include "utility.hpp"
 
 namespace Mushroom {
 
-BTree::BTree(const int fd, const int key_len, LatchManager *latch_manager)
-:inserted_(0), latch_manager_(latch_manager)
+BTree::BTree(const int fd, const int key_len)
 {
 	key_len_ = static_cast<uint8_t>(key_len);
 
 	degree_ = BTreePage::CalculateDegree(key_len);
 
+	latch_manager_ = new LatchManager();
+	assert(latch_manager_);
 	root_ = BTreePage::NewPage(BTreePage::ROOT, key_len_, 0, degree_);
+	assert(root_);
 	BTreePage::SetZero((uint64_t)root_);
 
 	char buf[BTreePage::PageByte + key_len_] = {0};
@@ -32,10 +32,15 @@ BTree::BTree(const int fd, const int key_len, LatchManager *latch_manager)
 	assert(root_->Insert(key, next) == InsertOk);
 }
 
+BTree::~BTree()
+{
+	delete [] (char *)BTreePage::ZERO;
+	delete latch_manager_;
+}
+
 Status BTree::Close()
 {
 	std::cout << BTreePage::current << std::endl;
-	delete [] (char *)BTreePage::ZERO;
 	return Success;
 }
 
@@ -114,7 +119,6 @@ Status BTree::Put(KeySlice *key)
 		}
 	}
 	latch->Unlock();
-	++inserted_;
 	return Success;
 }
 

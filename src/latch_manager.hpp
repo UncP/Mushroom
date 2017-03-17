@@ -8,47 +8,35 @@
 #ifndef _LATCH_MANAGER_HPP_
 #define _LATCH_MANAGER_HPP_
 
-#include <string>
-#include <atomic>
-#include <pthread.h>
-
 #include "latch.hpp"
-#include "btree_page.hpp"
 
 namespace Mushroom {
 
 class LatchManager
 {
 	public:
-		struct LatchSet {
-			LatchSet():slot_(0) { assert(pthread_rwlock_init(lock_, 0) == 0); }
-			~LatchSet() { assert(pthread_rwlock_destroy(lock_) == 0); }
-			pthread_rwlock_t  lock_[1];
-			uint32_t slot_;
-		};
-
 		LatchManager();
 
-		Latch *GetLatch(page_id page_no);
+		~LatchManager();
 
-		~LatchManager() {
-			delete [] latch_set_;
-			delete [] latches_;
-		}
+		Latch* GetLatch(page_id page_no);
 
-		friend std::ostream& operator<<(std::ostream &os, const LatchManager *lm) {
-
-		}
 	private:
-		void Link(uint32_t idx, uint32_t cur, page_id id);
+		struct LatchSet {
+			LatchSet():slot_(0) { }
+			SpinLatch         latch_;
+			volatile uint16_t slot_;
+		};
 
-		static const int total = 128;
-		static const int mask  = 37;
+		void Link(uint16_t hashidx, uint16_t victim, page_id page_no);
 
-		std::atomic<uint32_t> deployed_;
-		std::atomic<uint32_t> next_;
-		LatchSet        *latch_set_;
-		Latch           *latches_;
+		static const uint16_t total = 128;
+		static const uint16_t mask  = 17;
+
+		uint16_t  deployed_;
+		uint16_t  victim_;
+		LatchSet *latch_set_;
+		Latch    *latches_;
 };
 
 } // namespace Mushroom

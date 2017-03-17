@@ -18,7 +18,6 @@
 namespace Mushroom {
 
 MushroomDB::MushroomDB(const char *name, const int key_len)
-:pool_(nullptr)
 {
 	// assert(key_len <= 256);
 	// assert(!chdir(".."));
@@ -30,9 +29,8 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	// int fd = open("index", O_RDWR);
 	// assert(fd > 0);
 	// btree_ = new BTree(fd, key_len);
-	latch_manager_ = new LatchManager();
 
-	btree_ = new BTree(-1, key_len, latch_manager_);
+	btree_ = new BTree(-1, key_len);
 
 	pool_ = new ThreadPool(new Queue(1024, key_len));
 }

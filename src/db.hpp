@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "latch_manager.hpp"
 #include "btree.hpp"
 #include "thread_pool.hpp"
 
@@ -34,22 +33,18 @@ class MushroomDB
 
 		Status FindMultiple(const std::vector<std::string> &files, const int total = 1);
 
-		const BTree* Btree() const { return btree_; }
-
 		Status Close();
+
+		const BTree* Btree() const { return btree_; }
 
 		~MushroomDB() {
 			delete btree_;
 			delete pool_;
-			delete latch_manager_;
 		}
 
 	private:
-		BTree        *btree_;
-
-		ThreadPool   *pool_;
-
-		LatchManager *latch_manager_;
+		BTree      *btree_;
+		ThreadPool *pool_;
 };
 
 } // namespace Mushroom

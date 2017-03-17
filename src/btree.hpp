@@ -23,9 +23,9 @@ namespace Mushroom {
 class BTree
 {
 	public:
-		static const int MAX_KEY_LENGTH = 256;
+		static const uint16_t MAX_KEY_LENGTH = 256;
 
-		BTree(const int fd, const int key_len, LatchManager *latch_manager);
+		BTree(const int fd, const int key_len);
 
 		Status Close();
 
@@ -48,9 +48,7 @@ class BTree
 		BTree& operator=(const BTree &) = delete;
 		BTree(const BTree &) = delete;
 
-		std::atomic<int> inserted_;
-
-		const LatchManager* LM() const { return latch_manager_; }
+		~BTree();
 
 	private:
 
@@ -64,8 +62,8 @@ class BTree
 
 		BTreePage    *root_;
 
-		uint16_t degree_;
 		uint8_t  key_len_;
+		uint16_t degree_;
 };
 
 } // namespace Mushroom
