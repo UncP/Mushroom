@@ -47,14 +47,6 @@ void Lock(int i, uint32_t page_no)
 				++upgrade;
 				latch->Unlock();
 				break;
-			case 3:
-				latch = latch_manager.GetLatch(page_no);
-				latch->LockShared();
-				latch->Upgrade();
-				++upgrade;
-				latch->Downgrade();
-				latch->UnlockShared();
-				break;
 		}
 		page_no = (page_no + 1) % 1024;
 	}
@@ -72,7 +64,7 @@ int main(int argc, char **argv)
 {
 	std::vector<std::thread> threads;
 	for (int i = 0; i != 4; ++i)
-		threads.push_back(std::thread(Lock, i % 4, i % 2));
+		threads.push_back(std::thread(Lock, i % 3, i % 2));
 	threads.push_back(std::thread(Show));
 	std::this_thread::sleep_for(t1);
 	on = false;

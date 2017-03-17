@@ -16,10 +16,13 @@
 
 namespace Mushroom {
 
+class BTree;
+
 typedef enum { InsertOk, ExistedKey, MoveRight } InsertStatus;
 
 class BTreePage
 {
+	friend class BTree;
 	public:
 		static enum { ROOT = 0, BRANCH, LEAF } TYPE;
 
@@ -27,10 +30,6 @@ class BTreePage
 
 		static const uint16_t PageByte  = sizeof(page_id);
 		static const uint16_t IndexByte = 2;
-
-		static uint64_t ZERO;
-
-		static std::atomic<uint32_t> current;
 
 		static void SetZero(uint64_t offset) { ZERO = offset; }
 
@@ -41,8 +40,6 @@ class BTreePage
 		static BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0);
-
-		void Copy(const BTreePage *that) { memcpy(this, that, PageSize); }
 
 		void Reset(page_id page_no, int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
@@ -90,6 +87,10 @@ class BTreePage
 		std::string ToString() const;
 
 	private:
+		static uint64_t ZERO;
+
+		static std::atomic<uint32_t> current;
+
 		uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 		}

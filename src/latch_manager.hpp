@@ -8,44 +8,44 @@
 #ifndef _LATCH_MANAGER_HPP_
 #define _LATCH_MANAGER_HPP_
 
-#include <mutex>
 #include <string>
+#include <atomic>
+#include <pthread.h>
 
 #include "latch.hpp"
 #include "btree_page.hpp"
 
 namespace Mushroom {
 
-class LatchSet
-{
-	public:
-		LatchSet() { }
-
-		Latch* GetLatch(page_id page_no);
-
-		std::string ToString() const;
-
-	private:
-		static const int Max = 8;
-
-		std::mutex mutex_;
-		Latch      latches_[Max];
-};
-
 class LatchManager
 {
 	public:
-		LatchManager() { }
+		struct LatchSet {
+			LatchSet():slot_(0) { assert(pthread_rwlock_init(lock_, 0) == 0); }
+			~LatchSet() { assert(pthread_rwlock_destroy(lock_) == 0); }
+			pthread_rwlock_t  lock_[1];
+			uint32_t slot_;
+		};
+
+		LatchManager();
 
 		Latch *GetLatch(page_id page_no);
 
-		std::string ToString() const;
+		~LatchManager() {
+			delete [] latch_set_;
+			delete [] latches_;
+		}
 
 	private:
-		static const int Hash = 64;
-		static const int Mask = Hash - 1;
+		void Link(uint32_t idx, uint32_t cur, page_id id);
 
-		LatchSet    latch_set_[Hash];
+		static const int total = 128;
+		static const int mask  = 37;
+
+		std::atomic<uint32_t> deployed_;
+		std::atomic<uint32_t> next_;
+		LatchSet        *latch_set_;
+		Latch           *latches_;
 };
 
 } // namespace Mushroom

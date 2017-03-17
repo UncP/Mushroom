@@ -8,7 +8,6 @@
 #ifndef _LATCH_HPP_
 #define _LATCH_HPP_
 
-#include <sstream>
 #include <atomic>
 #include <cassert>
 #include <pthread.h>
@@ -18,55 +17,53 @@
 namespace Mushroom {
 
 class BTreePage;
+class LatchManager;
 
 class Latch
 {
+	friend class LatchManager;
 	public:
-		Latch():id_(0x7FFFFFFF) { assert(pthread_rwlock_init(&mutex_, NULL) == 0); }
-
-		page_id Id() const { return id_; }
-		void Pin(page_id id)   { ++users_; id_ = id; }
-		void UnPin() { --users_; }
-		bool Free() const { return users_ == 0; }
+		Latch():pin_(0), prev_(0), next_(0), id_(0xFFFFFFFF) {
+			assert(pthread_rwlock_init(busy_, 0) == 0);
+			assert(pthread_rwlock_init(lock_, 0) == 0);
+		}
 
 		void LockShared() {
-			pthread_rwlock_rdlock(&mutex_);
+			pthread_rwlock_rdlock(lock_);
 		}
-
-		void UnlockShared() {
-			pthread_rwlock_unlock(&mutex_);
-			UnPin();
-		}
-
 		void Lock() {
-			pthread_rwlock_wrlock(&mutex_);
+			pthread_rwlock_wrlock(lock_);
 		}
-
+		void UnlockShared() {
+			pthread_rwlock_unlock(lock_);
+			--pin_;
+		}
 		void Unlock() {
-			pthread_rwlock_unlock(&mutex_);
-			UnPin();
+			pthread_rwlock_unlock(lock_);
+			--pin_;
 		}
 
 		void Upgrade() {
-			pthread_rwlock_unlock(&mutex_);
-			pthread_rwlock_wrlock(&mutex_);
+			pthread_rwlock_unlock(lock_);
+			pthread_rwlock_wrlock(lock_);
 		}
 
-		std::string ToString() const {
-			if (id_ == 0x7FFFFFFF || users_ == 0) return std::string();
-			std::ostringstream os;
-			os << id_ << ": " << users_ << std::endl;
-			return os.str();
+		~Latch() {
+			assert(pthread_rwlock_destroy(busy_) == 0);
+			assert(pthread_rwlock_destroy(lock_) == 0);
 		}
-
-		~Latch() { assert(pthread_rwlock_destroy(&mutex_) == 0); }
 
 		BTreePage *page_;
 
 	private:
-		std::atomic<int> users_;
-		page_id          id_;
-		pthread_rwlock_t mutex_;
+		std::atomic<uint32_t> pin_;
+
+		uint32_t          prev_;
+		uint32_t          next_;
+		uint32_t          hash_;
+		page_id           id_;
+		pthread_rwlock_t  busy_[1];
+		pthread_rwlock_t  lock_[1];
 };
 
 } // namespace Mushroom
