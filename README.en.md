@@ -22,7 +22,7 @@
 | 0.4.2  |  Multi  |    \    | change the way B link tree root split |
 | 0.4.3  |  Multi  |    \   |  threads conduct operations without going through the queue |
 | 0.4.4  |  Multi  |    \   |  latch manager refactoring |
-| 0.5.0  |  Multi  |    11.70   | fix BUG that exists from 0.4.0 to 0.4.4 |
+| 0.5.0  |  Multi  |    11.70   | fix ***BUG*** that exists from 0.4.0 to 0.4.4 |
 
 
 ### TODO
