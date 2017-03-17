@@ -36,6 +36,9 @@ class LatchManager
 			delete [] latches_;
 		}
 
+		friend std::ostream& operator<<(std::ostream &os, const LatchManager *lm) {
+
+		}
 	private:
 		void Link(uint32_t idx, uint32_t cur, page_id id);
 
