@@ -10,9 +10,6 @@ btree_test_single:$(OBJ) ../test/btree_test_single.cpp
 btree_test_multiple:$(OBJ) ../test/btree_test_multiple.cpp
 	$(CPP) $(CPPFLAGS) -o btree_test_multiple $(OBJ) ../test/btree_test_multiple.cpp
 
-latch_manager_test:$(OBJ) ../test/latch_manager_test.cpp
-	$(CPP) $(CPPFLAGS) -o latch_manager_test $(OBJ) ../test/latch_manager_test.cpp
-
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp
 

@@ -40,7 +40,7 @@ BTree::~BTree()
 
 Status BTree::Close()
 {
-	std::cout << BTreePage::current << std::endl;
+	printf("total page: %u\n", BTreePage::current);
 	return Success;
 }
 
@@ -78,7 +78,7 @@ void BTree::Insert(Latch **latch, KeySlice *key)
 				break;
 			}
 			default: {
-				std::cout << "key existed ;)\n";
+				printf("existed key :(\n");
 				assert(0);
 			}
 		}
@@ -98,7 +98,7 @@ Status BTree::Put(KeySlice *key)
 	BTreePage *left = latch->page_;
 	for (; left->NeedSplit(); ) {
 		if (left->Type() != BTreePage::ROOT) {
-			auto right = BTreePage::NewPage(left->Type(), left->KeyLen(), left->Level(),
+			BTreePage *right = BTreePage::NewPage(left->Type(), left->KeyLen(), left->Level(),
         left->Degree());
 			left->Split(right, key);
 			Latch *pre = latch;
@@ -106,8 +106,8 @@ Status BTree::Put(KeySlice *key)
 			page_id page_no = stack[--depth];
 			latch = latch_manager_->GetLatch(page_no);
 			latch->Lock();
-			pre->Unlock();
 			Insert(&latch, key);
+			pre->Unlock();
 			left = latch->page_;
 		} else {
 			SplitRoot(latch);
@@ -150,6 +150,7 @@ Status BTree::Get(KeySlice *key) const
 
 	auto latch = DescendToLeaf(key, stack, &depth);
 	bool flag = latch->page_->Search(key);
+	if (!flag) Output(latch->page_);
 	latch->UnlockShared();
 	return flag ? Success : Fail;
 }

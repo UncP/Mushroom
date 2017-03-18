@@ -11,7 +11,6 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <thread>
-#include <iostream>
 
 #include "db.hpp"
 
@@ -57,10 +56,16 @@ Status MushroomDB::FindSingle(const char *file, const int total)
 
 Status MushroomDB::FindMultiple(const std::vector<std::string> &files, const int total)
 {
+	bool flag = true;
+	std::vector<std::thread> vector;
 	for (size_t i = 0; i != files.size(); ++i)
-		if (FindSingle(files[i].c_str(), total) == Fail)
-			return Fail;
-	return Success;
+		vector.push_back(std::thread([&, i] {
+			if (FindSingle(files[i].c_str(), total) == Fail)
+				__sync_bool_compare_and_swap(&flag, true, false);
+		}));
+	for (auto &e : vector)
+		e.join();
+	return flag ? Success : Fail;
 }
 
 Status MushroomDB::IndexSingle(const char *file, const int total)

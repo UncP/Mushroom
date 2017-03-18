@@ -29,14 +29,24 @@ int main(int argc, char **argv)
 
 	MushroomDB db("mushroom", key_len);
 
+	KeySlice::SetStringFormat([](const KeySlice *key) {
+		return std::string(key->Data(), key_len) + "    ";
+	});
+
 	auto beg = std::chrono::high_resolution_clock::now();
 	db.IndexMultiple(files, total);
 	auto end  = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
+	std::cerr << "\ntotal: " << (total * 4) << "\n";
+	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
 
-	if (db.FindMultiple(files, total) == Fail) {
-		std::cout << "\033[31mError :(\033[0m\n";
+	beg = std::chrono::high_resolution_clock::now();
+	auto status = db.FindMultiple(files, total);
+	end = std::chrono::high_resolution_clock::now();
+	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+	if (status == Fail) {
+		std::cout << "\033[31mFail :(\033[0m\n";
 	} else {
 		Iterator it(db.Btree());
 		assert(it.CheckBtree());

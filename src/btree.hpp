@@ -10,7 +10,6 @@
 
 #include <fstream>
 #include <string>
-#include <atomic>
 
 #include "status.hpp"
 #include "slice.hpp"

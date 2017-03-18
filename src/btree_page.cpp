@@ -193,8 +193,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 
 bool BTreePage::NeedSplit()
 {
-	if (total_key_ < degree_)
-		return false;
+	if (total_key_ < degree_) return false;
 	uint16_t *index = Index();
 	const char *first = Key(index, 0)->Data();
 	const char *last  = Key(index, total_key_ - 1)->Data();
