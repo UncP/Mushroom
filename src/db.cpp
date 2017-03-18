@@ -18,20 +18,8 @@ namespace Mushroom {
 
 MushroomDB::MushroomDB(const char *name, const int key_len)
 {
-	// assert(key_len <= 256);
-	// assert(!chdir(".."));
-	// assert(mkdir(name, S_IRUSR | S_IWUSR | S_IROTH) >= 0);
-	// assert(!chdir(name));
-
-	// assert(access("index", F_OK));
-	// assert(creat("index", O_RDWR) > 0);
-	// int fd = open("index", O_RDWR);
-	// assert(fd > 0);
-	// btree_ = new BTree(fd, key_len);
-
 	btree_ = new BTree(-1, key_len);
-
-	pool_ = new ThreadPool(new Queue(1024, key_len));
+	pool_  = new ThreadPool(new Queue(1024, key_len));
 }
 
 Status MushroomDB::Put(KeySlice *key)

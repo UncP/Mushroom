@@ -21,6 +21,7 @@ BTree::BTree(const int fd, const int key_len)
 
 	latch_manager_ = new LatchManager();
 	assert(latch_manager_);
+
 	root_ = BTreePage::NewPage(BTreePage::ROOT, key_len_, 0, degree_);
 	assert(root_);
 	BTreePage::SetZero((uint64_t)root_);
@@ -46,16 +47,16 @@ Status BTree::Close()
 
 Latch* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const
 {
-	Latch *latch = latch_manager_->GetLatch(root_->PageNo());
+	Latch *latch = latch_manager_->GetLatch(root_->page_no_);
 	latch->LockShared();
-	for (; latch->page_->Level();) {
+	for (; latch->page_->level_;) {
 		page_id page_no = latch->page_->Descend(key);
-		page_id pre_no = latch->page_->PageNo();
-		uint8_t pre_le = latch->page_->Level();
+		page_id pre_no = latch->page_->page_no_;
+		uint8_t pre_le = latch->page_->level_;
 		latch->UnlockShared();
 		latch = latch_manager_->GetLatch(page_no);
 		latch->LockShared();
-		if (latch->page_->Level() != pre_le) {
+		if (latch->page_->level_ != pre_le) {
 			stack[*depth] = pre_no;
 			++*depth;
 		}
@@ -97,9 +98,9 @@ Status BTree::Put(KeySlice *key)
 
 	BTreePage *left = latch->page_;
 	for (; left->NeedSplit(); ) {
-		if (left->Type() != BTreePage::ROOT) {
-			BTreePage *right = BTreePage::NewPage(left->Type(), left->KeyLen(), left->Level(),
-        left->Degree());
+		if (left->type_ != BTreePage::ROOT) {
+			BTreePage *right = BTreePage::NewPage(left->type_, left->key_len_, left->level_,
+        left->degree_);
 			left->Split(right, key);
 			Latch *pre = latch;
 			assert(depth != 0);
@@ -120,22 +121,22 @@ Status BTree::Put(KeySlice *key)
 
 Status BTree::SplitRoot(Latch *latch)
 {
-	auto level = root_->Level();
+	auto level = root_->level_;
 	BTreePage *left = BTreePage::NewPage(BTreePage::ROOT, key_len_, level+1, degree_);
 	BTreePage *right = BTreePage::NewPage(level ? BTreePage::BRANCH : BTreePage::LEAF,
-	 	root_->KeyLen(), level, degree_);
+	 	root_->key_len_, level, degree_);
 
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *slice = (KeySlice *)buf;
 
-	root_->AssignType(level ? BTreePage::BRANCH : BTreePage::LEAF);
+	root_->type_ = level ? BTreePage::BRANCH : BTreePage::LEAF;
 	root_->Split(right, slice);
 
 	char tmp[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *limit = (KeySlice *)tmp;
 	memset(limit->Data(), 0xFF, key_len_);
 
-	page_id page_no = root_->PageNo();
+	page_id page_no = root_->page_no_;
 	left->AssignFirst(page_no);
 	assert(left->Insert(limit, page_no) == InsertOk);
 	assert(left->Insert(slice, page_no) == InsertOk);
@@ -157,17 +158,17 @@ Status BTree::Get(KeySlice *key) const
 
 BTreePage* BTree::First(page_id *page_no, int level) const
 {
-	if (level > root_->Level())
+	if (level > root_->level_)
 		return nullptr;
 	if (level == -1)
-		level = root_->Level();
+		level = root_->level_;
 
 	BTreePage *page = root_;
-	for (; page->Level() != level;)
-		page = BTreePage::GetPage(page->First());
+	for (; page->level_ != level;)
+		page = BTreePage::GetPage(page->first_);
 
 	if (page_no)
-		*page_no = page->PageNo();
+		*page_no = page->page_no_;
 	return page;
 }
 
@@ -195,7 +196,7 @@ void BTree::Traverse(int level) const
 
 		page = BTreePage::GetPage(page_no);
 
-		assert(page->Level() == level);
+		assert(page->level_ == level);
 	}
 }
 

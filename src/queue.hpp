@@ -1,10 +1,8 @@
 /**
- *    > Author:   UncP
- *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
- *    > Description:
- *
- *    > Created Time: 2016-10-17 14:12:46
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
+ *    > Created Time:  2016-10-17 14:12:46
 **/
 
 #ifndef _QUEUE_HPP_
@@ -38,7 +36,6 @@ class Queue
 		~Queue();
 
 	private:
-
 		bool                    clear_;
 		int                     capacity_;
 		std::vector<Task *>     queue_;

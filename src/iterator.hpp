@@ -30,7 +30,7 @@ class Iterator
 
 		const KeySlice* Key() const { return key_; }
 
-		~Iterator() { if (key_) delete [] key_; key_ = nullptr; }
+		~Iterator() { delete [] key_; }
 
 	private:
 		const BTree *btree_;

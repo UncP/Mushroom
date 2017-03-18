@@ -46,22 +46,11 @@ class BTreePage
 
 		Status Write(const int);
 
-		page_id PageNo() const { return page_no_; }
-		page_id First() const { return first_; }
-		uint8_t KeyLen() const { return key_len_; }
-		uint8_t Level() const { return level_; }
-		uint16_t Degree() const { return degree_; }
-		uint16_t KeyNum() const { return total_key_; }
-		int Type() const { return type_; }
-		const char* Data() const { return data_; }
 		page_id Next() const {
 			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);
 			return key->PageNo();
 		}
 
-		void AssignType(int type) { type_ = type; }
-		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
-		void AssignLevel(uint8_t level) { level_ = level; }
 		void AssignFirst(page_id first) {
 			assert(type_ != LEAF);
 			first_ = first;
@@ -86,7 +75,7 @@ class BTreePage
 		std::string ToString() const;
 
 		static uint64_t ZERO;
-		static uint32_t current;
+		static page_id  current;
 
 	private:
 		uint16_t* Index() const {

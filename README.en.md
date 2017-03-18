@@ -5,14 +5,12 @@
 
 #### This is an upgrade of [Up Database](http://www.github.com/UncP/Up_Database) and [pear Database](http://www.github.com/UncP/pear)
 
-***
+******
 
 ### B<sup>link</sup> Tree Benchfuck
 `key length: 16 bytes`  
-`key tuples: 10 million`  
-`two sorting time means two strategies`
-1. one thread arrange task, multi threads excute
-2. multi threads excute directly
+`key tuples: 10 million`    
+`CPU: 2.1 GHz  4 threads`
 
 |  Version  |  Thread  |  Sorting Time(s) |           Improvements            |
 |--------|:-------:|:-----------:|:--------------------------:|
@@ -25,7 +23,7 @@
 | 0.4.2  |  Multi  |    \    | change the way B link tree root split |
 | 0.4.3  |  Multi  |    \   |  new test strategy, threads conduct operations without going through the queue |
 | 0.4.4  |  Multi  |    \   |  latch manager refactoring |
-| 0.5.0  |  Multi  |    11.70 / 9.00   | fix ***BUG*** that exists from 0.4.1 to 0.4.4 |
+| 0.5.0  |  Multi  |    11.70 / 9.00   | fix **BUG** that exists from 0.4.1 to 0.4.4 |
 
 
 ### TODO

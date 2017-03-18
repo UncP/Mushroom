@@ -16,7 +16,7 @@ namespace Mushroom {
 
 uint64_t BTreePage::ZERO;
 
-uint32_t BTreePage::current = 0;
+page_id BTreePage::current = 0;
 
 uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 {
@@ -145,7 +145,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 		CopyPrefix(slice, data_, pre_len_);
 	}
 
-	slice->AssignPageNo(that->PageNo());
+	slice->AssignPageNo(that->page_no_);
 	memcpy(slice->Data() + pre_len_, fence->Data(), key_len_);
 
 	if (level_) {
@@ -157,7 +157,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 		r_idx -= right;
 	}
 
-	fence->AssignPageNo(that->PageNo());
+	fence->AssignPageNo(that->page_no_);
 
 	uint16_t slot_len = PageByte + key_len_;
 	for (uint16_t i = index, j = 0; i != total_key_; ++i, ++j) {
@@ -233,7 +233,7 @@ BTreePage* BTreePage::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t
 	page_id page_no = __sync_fetch_and_add(&current, 1);
 	BTreePage *page;
 	if (!page_no)
-		page = (BTreePage *)new char[80000 * PageSize];
+		page = (BTreePage *)new char[75000 * PageSize];
 	else
 		page = GetPage(page_no);
 	page->Reset(page_no, type, key_len, level, degree);
