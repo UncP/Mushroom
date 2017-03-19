@@ -63,7 +63,7 @@ class KeySlice
 	};
 
 	public:
-		using StringFormat = std::function<std::string(const KeySlice *)>;
+		using StringFormat = std::function<std::string(const KeySlice *, uint8_t)>;
 
 		char* Data() { return data_; }
 		const char* Data() const { return data_; }
@@ -76,8 +76,8 @@ class KeySlice
 			form_string_ = from_string;
 		}
 
-		std::string ToString() const {
-			return form_string_(this);
+		std::string ToString(uint8_t len) const {
+			return form_string_(this, len);
 		}
 
 		static StringFormat form_string_;

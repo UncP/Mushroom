@@ -151,7 +151,10 @@ Status BTree::Get(KeySlice *key) const
 
 	auto latch = DescendToLeaf(key, stack, &depth);
 	bool flag = latch->page_->Search(key);
-	if (!flag) Output(latch->page_);
+	if (!flag) {
+		printf("%s", key->ToString(key_len_).c_str());
+		Output(latch->page_);
+	}
 	latch->UnlockShared();
 	return flag ? Success : Fail;
 }

@@ -73,7 +73,7 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		return latch;
   }
 
-	uint16_t idx, victim = __sync_fetch_and_add(&deployed_, 1) + 1;
+	uint16_t victim = __sync_fetch_and_add(&deployed_, 1) + 1;
 
 	if (victim < total) {
 		latch = latches_ + victim;
@@ -97,7 +97,7 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		if (latch->pin_ || !latch->busy_.SpinWriteTry())
 			continue;
 
-		idx = latch->hash_;
+		uint16_t idx = latch->hash_;
 
 		if (!latch_set_[idx].latch_.SpinWriteTry()) {
 			latch->busy_.SpinReleaseWrite();

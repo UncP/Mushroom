@@ -24,14 +24,24 @@ int main(int argc, char **argv)
 
 	MushroomDB db("mushroom", key_len);
 
+	KeySlice::SetStringFormat([](const KeySlice *key, uint8_t len) {
+		return std::string(key->Data(), len) + "\n";
+	});
+
 	auto beg = std::chrono::high_resolution_clock::now();
 	db.IndexSingle(file, total);
-	auto end  = std::chrono::high_resolution_clock::now();
+	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "\ntime: " << std::setw(8) << Time << "  s\n";
+	std::cerr << "\ntotal: " << total << "\n";
+	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
 
-	if (db.FindSingle(file, total) == Fail) {
-		std::cout << "\033[31mError :(\033[0m\n";
+	beg = std::chrono::high_resolution_clock::now();
+	auto status = db.FindSingle(file, total);
+	end = std::chrono::high_resolution_clock::now();
+	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+	if (status == Fail) {
+		std::cout << "\033[31mFail :(\033[0m\n";
 	} else {
 		Iterator it(db.Btree());
 		assert(it.CheckBtree());
@@ -39,26 +49,5 @@ int main(int argc, char **argv)
 	}
 
 	db.Close();
-
-	// KeySlice::SetStringFormat([](const KeySlice *key) {
-	// 	return std::string(key->Data()) + "    ";
-	// });
-
-	// #ifndef SingleThread
-	// bool stop = false;
-	// std::thread check([&]() {
-	// 	using namespace std::chrono_literals;
-	// 	while (!stop) {
-	// 		std::this_thread::sleep_for(1s);
-	// 		std::cout << db.Btree()->inserted_ << std::endl;
-	// 		std::cout << db.Btree()->LM()->ToString();
-	// 	}
-	// });
-	// #endif
-
-	// #ifndef SingleThread
-	// stop = true;
-	// check.join();
-	// #endif
 	return 0;
 }

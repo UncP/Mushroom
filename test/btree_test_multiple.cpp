@@ -29,15 +29,15 @@ int main(int argc, char **argv)
 
 	MushroomDB db("mushroom", key_len);
 
-	KeySlice::SetStringFormat([](const KeySlice *key) {
-		return std::string(key->Data(), key_len) + "    ";
+	KeySlice::SetStringFormat([](const KeySlice *key, uint8_t len) {
+		return std::string(key->Data(), len) + "\n";
 	});
 
 	auto beg = std::chrono::high_resolution_clock::now();
 	db.IndexMultiple(files, total);
-	auto end  = std::chrono::high_resolution_clock::now();
+	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "\ntotal: " << (total * 4) << "\n";
+	std::cerr << "\ntotal: " << (total * files.size()) << "\n";
 	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
 
 	beg = std::chrono::high_resolution_clock::now();

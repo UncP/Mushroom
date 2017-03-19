@@ -28,11 +28,10 @@ uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level,
 	uint16_t degree)
 {
-	// assert(!dirty_);
 	memset(this, 0, PageSize);
 	page_no_ = page_no;
 	degree_  = degree;
-	type_    = type;
+	type_    = (uint8_t)type;
 	key_len_ = key_len;
 	level_   = level;
 }
@@ -71,7 +70,7 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 		}
 	}
 	*idx = high;
-	if (high) *slice = Key(index, high - 1);
+	if (high) *slice = Key(index, high-1);
 	return false;
 }
 
@@ -287,7 +286,7 @@ std::string BTreePage::ToString() const
 	os << "\n";
 	for (uint16_t i = 0; i != total_key_; ++i) {
 		KeySlice *key = Key(index, i);
-		os << key->ToString();
+		os << key->ToString(key_len_);
 	}
 	os << "\nnext: " << Key(index, total_key_-1)->PageNo() << "\n";
 	return os.str();

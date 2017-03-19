@@ -13,7 +13,7 @@
 
 namespace Mushroom {
 
-std::function<std::string(const KeySlice *)> KeySlice::form_string_ = nullptr;
+std::function<std::string(const KeySlice *, uint8_t)> KeySlice::form_string_ = nullptr;
 
 std::string Slice::ToString() const
 {
