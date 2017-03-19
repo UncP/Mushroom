@@ -9,11 +9,12 @@
 
 ### B<sup>link</sup> Tree Benchfuck
 `key length: 16 bytes`  
-`key tuples: 10 million`    
-`CPU: 2.1 GHz  4 threads`
+`total key: 10 million`  
+`total size: 160 M`  
+`CPU: Intel i3  2.1GHz  4 threads`
 
-|  Version  |  Thread  |  Sorting Time(s) |           Improvements            |
-|--------|:-------:|:-----------:|:--------------------------:|
+| Version | Thread | Sorting Time(s) |           Improvements            |
+|:------:|:-------:|:-----------:|:--------------------------:|
 | 0.1.0  |  Single |    16.00    ||
 | 0.2.0  |  Multi  |    12.32    |   two-phase lock based concurrent index   |
 | 0.2.1  |  Multi  |    11.28    |         latch manager optimization         |
@@ -29,8 +30,8 @@
 ### TODO
 - [x] B<sup>link</sup> Tree Index Engine
 - [x] Thread Pool
-- [x] Thread Safe Queue(Bounded)
+- [x] Thread Safe Queue (Bounded)
 - [x] Latch Manager
 - [x] Concurrent Index
-- [x] Prefix Compression(Lazy)
+- [x] Prefix Compression (Lazy)
 - [ ] Data Manager
