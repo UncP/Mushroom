@@ -8,13 +8,16 @@
 #ifndef _UTILITY_HPP_
 #define _UTILITY_HPP_
 
-#include <iostream>
+#include <cstdint>
 
-template<typename T>
-void Output(const T *t, bool new_line = false) {
-	std::cout << t->ToString();
-	if (new_line)
-		std::cout << std::endl;
-}
+namespace Mushroom {
+
+typedef uint32_t page_id;
+
+class BTreePage;
+
+class LatchManager;
+
+} // namespace Mushroom
 
 #endif /* _UTILITY_HPP_ */

@@ -21,19 +21,24 @@ class MushroomDB
 	public:
 		MushroomDB(const char *name, const int key_len);
 
-		Status Put(KeySlice *key);
+		bool Put(KeySlice *key);
 
-		Status Get(KeySlice *key);
+		bool Get(KeySlice *key);
 
-		Status IndexSingle(const char *file, const int total = 1);
+		void IndexSingle(const char *file, const int total = 1);
 
-		Status IndexMultiple(const std::vector<std::string> &files, const int total = 1);
+		void IndexMultiple(const std::vector<std::string> &files, const int total = 1);
 
-		Status FindSingle(const char *file, const int total = 1);
+		bool FindSingle(const char *file, const int total = 1);
 
-		Status FindMultiple(const std::vector<std::string> &files, const int total = 1);
+		bool FindMultiple(const std::vector<std::string> &files, const int total = 1);
 
-		Status Close();
+		bool Close();
+
+		MushroomDB(const MushroomDB &) = delete;
+		MushroomDB(const MushroomDB &&) = delete;
+		MushroomDB& operator=(const MushroomDB &) = delete;
+		MushroomDB& operator=(const MushroomDB &&) = delete;
 
 		const BTree* Btree() const { return btree_; }
 

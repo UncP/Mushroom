@@ -6,7 +6,6 @@
 **/
 
 #include "latch_manager.hpp"
-#include "btree_page.hpp"
 
 namespace Mushroom {
 
@@ -48,10 +47,7 @@ Latch* LatchManager::GetLatch(page_id page_no)
 
 	latch_set_[hashidx].latch_.SpinReleaseRead();
 
-	if (slot) {
-		latch->page_ = BTreePage::GetPage(page_no);
-		return latch;
-	}
+	if (slot) return latch;
 
   latch_set_[hashidx].latch_.SpinWriteLock();
 
@@ -69,7 +65,6 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		latch->Pin();
 		latch->page_no_ = page_no;
 		latch_set_[hashidx].latch_.SpinReleaseWrite();
-		latch->page_ = BTreePage::GetPage(page_no);
 		return latch;
   }
 
@@ -80,7 +75,6 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		latch->Pin();
 		Link(hashidx, victim, page_no);
 		latch_set_[hashidx].latch_.SpinReleaseWrite();
-		latch->page_ = BTreePage::GetPage(page_no);
 		return latch;
 	}
 
@@ -123,7 +117,6 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		Link(hashidx, victim, page_no);
 		latch_set_[hashidx].latch_.SpinReleaseWrite();
 		latch->busy_.SpinReleaseWrite();
-		latch->page_ = BTreePage::GetPage(page_no);
 		return latch;
   }
 }

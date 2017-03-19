@@ -25,7 +25,7 @@ front_(0), avail_back_(0), work_back_(0)
 	work_.swap(tmp2);
 }
 
-void Queue::Push(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
+void Queue::Push(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
 {
 	std::unique_lock<std::mutex> lock(mutex_);
 	empty_.wait(lock, [this]{ return avail_[front_] >= 0; });

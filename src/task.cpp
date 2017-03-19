@@ -1,10 +1,8 @@
 /**
- *    > Author:   UncP
- *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
- *    > Description:
- *
- *    > Created Time: 2016-11-29 15:25:34
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
+ *    > Created Time:  2016-11-29 15:25:34
 **/
 
 #include "task.hpp"
@@ -17,7 +15,7 @@ Task::Task(uint8_t key_len):fun_(nullptr), btree_(nullptr), key_(nullptr), key_l
 	key_ = (KeySlice *)buf;
 }
 
-void Task::Assign(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
+void Task::Assign(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
 {
 	fun_   = fun;
 	btree_ = btree;

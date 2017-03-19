@@ -5,6 +5,7 @@
  *    > Created Time:  2016-10-22 09:10:01
 **/
 
+#include <iostream>
 #include <unistd.h>
 #include <sstream>
 #include <set>
@@ -14,10 +15,6 @@
 
 namespace Mushroom {
 
-uint64_t BTreePage::ZERO;
-
-page_id BTreePage::current = 0;
-
 uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 {
 	BTreePage *page = nullptr;
@@ -25,7 +22,7 @@ uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 	return (PageSize - offset) / (PageByte + IndexByte + key_len);
 }
 
-void BTreePage::Reset(page_id page_no, int type, uint8_t key_len, uint8_t level,
+void BTreePage::Initialize(page_id page_no, int type, uint8_t key_len, uint8_t level,
 	uint16_t degree)
 {
 	memset(this, 0, PageSize);
@@ -227,34 +224,22 @@ bool BTreePage::NeedSplit()
 	return false;
 }
 
-BTreePage* BTreePage::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree)
-{
-	page_id page_no = __sync_fetch_and_add(&current, 1);
-	BTreePage *page;
-	if (!page_no)
-		page = (BTreePage *)new char[75000 * PageSize];
-	else
-		page = GetPage(page_no);
-	page->Reset(page_no, type, key_len, level, degree);
-	return page;
-}
-
-Status BTreePage::Read(const page_id page_no, const int fd)
+bool BTreePage::Read(const page_id page_no, const int fd)
 {
 	if (pread(fd, this, PageSize, page_no * PageSize) != PageSize)
-		return Fail;
+		return false;
 	assert(page_no_ == page_no);
-	return Success;
+	return true;
 }
 
-Status BTreePage::Write(const int fd)
+bool BTreePage::Write(const int fd)
 {
 	if (dirty_) {
 		dirty_ = 0;
 		if (pwrite(fd, this, PageSize, page_no_ * PageSize) != PageSize)
-			return Fail;
+			return false;
 	}
-	return Success;
+	return true;
 }
 
 std::string BTreePage::ToString() const

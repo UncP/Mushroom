@@ -23,7 +23,7 @@ bool Iterator::Seek(const char *key)
 	size_t len = strlen(key);
 	if (len > BTree::MAX_KEY_LENGTH) return false;
 	memcpy(key_->Data(), key, len);
-	return btree_->Get(key_) == Success;
+	return btree_->Get(key_);
 }
 
 bool Iterator::Begin()

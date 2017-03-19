@@ -41,11 +41,11 @@ int main(int argc, char **argv)
 	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
 
 	beg = std::chrono::high_resolution_clock::now();
-	auto status = db.FindMultiple(files, total);
+	auto flag = db.FindMultiple(files, total);
 	end = std::chrono::high_resolution_clock::now();
 	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
-	if (status == Fail) {
+	if (!flag) {
 		std::cout << "\033[31mFail :(\033[0m\n";
 	} else {
 		Iterator it(db.Btree());

@@ -22,41 +22,41 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	pool_  = new ThreadPool(new Queue(1024, key_len));
 }
 
-Status MushroomDB::Put(KeySlice *key)
+bool MushroomDB::Put(KeySlice *key)
 {
 	pool_->AddTask(&BTree::Put, btree_, key);
-	return Success;
+	return true;
 }
 
-Status MushroomDB::Get(KeySlice *key)
+bool MushroomDB::Get(KeySlice *key)
 {
 	return btree_->Get(key);
 }
 
-Status MushroomDB::FindSingle(const char *file, const int total)
+bool MushroomDB::FindSingle(const char *file, const int total)
 {
 	std::ifstream in(file);
 	assert(in.is_open());
 	bool flag = btree_->KeyCheck(in, total);
 	in.close();
-	return flag ? Success : Fail;
+	return flag;
 }
 
-Status MushroomDB::FindMultiple(const std::vector<std::string> &files, const int total)
+bool MushroomDB::FindMultiple(const std::vector<std::string> &files, const int total)
 {
 	bool flag = true;
 	std::vector<std::thread> vector;
 	for (size_t i = 0; i != files.size(); ++i)
 		vector.push_back(std::thread([&, i] {
-			if (FindSingle(files[i].c_str(), total) == Fail)
+			if (!FindSingle(files[i].c_str(), total))
 				__sync_bool_compare_and_swap(&flag, true, false);
 		}));
 	for (auto &e : vector)
 		e.join();
-	return flag ? Success : Fail;
+	return flag;
 }
 
-Status MushroomDB::IndexSingle(const char *file, const int total)
+void MushroomDB::IndexSingle(const char *file, const int total)
 {
 	uint32_t key_len = btree_->KeyLen();
 	char tmp[BTreePage::PageByte + key_len] = {0};
@@ -87,10 +87,9 @@ Status MushroomDB::IndexSingle(const char *file, const int total)
 	}
 	close(fd);
 	pool_->Clear();
-	return Success;
 }
 
-Status MushroomDB::IndexMultiple(const std::vector<std::string> &files, const int total)
+void MushroomDB::IndexMultiple(const std::vector<std::string> &files, const int total)
 {
 	std::vector<std::thread> vector;
 	for (size_t i = 0; i != files.size(); ++i)
@@ -125,13 +124,12 @@ Status MushroomDB::IndexMultiple(const std::vector<std::string> &files, const in
 		}));
 	for (auto &e : vector)
 		e.join();
-	return Success;
 }
 
-Status MushroomDB::Close()
+bool MushroomDB::Close()
 {
 	btree_->Close();
-	return Success;
+	return true;
 }
 
 } // namespace Mushroom

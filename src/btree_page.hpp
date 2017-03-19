@@ -10,7 +10,7 @@
 
 #include <cassert>
 
-#include "status.hpp"
+#include "utility.hpp"
 #include "slice.hpp"
 
 namespace Mushroom {
@@ -30,21 +30,13 @@ class BTreePage
 		static const uint16_t PageByte  = sizeof(page_id);
 		static const uint16_t IndexByte = 2;
 
-		static void SetZero(uint64_t offset) { ZERO = offset; }
-
-		static BTreePage* GetPage(page_id page_no) {
-			return (BTreePage *)(ZERO + page_no * PageSize);
-		}
-
-		static BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
-
 		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0);
 
-		void Reset(page_id page_no, int type, uint8_t key_len, uint8_t level, uint16_t degree);
+		void Initialize(page_id page_no, int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
-		Status Read(const page_id page_no, const int fd);
+		bool Read(const page_id page_no, const int fd);
 
-		Status Write(const int);
+		bool Write(const int);
 
 		page_id Next() const {
 			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);
@@ -73,9 +65,6 @@ class BTreePage
 		void Analyze() const;
 
 		std::string ToString() const;
-
-		static uint64_t ZERO;
-		static page_id  current;
 
 	private:
 		uint16_t* Index() const {

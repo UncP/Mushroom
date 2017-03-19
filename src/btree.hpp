@@ -11,11 +11,11 @@
 #include <fstream>
 #include <string>
 
-#include "status.hpp"
+#include "utility.hpp"
 #include "slice.hpp"
 #include "btree_page.hpp"
-
 #include "latch_manager.hpp"
+#include "page_manager.hpp"
 
 namespace Mushroom {
 
@@ -26,13 +26,13 @@ class BTree
 
 		BTree(const int fd, const int key_len);
 
-		Status Close();
+		bool Close();
 
 		uint8_t KeyLen() const { return key_len_; }
 
-		Status Put(KeySlice *key);
+		bool Put(KeySlice *key);
 
-		Status Get(KeySlice *key) const;
+		bool Get(KeySlice *key) const;
 
 		BTreePage* First(page_id *page_no, int level) const;
 
@@ -44,8 +44,10 @@ class BTree
 
 		std::string ToString() const;
 
-		BTree& operator=(const BTree &) = delete;
 		BTree(const BTree &) = delete;
+		BTree(const BTree &&) = delete;
+		BTree& operator=(const BTree &) = delete;
+		BTree& operator=(const BTree &&) = delete;
 
 		~BTree();
 
@@ -53,13 +55,14 @@ class BTree
 
 		Latch* DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const;
 
-		Status SplitRoot(Latch *latch);
+		void SplitRoot(Latch *latch);
 
 		void Insert(Latch **latch, KeySlice *key);
 
 		LatchManager *latch_manager_;
+		PageManager  *page_manager_;
 
-		BTreePage    *root_;
+		volatile BTreePage *root_;
 
 		uint8_t  key_len_;
 		uint16_t degree_;

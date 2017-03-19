@@ -38,7 +38,7 @@ ThreadPool::ThreadPool(Queue *queue):queue_(queue), working_(false)
 	working_ = true;
 }
 
-void ThreadPool::AddTask(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
+void ThreadPool::AddTask(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
 {
 	queue_->Push(fun, btree, key);
 }

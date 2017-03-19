@@ -31,7 +31,7 @@ class LatchManager
 		void Link(uint16_t hashidx, uint16_t victim, page_id page_no);
 
 		static const uint16_t total = 128;
-		static const uint16_t mask  = 17;
+		static const uint16_t mask  = 37;
 
 		uint16_t  deployed_;
 		uint16_t  victim_;

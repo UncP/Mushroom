@@ -11,12 +11,9 @@
 #include <cassert>
 #include <pthread.h>
 
-#include "status.hpp"
+#include "utility.hpp"
 
 namespace Mushroom {
-
-class BTreePage;
-class LatchManager;
 
 class SpinLatch
 {

@@ -27,7 +27,7 @@ class Queue
 	public:
 		Queue(int capacity, uint8_t key_len);
 
-		void Push(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
+		void Push(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
 
 		void Pull();
 

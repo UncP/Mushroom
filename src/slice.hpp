@@ -15,7 +15,7 @@
 #include <functional>
 #include <cassert>
 
-#include "status.hpp"
+#include "utility.hpp"
 
 namespace Mushroom {
 

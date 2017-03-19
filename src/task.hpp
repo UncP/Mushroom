@@ -1,9 +1,7 @@
 /**
- *    > Author:   UncP
- *    > Mail:     770778010@qq.com
- *    > Github:   https://www.github.com/UncP/Mushroom
- *    > Description:
- *
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
  *    > Created Time: 2016-10-18 15:30:39
 **/
 
@@ -12,7 +10,6 @@
 
 #include "btree.hpp"
 #include "slice.hpp"
-#include "status.hpp"
 
 namespace Mushroom {
 
@@ -21,9 +18,9 @@ class Task
 	public:
 		Task(uint8_t key_len);
 
-		void Assign(Status (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
+		void Assign(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
 
-		Status operator()() { return (btree_->*fun_)(key_); }
+		bool operator()() { return (btree_->*fun_)(key_); }
 
 		Task(const Task &) = delete;
 		Task(const Task &&) = delete;
@@ -33,10 +30,10 @@ class Task
 		~Task();
 
 	private:
-		Status         (BTree::*(fun_))(KeySlice *);
-		BTree          *btree_;
-		KeySlice       *key_;
-		uint8_t         key_len_;
+		bool         (BTree::*(fun_))(KeySlice *);
+		BTree        *btree_;
+		KeySlice     *key_;
+		uint8_t       key_len_;
 };
 
 } // namespace Mushroom
