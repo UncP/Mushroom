@@ -5,18 +5,26 @@
  *    > Created Time:  2017-03-19 13:13:52
 **/
 
+#define __USE_LARGEFILE64   1
+#define __USE_FILE_OFFSET64 1
+
+#include <unistd.h>
 #include <sys/mman.h>
 
 #include "page_manager.hpp"
 
 namespace Mushroom {
 
-PageManager::PageManager(int fd, page_id tot):cur_(0), tot_(0), mem_(0)
+PageManager::PageManager(int fd):fd_(fd), cur_(0), tot_(0), mem_(0)
 {
-	if (!tot) {
+	if (fd_ == -1) {
 		mem_ = new char[BTreePage::PageSize * 80000];
 	} else {
-		mem_ = (char *)mmap(0, tot * BTreePage::PageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		char *tmp = new char[10 * BTreePage::PageSize];
+		assert(pwrite(fd_, tmp, 10*BTreePage::PageSize, 0) == 10*BTreePage::PageSize);
+		mem_ = (char *)mmap(0, 10*BTreePage::PageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0LL);
+		assert(mem_);
+		delete [] tmp;
 	}
 }
 
@@ -35,10 +43,11 @@ BTreePage* PageManager::NewPage(int type, uint8_t key_len, uint8_t level, uint16
 
 bool PageManager::Free()
 {
-	if (!tot_) {
+	if (fd_ == -1) {
 		delete [] mem_;
 	} else {
-		munmap((void *)mem_, tot_ * BTreePage::PageSize);
+		munmap(mem_, 10 * BTreePage::PageSize);
+		close(fd_);
 	}
 	cur_ = 0;
 	tot_ = 0;

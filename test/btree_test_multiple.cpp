@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 		std::string("../data/16_2500000_3_random")
 	};
 
-	MushroomDB db("mushroom", key_len);
+	MushroomDB db("../mushroom", key_len);
 
 	KeySlice::SetStringFormat([](const KeySlice *key, uint8_t len) {
 		return std::string(key->Data(), len) + "\n";

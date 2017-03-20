@@ -98,12 +98,11 @@ bool BTree::Put(KeySlice *key)
 
 	Insert(&latch, key);
 
-	BTreePage *left = latch->page_;
-	for (; left->NeedSplit(); ) {
-		if (left->type_ != BTreePage::ROOT) {
-			BTreePage *right = page_manager_->NewPage(left->type_, left->key_len_, left->level_,
-        left->degree_);
-			left->Split(right, key);
+	for (; latch->page_->NeedSplit(); ) {
+		if (latch->page_->type_ != BTreePage::ROOT) {
+			BTreePage *right = page_manager_->NewPage(latch->page_->type_, latch->page_->key_len_,
+				latch->page_->level_, latch->page_->degree_);
+			latch->page_->Split(right, key);
 			Latch *pre = latch;
 			assert(depth != 0);
 			page_id page_no = stack[--depth];
@@ -112,7 +111,6 @@ bool BTree::Put(KeySlice *key)
 			latch->Lock();
 			Insert(&latch, key);
 			pre->Unlock();
-			left = latch->page_;
 		} else {
 			SplitRoot(latch);
 			break;

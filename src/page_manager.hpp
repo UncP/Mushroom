@@ -15,7 +15,7 @@ namespace Mushroom {
 class PageManager
 {
 	public:
-		PageManager(int fd, page_id tot);
+		PageManager(int fd);
 
 		BTreePage* GetPage(page_id page_no);
 		BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
@@ -32,6 +32,7 @@ class PageManager
 		PageManager& operator=(const PageManager &&) = delete;
 
 	private:
+		const int        fd_;
 		volatile page_id cur_;
 		volatile page_id tot_;
 		char            *mem_;

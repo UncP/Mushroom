@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	const int key_len = 16;
 	const char *file = "../data/16_10000000_random";
 
-	MushroomDB db("mushroom", key_len);
+	MushroomDB db("../mushroom", key_len);
 
 	KeySlice::SetStringFormat([](const KeySlice *key, uint8_t len) {
 		return std::string(key->Data(), len) + "\n";

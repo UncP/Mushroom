@@ -19,7 +19,13 @@ namespace Mushroom {
 
 MushroomDB::MushroomDB(const char *name, const int key_len)
 {
-	PageManager *page_manager = new PageManager(-1, 0);
+	if (!access(name, F_OK)) assert(!remove(name));
+	assert(creat(name, O_RDWR) > 0);
+	int fd = open(name, O_RDWR);
+	assert(fd > 0);
+
+	PageManager *page_manager = new PageManager(fd);
+
 	btree_ = new BTree(key_len, page_manager);
 
 	pool_  = new ThreadPool(new Queue(128, key_len));
