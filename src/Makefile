@@ -1,7 +1,7 @@
 CPP 		 = g++
 CPPFLAGS = -std=c++14 -Wall -O3 -pthread
 
-OBJ = slice.o latch.o latch_manager.o btree_page.o btree.o task.o queue.o \
+OBJ = slice.o latch.o latch_manager.o btree_page.o page_manager.o btree.o task.o queue.o \
 	iterator.o thread_pool.o db.o
 
 btree_test_single:$(OBJ) ../test/btree_test_single.cpp

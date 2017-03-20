@@ -16,7 +16,7 @@ PageManager::PageManager(int fd, page_id tot):cur_(0), tot_(0), mem_(0)
 	if (!tot) {
 		mem_ = new char[BTreePage::PageSize * 80000];
 	} else {
-		mem_ = mmap(0, tot * BTreePage::PageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+		mem_ = (char *)mmap(0, tot * BTreePage::PageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	}
 }
 
@@ -33,21 +33,22 @@ BTreePage* PageManager::NewPage(int type, uint8_t key_len, uint8_t level, uint16
 	return page;
 }
 
-PageManager::Close()
+bool PageManager::Free()
 {
 	if (!tot_) {
 		delete [] mem_;
 	} else {
-		munmap(mem_, tot_ * BTreePage::PageSize);
+		munmap((void *)mem_, tot_ * BTreePage::PageSize);
 	}
 	cur_ = 0;
 	tot_ = 0;
 	mem_ = 0;
+	return true;
 }
 
 PageManager::~PageManager()
 {
-	if (mem_) Close();
+	if (mem_) Free();
 }
 
 } // namespace Mushroom

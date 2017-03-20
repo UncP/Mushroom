@@ -13,25 +13,21 @@
 
 namespace Mushroom {
 
-BTree::BTree(const int fd, const int key_len)
+BTree::BTree(int key_len, PageManager *page_manager)
+:page_manager_(page_manager), root_(0), key_len_((uint8_t)key_len)
 {
-	key_len_ = static_cast<uint8_t>(key_len);
-
-	degree_ = BTreePage::CalculateDegree(key_len);
+	degree_ = BTreePage::CalculateDegree(key_len_);
 
 	latch_manager_ = new LatchManager();
 	assert(latch_manager_);
-	page_manager_  = new PageManager(-1, 0);
 
-	root_ = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
-	assert(root_);
-	BTreePage::SetZero((uint64_t)root_);
+	BTreePage *root = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
 
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
 	memset(key->Data(), 0xFF, key_len_);
 	page_id next;
-	assert(root_->Insert(key, next) == InsertOk);
+	assert(root->Insert(key, next) == InsertOk);
 }
 
 BTree::~BTree()
@@ -40,16 +36,16 @@ BTree::~BTree()
 	delete page_manager_;
 }
 
-bool BTree::Close()
+bool BTree::Free()
 {
 	printf("total page: %u\n", page_manager_->Total());
-	page_manager_->Close();
+	page_manager_->Free();
 	return true;
 }
 
 Latch* BTree::DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const
 {
-	page_id page_no = root_->page_no_;
+	page_id page_no = root_;
 	Latch *latch = latch_manager_->GetLatch(page_no);
 	latch->page_ = page_manager_->GetPage(page_no);
 	latch->LockShared();
@@ -128,26 +124,27 @@ bool BTree::Put(KeySlice *key)
 
 void BTree::SplitRoot(Latch *latch)
 {
-	auto level = root_->level_;
+	uint8_t level = latch->page_->level_;
 	BTreePage *left = page_manager_->NewPage(BTreePage::ROOT, key_len_, level+1, degree_);
 	BTreePage *right = page_manager_->NewPage(level ? BTreePage::BRANCH : BTreePage::LEAF,
-	 	root_->key_len_, level, degree_);
+	 	latch->page_->key_len_, level, degree_);
 
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *slice = (KeySlice *)buf;
 
-	root_->type_ = level ? BTreePage::BRANCH : BTreePage::LEAF;
-	root_->Split(right, slice);
+	latch->page_->type_ = level ? BTreePage::BRANCH : BTreePage::LEAF;
+	latch->page_->Split(right, slice);
 
 	char tmp[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *limit = (KeySlice *)tmp;
 	memset(limit->Data(), 0xFF, key_len_);
 
-	page_id page_no = root_->page_no_;
+	page_id page_no = latch->page_->page_no_;
 	left->AssignFirst(page_no);
+	page_no = 0;
 	assert(left->Insert(limit, page_no) == InsertOk);
 	assert(left->Insert(slice, page_no) == InsertOk);
-	__sync_bool_compare_and_swap(&root_, root_, left);
+	__sync_val_compare_and_swap(&root_, root_, left->page_no_);
 }
 
 bool BTree::Get(KeySlice *key) const
@@ -167,12 +164,12 @@ bool BTree::Get(KeySlice *key) const
 
 BTreePage* BTree::First(page_id *page_no, int level) const
 {
-	if (level > root_->level_)
+	BTreePage *page = page_manager_->GetPage(root_);
+	if (level > page->level_)
 		return nullptr;
 	if (level == -1)
-		level = root_->level_;
+		level = page->level_;
 
-	BTreePage *page = root_;
 	for (; page->level_ != level;)
 		page = page_manager_->GetPage(page->first_);
 

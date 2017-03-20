@@ -9,7 +9,6 @@
 #define _PAGE_MANAGER_HPP_
 
 #include "btree_page.hpp"
-#include "latch_manager.hpp"
 
 namespace Mushroom {
 
@@ -21,19 +20,21 @@ class PageManager
 		BTreePage* GetPage(page_id page_no);
 		BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
-		PageManager(const PageManger &) = delete;
-		PageManager(const PageManger &&) = delete;
-		PageManager& operator=(const PageManager &) = delete;
-		PageManager& operator=(const PageManager &&) = delete;
+		bool Free();
 
-		bool Close();
+		page_id Total() const { return cur_; }
 
 		~PageManager();
+
+		PageManager(const PageManager &) = delete;
+		PageManager(const PageManager &&) = delete;
+		PageManager& operator=(const PageManager &) = delete;
+		PageManager& operator=(const PageManager &&) = delete;
 
 	private:
 		volatile page_id cur_;
 		volatile page_id tot_;
-		char * const     mem_;
+		char            *mem_;
 };
 
 } // namespace Mushroom

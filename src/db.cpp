@@ -13,13 +13,16 @@
 #include <thread>
 
 #include "db.hpp"
+#include "page_manager.hpp"
 
 namespace Mushroom {
 
 MushroomDB::MushroomDB(const char *name, const int key_len)
 {
-	btree_ = new BTree(-1, key_len);
-	pool_  = new ThreadPool(new Queue(1024, key_len));
+	PageManager *page_manager = new PageManager(-1, 0);
+	btree_ = new BTree(key_len, page_manager);
+
+	pool_  = new ThreadPool(new Queue(128, key_len));
 }
 
 bool MushroomDB::Put(KeySlice *key)
@@ -128,7 +131,7 @@ void MushroomDB::IndexMultiple(const std::vector<std::string> &files, const int 
 
 bool MushroomDB::Close()
 {
-	btree_->Close();
+	btree_->Free();
 	return true;
 }
 

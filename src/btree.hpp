@@ -13,7 +13,6 @@
 
 #include "utility.hpp"
 #include "slice.hpp"
-#include "btree_page.hpp"
 #include "latch_manager.hpp"
 #include "page_manager.hpp"
 
@@ -24,9 +23,9 @@ class BTree
 	public:
 		static const uint16_t MAX_KEY_LENGTH = 256;
 
-		BTree(const int fd, const int key_len);
+		BTree(int key_len, PageManager *page_manager);
 
-		bool Close();
+		bool Free();
 
 		uint8_t KeyLen() const { return key_len_; }
 
@@ -62,7 +61,7 @@ class BTree
 		LatchManager *latch_manager_;
 		PageManager  *page_manager_;
 
-		volatile BTreePage *root_;
+		volatile page_id root_;
 
 		uint8_t  key_len_;
 		uint16_t degree_;
