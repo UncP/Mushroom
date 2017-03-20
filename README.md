@@ -6,15 +6,14 @@
 #### 这是 [Up Database](http://www.github.com/UncP/Up_Database) 以及 [pear Database](http://www.github.com/UncP/pear) 的升级版本
 
 ### Feature
-- [x] B<sup>link</sup> 树索引
-- [x] 前缀压缩（懒惰）
-- [x] 锁管理器
-- [x] 并发索引
-- [x] 多线程（线程池、二次映射有界队列）
++ 并发B<sup>link</sup> 树索引
++ 前缀压缩（懒惰）
++ 锁管理器
++ 多线程（线程池、二次映射有界队列）
 
 ******
 
-### B<sup>link</sup>树 Benchfuck
+### B<sup>link</sup> Tree BenchFuck
 `关键值长度： 16 字节`  
 `关键值数量： 1000 万组`  
 `总大小：160 M`  

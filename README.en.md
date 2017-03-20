@@ -5,6 +5,13 @@
 
 #### This is an upgrade of [Up Database](http://www.github.com/UncP/Up_Database) and [pear Database](http://www.github.com/UncP/pear)
 
+
+### Feature
++ Concurrent B<sup>link</sup> Tree Index
++ Prefix Compression (Lazy)
++ Latch Manager
++ Mulit-Thread (Thread Pool, Bounded Thread-Safe Queue)
+
 ******
 
 ### B<sup>link</sup> Tree Benchfuck
@@ -25,13 +32,3 @@
 | 0.4.3  |  Multi  |    \   |  new test strategy, threads conduct operations without going through the queue |
 | 0.4.4  |  Multi  |    \   |  latch manager refactoring |
 | 0.5.0  |  Multi  |    11.70 / 9.00   | fix **BUG** that exists from 0.4.1 to 0.4.4 |
-
-
-### TODO
-- [x] B<sup>link</sup> Tree Index Engine
-- [x] Thread Pool
-- [x] Thread Safe Queue (Bounded)
-- [x] Latch Manager
-- [x] Concurrent Index
-- [x] Prefix Compression (Lazy)
-- [ ] Data Manager
