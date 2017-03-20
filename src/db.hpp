@@ -25,13 +25,13 @@ class MushroomDB
 
 		bool Get(KeySlice *key);
 
-		void IndexSingle(const char *file, const int total = 1);
+		void IndexSingle(const char *file, const int total);
 
-		void IndexMultiple(const std::vector<std::string> &files, const int total = 1);
+		void IndexMultiple(const std::vector<std::string> &files, const int total);
 
-		bool FindSingle(const char *file, const int total = 1);
+		bool FindSingle(const char *file, const int total);
 
-		bool FindMultiple(const std::vector<std::string> &files, const int total = 1);
+		bool FindMultiple(const std::vector<std::string> &files, const int total);
 
 		bool Close();
 

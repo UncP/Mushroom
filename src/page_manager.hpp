@@ -24,8 +24,6 @@ class PageManager
 
 		page_id Total() const { return cur_; }
 
-		~PageManager();
-
 		PageManager(const PageManager &) = delete;
 		PageManager(const PageManager &&) = delete;
 		PageManager& operator=(const PageManager &) = delete;

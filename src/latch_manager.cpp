@@ -115,8 +115,8 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		latch_set_[idx].latch_.SpinReleaseWrite();
 		latch->Pin();
 		Link(hashidx, victim, page_no);
-		latch_set_[hashidx].latch_.SpinReleaseWrite();
 		latch->busy_.SpinReleaseWrite();
+		latch_set_[hashidx].latch_.SpinReleaseWrite();
 		return latch;
   }
 }

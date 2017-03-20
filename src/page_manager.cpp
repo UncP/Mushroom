@@ -55,9 +55,4 @@ bool PageManager::Free()
 	return true;
 }
 
-PageManager::~PageManager()
-{
-	if (mem_) Free();
-}
-
 } // namespace Mushroom

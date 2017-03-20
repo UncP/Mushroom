@@ -24,7 +24,7 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	int fd = open(name, O_RDWR);
 	assert(fd > 0);
 
-	PageManager *page_manager = new PageManager(fd);
+	PageManager *page_manager = new PageManager(-1);
 
 	btree_ = new BTree(key_len, page_manager);
 

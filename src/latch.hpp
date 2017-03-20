@@ -115,8 +115,6 @@ class Latch
 			assert(pthread_rwlock_destroy(lock_) == 0);
 		}
 
-		BTreePage *page_;
-
 	private:
 		volatile uint16_t pin_;
 		volatile uint16_t prev_;

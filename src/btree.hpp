@@ -21,7 +21,7 @@ namespace Mushroom {
 class BTree
 {
 	public:
-		static const uint16_t MAX_KEY_LENGTH = 256;
+		static const uint32_t MAX_KEY_LENGTH = 256;
 
 		BTree(int key_len, PageManager *page_manager);
 
@@ -41,8 +41,6 @@ class BTree
 
 		bool KeyCheck(std::ifstream &in, int total) const;
 
-		std::string ToString() const;
-
 		BTree(const BTree &) = delete;
 		BTree(const BTree &&) = delete;
 		BTree& operator=(const BTree &) = delete;
@@ -51,12 +49,20 @@ class BTree
 		~BTree();
 
 	private:
+		struct Set {
+			Set():depth_(0) { }
+			page_id    page_no_;
+			Latch     *latch_;
+			BTreePage *page_;
+			page_id    stack_[8];
+			uint8_t    depth_;
+		};
 
-		Latch* DescendToLeaf(const KeySlice *key, page_id *stack, uint8_t *depth) const;
+		void DescendToLeaf(const KeySlice *key, Set &set) const;
 
-		void SplitRoot(Latch *latch);
+		void SplitRoot(Set &set);
 
-		void Insert(Latch **latch, KeySlice *key);
+		void Insert(Set &set, KeySlice *key);
 
 		LatchManager *latch_manager_;
 		PageManager  *page_manager_;
