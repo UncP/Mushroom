@@ -11,9 +11,11 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <thread>
+#include <sys/mman.h>
 
 #include "db.hpp"
 #include "page_manager.hpp"
+#include "latch_manager.hpp"
 
 namespace Mushroom {
 
@@ -24,9 +26,20 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	int fd = open(name, O_RDWR);
 	assert(fd > 0);
 
+	assert(sizeof(LatchManager) == BTreePage::PageSize * LatchManager::pages);
+
+	if (!lseek(fd, 0, SEEK_END)) {
+		LatchManager tmp;
+		assert(pwrite(fd, (void *)&tmp, sizeof(LatchManager), 0) == sizeof(LatchManager));
+	}
+
+	LatchManager *latch_manager =
+		(LatchManager *)mmap(0, sizeof(LatchManager), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	assert(latch_manager != MAP_FAILED);
+
 	PageManager *page_manager = new PageManager(-1);
 
-	btree_ = new BTree(key_len, page_manager);
+	btree_ = new BTree(key_len, latch_manager, page_manager);
 
 	pool_  = new ThreadPool(new Queue(128, key_len));
 }

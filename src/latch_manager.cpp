@@ -5,15 +5,13 @@
  *    > Created Time:  2016-10-21 16:52:52
 **/
 
+#include <sys/mman.h>
+
 #include "latch_manager.hpp"
 
 namespace Mushroom {
 
-LatchManager::LatchManager():deployed_(0), victim_(0)
-{
-	latch_set_ = new LatchSet[mask-1];
-	latches_   = new Latch[total];
-}
+LatchManager::LatchManager():deployed_(0), victim_(0) { }
 
 void LatchManager::Link(uint16_t hashidx, uint16_t victim, page_id page_no)
 {
@@ -121,10 +119,9 @@ Latch* LatchManager::GetLatch(page_id page_no)
   }
 }
 
-LatchManager::~LatchManager()
+void LatchManager::Free()
 {
-	delete [] latches_;
-	delete [] latch_set_;
+	assert(!munmap((void *)this, sizeof(LatchManager)));
 }
 
 } // namespace Mushroom

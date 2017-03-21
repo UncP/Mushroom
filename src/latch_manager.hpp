@@ -17,9 +17,11 @@ class LatchManager
 	public:
 		LatchManager();
 
-		~LatchManager();
+		void Free();
 
 		Latch* GetLatch(page_id page_no);
+
+		static const uint16_t pages = 3;
 
 	private:
 		struct LatchSet {
@@ -30,13 +32,13 @@ class LatchManager
 
 		void Link(uint16_t hashidx, uint16_t victim, page_id page_no);
 
-		static const uint16_t total = 128;
-		static const uint16_t mask  = 37;
+		static const uint16_t total = 148;
+		static const uint16_t mask  = 56;
 
-		uint16_t  deployed_;
-		uint16_t  victim_;
-		LatchSet *latch_set_;
-		Latch    *latches_;
+		uint16_t deployed_;
+		uint16_t victim_;
+		LatchSet latch_set_[mask-1];
+		Latch    latches_[total];
 };
 
 } // namespace Mushroom

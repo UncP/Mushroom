@@ -23,7 +23,7 @@ class BTree
 	public:
 		static const uint32_t MAX_KEY_LENGTH = 256;
 
-		BTree(int key_len, PageManager *page_manager);
+		BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager);
 
 		bool Free();
 

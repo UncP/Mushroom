@@ -13,13 +13,11 @@
 
 namespace Mushroom {
 
-BTree::BTree(int key_len, PageManager *page_manager)
-:page_manager_(page_manager), root_(0), key_len_((uint8_t)key_len)
+BTree::BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager)
+:latch_manager_(latch_manager), page_manager_(page_manager), root_(0),
+ key_len_((uint8_t)key_len)
 {
 	degree_ = BTreePage::CalculateDegree(key_len_);
-
-	latch_manager_ = new LatchManager();
-	assert(latch_manager_);
 
 	BTreePage *root = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
 
@@ -32,13 +30,13 @@ BTree::BTree(int key_len, PageManager *page_manager)
 
 BTree::~BTree()
 {
-	delete latch_manager_;
 	delete page_manager_;
 }
 
 bool BTree::Free()
 {
 	printf("total page: %u\n", page_manager_->Total());
+	latch_manager_->Free();
 	page_manager_->Free();
 	return true;
 }
@@ -145,6 +143,7 @@ bool BTree::Get(KeySlice *key) const
 	bool flag = set.page_->Search(key);
 	if (!flag) {
 		printf("%s", key->ToString(key_len_).c_str());
+		set.page_->Analyze();
 		std::cout << set.page_->ToString();
 	}
 	set.latch_->UnlockShared();
