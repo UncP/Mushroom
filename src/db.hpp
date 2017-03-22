@@ -8,11 +8,9 @@
 #ifndef _MUSHROOM_DB_HPP_
 #define _MUSHROOM_DB_HPP_
 
-#include <string>
 #include <vector>
 
 #include "btree.hpp"
-#include "thread_pool.hpp"
 
 namespace Mushroom {
 
@@ -42,16 +40,12 @@ class MushroomDB
 
 		const BTree* Btree() const { return btree_; }
 
-		~MushroomDB() {
-			delete btree_;
-			delete pool_;
-		}
+		~MushroomDB() { delete btree_; }
 
 	private:
-		int         fd_;
-		char       *mapped_;
-		BTree      *btree_;
-		ThreadPool *pool_;
+		int    fd_;
+		char  *mapped_;
+		BTree *btree_;
 };
 
 } // namespace Mushroom

@@ -17,6 +17,7 @@
 #include "db.hpp"
 #include "page_manager.hpp"
 #include "latch_manager.hpp"
+#include "thread_pool.hpp"
 
 namespace Mushroom {
 
@@ -54,14 +55,11 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	PageManager *page_manager = new PageManager(fd_, (page_id *)mapped_+1);
 
 	btree_ = new BTree(key_len, latch_manager, page_manager, (page_id *)mapped_);
-
-	pool_  = new ThreadPool(new Queue(128, key_len));
 }
 
 bool MushroomDB::Put(KeySlice *key)
 {
-	pool_->AddTask(&BTree::Put, btree_, key);
-	return true;
+	return btree_->Put(key);
 }
 
 bool MushroomDB::Get(KeySlice *key)
@@ -95,6 +93,8 @@ bool MushroomDB::FindMultiple(const std::vector<std::string> &files, const int t
 void MushroomDB::IndexSingle(const char *file, const int total)
 {
 	uint32_t key_len = btree_->KeyLen();
+	ThreadPool *pool = new ThreadPool(new Queue(64, key_len));;
+
 	char tmp[BTreePage::PageByte + key_len] = {0};
 	KeySlice *key = (KeySlice *)tmp;
 	int fd = open(file, O_RDONLY);
@@ -113,8 +113,7 @@ void MushroomDB::IndexSingle(const char *file, const int total)
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len);
-			// Put(key);
-			btree_->Put(key);
+			pool->AddTask(&BTree::Put, btree_, key);
 			if (++count == total) {
 				flag = false;
 				break;
@@ -123,7 +122,8 @@ void MushroomDB::IndexSingle(const char *file, const int total)
 		}
 	}
 	close(fd);
-	pool_->Clear();
+	pool->Clear();
+	delete pool;
 }
 
 void MushroomDB::IndexMultiple(const std::vector<std::string> &files, const int total)
@@ -149,7 +149,7 @@ void MushroomDB::IndexMultiple(const std::vector<std::string> &files, const int 
 					for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 					tmp[j] = '\0';
 					memcpy(key->Data(), tmp, key_len);
-					btree_->Put(key);
+					Put(key);
 					if (++count == total) {
 						flag = false;
 						break;
