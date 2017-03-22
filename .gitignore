@@ -1,4 +1,6 @@
-btree_test_*
+btree_test_with_queue
+btree_test_multi_thread
+btree_test_multi_process
 *.o
 run
 .tags*
