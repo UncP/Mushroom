@@ -8,10 +8,11 @@
 #include <cassert>
 #include <unistd.h>
 #include <fcntl.h>
-#include <fstream>
 #include <sys/stat.h>
-#include <thread>
 #include <sys/mman.h>
+#include <fstream>
+#include <thread>
+#include <iostream>
 
 #include "db.hpp"
 #include "page_manager.hpp"
@@ -22,24 +23,37 @@ namespace Mushroom {
 MushroomDB::MushroomDB(const char *name, const int key_len)
 {
 	if (!access(name, F_OK)) assert(!remove(name));
-	assert(creat(name, O_RDWR) > 0);
-	int fd = open(name, O_RDWR);
-	assert(fd > 0);
 
-	assert(sizeof(LatchManager) == BTreePage::PageSize * LatchManager::pages);
+	assert((sizeof(LatchManager) + 2 * sizeof(page_id)) ==
+		BTreePage::PageSize * PageManager::LatchPages);
 
-	if (!lseek(fd, 0, SEEK_END)) {
+	assert((fd_ = open(name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) > 0);
+
+	struct flock lock;
+	memset(&lock, 0, sizeof(lock));
+	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
+	lock.l_len = 2 * sizeof(page_id);
+	assert(fcntl(fd_, F_SETLKW, &lock) != -1);
+
+	if (!lseek(fd_, 0, SEEK_END)) {
+		page_id page_no[2] = {0, 0};
+		assert(write(fd_, (void *)page_no, 2 * sizeof(page_id)) == 2 * sizeof(page_id));
 		LatchManager tmp;
-		assert(pwrite(fd, (void *)&tmp, sizeof(LatchManager), 0) == sizeof(LatchManager));
+		assert(write(fd_, (void *)&tmp, sizeof(LatchManager)) == sizeof(LatchManager));
 	}
+	lock.l_type = F_UNLCK;
+	assert(fcntl(fd_, F_SETLKW, &lock) != -1);
 
-	LatchManager *latch_manager =
-		(LatchManager *)mmap(0, sizeof(LatchManager), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	assert(latch_manager != MAP_FAILED);
+	mapped_ = (char *)mmap(0, BTreePage::PageSize * PageManager::LatchPages,
+		PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+	assert(mapped_ != MAP_FAILED);
 
-	PageManager *page_manager = new PageManager(-1);
+	LatchManager *latch_manager = (LatchManager *)(mapped_ + 2*sizeof(page_id));
 
-	btree_ = new BTree(key_len, latch_manager, page_manager);
+	PageManager *page_manager = new PageManager(fd_, (page_id *)mapped_+1);
+
+	btree_ = new BTree(key_len, latch_manager, page_manager, (page_id *)mapped_);
 
 	pool_  = new ThreadPool(new Queue(128, key_len));
 }
@@ -99,7 +113,8 @@ void MushroomDB::IndexSingle(const char *file, const int total)
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len);
-			Put(key);
+			// Put(key);
+			btree_->Put(key);
 			if (++count == total) {
 				flag = false;
 				break;
@@ -151,6 +166,8 @@ void MushroomDB::IndexMultiple(const std::vector<std::string> &files, const int 
 bool MushroomDB::Close()
 {
 	btree_->Free();
+	munmap(mapped_, BTreePage::PageSize * PageManager::LatchPages);
+	close(fd_);
 	return true;
 }
 

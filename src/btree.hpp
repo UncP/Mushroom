@@ -23,7 +23,7 @@ class BTree
 	public:
 		static const uint32_t MAX_KEY_LENGTH = 256;
 
-		BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager);
+		BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager, page_id *root);
 
 		bool Free();
 
@@ -67,10 +67,10 @@ class BTree
 		LatchManager *latch_manager_;
 		PageManager  *page_manager_;
 
-		volatile page_id root_;
+		volatile page_id *root_;
 
-		uint8_t  key_len_;
-		uint16_t degree_;
+		uint8_t       key_len_;
+		uint16_t      degree_;
 };
 
 } // namespace Mushroom

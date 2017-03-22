@@ -1,6 +1,4 @@
-btree_test_single
-btree_test_multiple
-latch_manager_test
+btree_test_*
 *.o
 run
 .tags*

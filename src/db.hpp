@@ -48,6 +48,8 @@ class MushroomDB
 		}
 
 	private:
+		int         fd_;
+		char       *mapped_;
 		BTree      *btree_;
 		ThreadPool *pool_;
 };

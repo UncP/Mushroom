@@ -17,8 +17,6 @@ class LatchManager
 	public:
 		LatchManager();
 
-		void Free();
-
 		Latch* GetLatch(page_id page_no);
 
 		static const uint16_t pages = 3;
@@ -33,7 +31,7 @@ class LatchManager
 		void Link(uint16_t hashidx, uint16_t victim, page_id page_no);
 
 		static const uint16_t total = 148;
-		static const uint16_t mask  = 56;
+		static const uint16_t mask  = 55;
 
 		uint16_t deployed_;
 		uint16_t victim_;

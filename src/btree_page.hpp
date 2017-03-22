@@ -25,7 +25,7 @@ class BTreePage
 	public:
 		static enum { ROOT = 0, BRANCH, LEAF } TYPE;
 
-		static const uint16_t PageSize  = 4096;
+		static const uint32_t PageSize  = 4096;
 
 		static const uint16_t PageByte  = sizeof(page_id);
 		static const uint16_t IndexByte = 2;

@@ -1,4 +1,4 @@
-## Mushroom: Multi-Progress/Multi-Thread B<sup>link</sup> Tree Index
+## Mushroom: Multi-Thread/Multi-Process B<sup>link</sup> Tree Index
 [中文版 README](./README.md)
 
 
@@ -7,16 +7,17 @@
 + Prefix Compression (Lazy)
 + Latch Manager
 + Mulit-Thread (Thread Pool, Bounded Thread-Safe Queue)
++ Multi-Process (Shared Memory Mapping)
 
 ******
 
-### B<sup>link</sup> Tree Benchfuck
+### B<sup>link</sup> Tree BenchFuck
 `key length: 16 bytes`  
 `total key: 10 million`  
 `total size: 160 M`  
 `CPU: Intel i3  2.1GHz  4 threads`
 
-| Version | Multi-Thread | Multi-Progress | Sorting Time(s) |       Improvements       |
+| Version | Multi-Thread | Multi-Process | Sorting Time(s) |       Improvements       |
 |:------:|:-------:|:---------:|:-----------:|:--------------------------:|
 | 0.1.0  |  No   |  No  |16.00    ||
 | 0.2.0  |  Yes  |  No  |12.32    |   two-phase lock based concurrent index   |
@@ -27,4 +28,5 @@
 | 0.4.2  |  Yes  |  No  |\    | change the way B link tree root split |
 | 0.4.3  |  Yes  |  No  |\   |  new test strategy, threads conduct operations without going through the queue |
 | 0.4.4  |  Yes  |  No  |\   |  latch manager refactoring |
-| 0.5.0  |  Yes  |  No  |11.70 / 9.00   | fix **BUG** that exists from 0.4.1 to 0.4.4 |
+| 0.5.0  |  Yes  |  No  |11.70 / 9.00   | fix **BUG**(atomic operation bug) that exists from 0.4.1 to 0.4.4 |
+| 0.6.0  |  Yes  |  Yes  |\   | implement multi-process B<sup>link</sup> tree using shared memory mapping| 

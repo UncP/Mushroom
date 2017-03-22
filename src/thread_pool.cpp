@@ -5,8 +5,6 @@
  *    > Created Time:  2016-10-16 19:02:14
 **/
 
-#include <iostream>
-
 #include "thread_pool.hpp"
 
 namespace Mushroom {

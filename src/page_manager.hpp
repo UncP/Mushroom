@@ -15,25 +15,26 @@ namespace Mushroom {
 class PageManager
 {
 	public:
-		PageManager(int fd);
+		PageManager(int fd, page_id *cur);
 
 		BTreePage* GetPage(page_id page_no);
 		BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		bool Free();
 
-		page_id Total() const { return cur_; }
+		page_id Total() const { return *cur_; }
 
 		PageManager(const PageManager &) = delete;
 		PageManager(const PageManager &&) = delete;
 		PageManager& operator=(const PageManager &) = delete;
 		PageManager& operator=(const PageManager &&) = delete;
 
+		static const page_id LatchPages = 3;
+
 	private:
-		const int        fd_;
-		volatile page_id cur_;
-		volatile page_id tot_;
-		char            *mem_;
+		int   fd_;
+		volatile page_id *cur_;
+		char *mem_;
 };
 
 } // namespace Mushroom

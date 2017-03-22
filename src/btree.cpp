@@ -13,19 +13,20 @@
 
 namespace Mushroom {
 
-BTree::BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager)
-:latch_manager_(latch_manager), page_manager_(page_manager), root_(0),
+BTree::BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager,
+	page_id *root)
+:latch_manager_(latch_manager), page_manager_(page_manager), root_(root),
  key_len_((uint8_t)key_len)
 {
 	degree_ = BTreePage::CalculateDegree(key_len_);
 
-	BTreePage *root = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
+	BTreePage *new_root = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
 
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
 	memset(key->Data(), 0xFF, key_len_);
 	page_id next;
-	assert(root->Insert(key, next) == InsertOk);
+	assert(new_root->Insert(key, next) == InsertOk);
 }
 
 BTree::~BTree()
@@ -36,14 +37,13 @@ BTree::~BTree()
 bool BTree::Free()
 {
 	printf("total page: %u\n", page_manager_->Total());
-	latch_manager_->Free();
 	page_manager_->Free();
 	return true;
 }
 
 void BTree::DescendToLeaf(const KeySlice *key, Set &set) const
 {
-	set.page_no_ = root_;
+	set.page_no_ = *root_;
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	set.page_ = page_manager_->GetPage(set.page_no_);
 	set.latch_->LockShared();
@@ -133,7 +133,7 @@ void BTree::SplitRoot(Set &set)
 	page_id page_no = 0;
 	assert(new_root->Insert(limit, page_no) == InsertOk);
 	assert(new_root->Insert(slice, page_no) == InsertOk);
-	__sync_val_compare_and_swap(&root_, root_, new_root->page_no_);
+	__sync_val_compare_and_swap(root_, *root_, new_root->page_no_);
 }
 
 bool BTree::Get(KeySlice *key) const
@@ -152,7 +152,7 @@ bool BTree::Get(KeySlice *key) const
 
 BTreePage* BTree::First(page_id *page_no, int level) const
 {
-	BTreePage *page = page_manager_->GetPage(root_);
+	BTreePage *page = page_manager_->GetPage(*root_);
 	if (level > page->level_)
 		return nullptr;
 	if (level == -1)

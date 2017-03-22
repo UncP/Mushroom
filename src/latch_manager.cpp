@@ -5,8 +5,6 @@
  *    > Created Time:  2016-10-21 16:52:52
 **/
 
-#include <sys/mman.h>
-
 #include "latch_manager.hpp"
 
 namespace Mushroom {
@@ -117,11 +115,6 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		latch_set_[hashidx].latch_.SpinReleaseWrite();
 		return latch;
   }
-}
-
-void LatchManager::Free()
-{
-	assert(!munmap((void *)this, sizeof(LatchManager)));
 }
 
 } // namespace Mushroom
