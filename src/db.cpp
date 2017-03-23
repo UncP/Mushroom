@@ -20,7 +20,7 @@ namespace Mushroom {
 
 MushroomDB::MushroomDB(const char *name, const int key_len)
 {
-	// if (!access(name, F_OK)) assert(!remove(name));
+	if (!access(name, F_OK)) assert(!remove(name));
 
 	assert((sizeof(LatchManager) + 2 * sizeof(page_id)) ==
 		BTreePage::PageSize * PageManager::LatchPages);
@@ -46,7 +46,7 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	assert(mapped_ != MAP_FAILED);
 
 	LatchManager *latch_manager = (LatchManager *)(mapped_ + 2*sizeof(page_id));
-	PageManager *page_manager = new PageManager(fd_, (page_id *)mapped_+1);
+	PageManager *page_manager = new PageManager(-1, (page_id *)mapped_+1);
 
 	btree_ = new BTree(key_len, latch_manager, page_manager, (page_id *)mapped_);
 

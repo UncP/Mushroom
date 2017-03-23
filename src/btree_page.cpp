@@ -79,11 +79,10 @@ page_id BTreePage::Descend(const KeySlice *key) const
 	return index ? slice->PageNo() : first_;
 }
 
-bool BTreePage::Search(KeySlice *key) const
+bool BTreePage::Search(KeySlice *key, uint16_t *index) const
 {
-	uint16_t index;
 	KeySlice *slice = nullptr;
-	return Traverse(key, &index, &slice);
+	return Traverse(key, index, &slice);
 }
 
 InsertStatus BTreePage::Insert(const KeySlice *key, page_id &page_no)

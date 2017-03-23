@@ -50,7 +50,7 @@ class BTreePage
 
 		page_id Descend(const KeySlice *key) const;
 
-		bool Search(KeySlice *key) const;
+		bool Search(KeySlice *key, uint16_t *index) const;
 
 		InsertStatus Insert(const KeySlice *key, page_id &page_no);
 

@@ -37,6 +37,7 @@ int main(int argc, char **argv)
 
 	auto beg = std::chrono::high_resolution_clock::now();
 	std::vector<std::thread> vec1;
+	int all = total == 1 ? 1 : total/files.size();
 	for (size_t i = 0; i != files.size(); ++i)
 		vec1.push_back(std::thread([&, i] {
 			char tmp[BTreePage::PageByte + key_len] = {0};
@@ -57,7 +58,7 @@ int main(int argc, char **argv)
 					tmp[j] = '\0';
 					memcpy(key->Data(), tmp, key_len);
 					db.Put(key);
-					if (++count == total) {
+					if (++count == all) {
 						flag = false;
 						break;
 					}
@@ -70,7 +71,7 @@ int main(int argc, char **argv)
 		e.join();
 	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "\ntotal: " << (total * files.size()) << "\n";
+	std::cerr << "\ntotal: " << (int(total / files.size()) * 4) << "\n";
 	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
 
 	beg = std::chrono::high_resolution_clock::now();
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
 	std::vector<std::thread> vec2;
 	for (size_t i = 0; i != files.size(); ++i)
 		vec2.push_back(std::thread([&, i] {
-			if (!db.FindSingle(files[i].c_str(), total))
+			if (!db.FindSingle(files[i].c_str(), all))
 				__sync_bool_compare_and_swap(&flag, true, false);
 		}));
 	for (auto &e : vec2)
