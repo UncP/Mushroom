@@ -28,4 +28,4 @@
 | 0.4.3  |  Yes  |  No  |\   |  new test strategy, threads conduct operations without going through the queue |
 | 0.4.4  |  Yes  |  No  |\   |  latch manager refactoring |
 | 0.5.0  |  Yes  |  No  |11.70 / 9.00   | fix **BUG**(atomic operation bug) that exists from 0.4.1 to 0.4.4 |
-| 0.6.0  |  Yes  |  Yes  |\   | multi-process supported, remove B<sup>link</sup> tree search bug| 
+| 0.6.0  |  Yes  |  Yes  |\   | multi-process supported, fix B<sup>link</sup> tree search **bug**| 
