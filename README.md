@@ -1,6 +1,7 @@
-## 蘑菇：并发B<sup>link</sup>树索引
+## Mushroom（蘑菇）：并发B<sup>link</sup>树索引
 [English Version of README](./README.en.md)
 
+### 警告，Mushroom具有极高的性能！
 
 ### Feature
 + 并发B<sup>link</sup>树索引

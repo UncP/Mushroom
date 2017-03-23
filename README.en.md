@@ -1,6 +1,7 @@
 ## Mushroom: Concurrent B<sup>link</sup> Tree Index
 [中文版 README](./README.md)
 
+### Warning, Mushroom has extremely high performance!
 
 ### Feature
 + Concurrent B<sup>link</sup> Tree Index
