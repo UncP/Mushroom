@@ -10,9 +10,11 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+#include <thread>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "../src/db.hpp"
-// #include "../src/iterator.hpp"
 
 int main(int argc, char **argv)
 {
@@ -34,24 +36,60 @@ int main(int argc, char **argv)
 	});
 
 	auto beg = std::chrono::high_resolution_clock::now();
-	db.IndexMultiple(files, total);
+	std::vector<std::thread> vec1;
+	for (size_t i = 0; i != files.size(); ++i)
+		vec1.push_back(std::thread([&, i] {
+			char tmp[BTreePage::PageByte + key_len] = {0};
+			KeySlice *key = (KeySlice *)tmp;
+			int fd = open(files[i].c_str(), O_RDONLY);
+			assert(fd > 0);
+			char buf[8192];
+			int curr = 0, ptr = 0, count = 0;
+			bool flag = true;
+			for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
+				while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
+				if (ptr) buf[ptr++] = '\0';
+				else break;
+				for (int i = 0; i < ptr;) {
+					int j = 0;
+					char *tmp = buf + i;
+					for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
+					tmp[j] = '\0';
+					memcpy(key->Data(), tmp, key_len);
+					db.Put(key);
+					if (++count == total) {
+						flag = false;
+						break;
+					}
+					++i;
+				}
+			}
+			close(fd);
+		}));
+	for (auto &e : vec1)
+		e.join();
 	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "\ntotal: " << (total * files.size()) << "\n";
 	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
 
 	beg = std::chrono::high_resolution_clock::now();
-	auto flag = db.FindMultiple(files, total);
+	bool flag = true;
+	std::vector<std::thread> vec2;
+	for (size_t i = 0; i != files.size(); ++i)
+		vec2.push_back(std::thread([&, i] {
+			if (!db.FindSingle(files[i].c_str(), total))
+				__sync_bool_compare_and_swap(&flag, true, false);
+		}));
+	for (auto &e : vec2)
+		e.join();
 	end = std::chrono::high_resolution_clock::now();
 	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
-	if (!flag) {
-		std::cout << "\033[31mFail :(\033[0m\n";
-	} else {
-		// Iterator it(db.Btree());
-		// assert(it.CheckBtree());
-		std::cout << "\033[32mSuccess :)\033[0m\n";
-	}
+	if (!flag)
+		std::cerr << "\033[31mFail :(\033[0m\n";
+	else
+		std::cerr << "\033[32mSuccess :)\033[0m\n";
 
 	db.Close();
 	return 0;

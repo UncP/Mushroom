@@ -8,8 +8,6 @@
 #ifndef _MUSHROOM_DB_HPP_
 #define _MUSHROOM_DB_HPP_
 
-#include <vector>
-
 #include "btree.hpp"
 
 namespace Mushroom {
@@ -23,15 +21,7 @@ class MushroomDB
 
 		bool Get(KeySlice *key);
 
-		void IndexSingle(const char *file, const int total);
-
-		void IndexMultipleThread(const std::vector<std::string> &files, const int total);
-
-		void IndexMultipleProcess(const std::vector<std::string> &files, const int total);
-
 		bool FindSingle(const char *file, const int total);
-
-		bool FindMultiple(const std::vector<std::string> &files, const int total);
 
 		bool Close();
 
@@ -40,7 +30,7 @@ class MushroomDB
 		MushroomDB& operator=(const MushroomDB &) = delete;
 		MushroomDB& operator=(const MushroomDB &&) = delete;
 
-		const BTree* Btree() const { return btree_; }
+		BTree* Btree() const { return btree_; }
 
 		~MushroomDB() { delete btree_; }
 

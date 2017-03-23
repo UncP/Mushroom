@@ -19,14 +19,22 @@ BTree::BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager
  key_len_((uint8_t)key_len)
 {
 	degree_ = BTreePage::CalculateDegree(key_len_);
+}
 
-	BTreePage *new_root = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
-
+void BTree::Initialize()
+{
+	Set set;
+	set.page_no_ = *root_;
+	assert(!set.page_no_);
+	set.latch_ = latch_manager_->GetLatch(*root_);
+	assert(set.latch_->TryWriteLock());
+	set.page_ = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
 	char buf[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)buf;
 	memset(key->Data(), 0xFF, key_len_);
-	page_id next;
-	assert(new_root->Insert(key, next) == InsertOk);
+	page_id next = 0;
+	assert(set.page_->Insert(key, next) == InsertOk);
+	set.latch_->Unlock();
 }
 
 BTree::~BTree()

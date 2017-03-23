@@ -10,6 +10,7 @@
 
 #include <unistd.h>
 #include <sys/mman.h>
+#include <iostream>
 
 #include "page_manager.hpp"
 
@@ -20,10 +21,12 @@ PageManager::PageManager(int fd, page_id *cur):fd_(fd), cur_(cur)
 	if (fd_ == -1) {
 		mem_ = new char[BTreePage::PageSize * 80000];
 	} else {
-		char tmp[BTreePage::PageSize];
-		assert(pwrite(fd_, tmp, BTreePage::PageSize, 74999*BTreePage::PageSize)
-			== BTreePage::PageSize);
-		mem_ = (char *)mmap(0, 75000*BTreePage::PageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd_,
+		if (!*cur_) {
+			char tmp[BTreePage::PageSize] = {0};
+			assert(pwrite(fd_, tmp, BTreePage::PageSize, 12*BTreePage::PageSize)
+				== BTreePage::PageSize);
+		}
+		mem_ = (char *)mmap(0, 10*BTreePage::PageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd_,
 			BTreePage::PageSize * LatchPages);
 		assert(mem_ != MAP_FAILED);
 	}
@@ -47,7 +50,7 @@ bool PageManager::Free()
 	if (fd_ == -1) {
 		delete [] mem_;
 	} else {
-		munmap(mem_, 75000*BTreePage::PageSize);
+		munmap(mem_, 10*BTreePage::PageSize);
 	}
 	cur_ = 0;
 	mem_ = 0;

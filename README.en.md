@@ -1,12 +1,11 @@
-## Mushroom: Multi-Thread/Multi-Process B<sup>link</sup> Tree Index
+## Mushroom: Concurrent B<sup>link</sup> Tree Index
 [中文版 README](./README.md)
 
 
 ### Feature
 + Concurrent B<sup>link</sup> Tree Index
 + Prefix Compression (Lazy)
-+ Latch Manager
-+ Mulit-Thread (Thread Pool, Bounded Thread-Safe Queue)
++ Mulit-Thread (Latch Manager, Thread Pool, Bounded Thread-Safe Queue)
 + Multi-Process (Shared Memory Mapping)
 
 ******

@@ -25,9 +25,9 @@ class BTree
 
 		BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager, page_id *root);
 
-		bool Free();
+		void Initialize();
 
-		uint8_t KeyLen() const { return key_len_; }
+		bool Free();
 
 		bool Put(KeySlice *key);
 

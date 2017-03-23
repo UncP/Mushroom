@@ -41,7 +41,7 @@ bool Iterator::Next()
 
 bool Iterator::CheckBtree()
 {
-	uint8_t key_len = btree_->KeyLen();
+	uint32_t key_len = BTree::MAX_KEY_LENGTH;
 
 	char buf[BTree::MAX_KEY_LENGTH + sizeof(page_id)] = { 0 };
 	KeySlice *pre = (KeySlice *)buf;

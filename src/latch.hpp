@@ -110,6 +110,10 @@ class Latch
 			Unpin();
 		}
 
+		bool TryWriteLock() {
+			return !pthread_rwlock_trywrlock(lock_);
+		}
+
 		void Upgrade() {
 			pthread_rwlock_unlock(lock_);
 			pthread_rwlock_wrlock(lock_);

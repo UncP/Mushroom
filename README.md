@@ -1,12 +1,11 @@
-## 蘑菇：B<sup>link</sup>树多线程/多进程索引
+## 蘑菇：并发B<sup>link</sup>树索引
 [English Version of README](./README.en.md)
 
 
 ### Feature
 + 并发B<sup>link</sup>树索引
 + 前缀压缩（懒惰）
-+ 锁管理器
-+ 多线程（线程池、二次映射有界队列）
++ 多线程（锁管理器、线程池、二次映射有界队列）
 + 多进程（共享内存映射） 
 
 ******
