@@ -5,14 +5,14 @@
  *    > Created Time:  2016-10-10 15:34:43
 **/
 
-#include <cassert>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/wait.h>
 #include <fstream>
 #include <thread>
-#include <iostream>
+#include <cassert>
 
 #include "db.hpp"
 #include "page_manager.hpp"
@@ -93,7 +93,7 @@ bool MushroomDB::FindMultiple(const std::vector<std::string> &files, const int t
 void MushroomDB::IndexSingle(const char *file, const int total)
 {
 	uint32_t key_len = btree_->KeyLen();
-	ThreadPool *pool = new ThreadPool(new Queue(64, key_len));;
+	// ThreadPool *pool = new ThreadPool(new Queue(128, key_len));;
 
 	char tmp[BTreePage::PageByte + key_len] = {0};
 	KeySlice *key = (KeySlice *)tmp;
@@ -113,7 +113,8 @@ void MushroomDB::IndexSingle(const char *file, const int total)
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len);
-			pool->AddTask(&BTree::Put, btree_, key);
+			// pool->AddTask(&BTree::Put, btree_, key);
+			Put(key);
 			if (++count == total) {
 				flag = false;
 				break;
@@ -122,11 +123,11 @@ void MushroomDB::IndexSingle(const char *file, const int total)
 		}
 	}
 	close(fd);
-	pool->Clear();
-	delete pool;
+	// pool->Clear();
+	// delete pool;
 }
 
-void MushroomDB::IndexMultiple(const std::vector<std::string> &files, const int total)
+void MushroomDB::IndexMultipleThread(const std::vector<std::string> &files, const int total)
 {
 	std::vector<std::thread> vector;
 	for (size_t i = 0; i != files.size(); ++i)
@@ -161,6 +162,20 @@ void MushroomDB::IndexMultiple(const std::vector<std::string> &files, const int 
 		}));
 	for (auto &e : vector)
 		e.join();
+}
+
+void MushroomDB::IndexMultipleProcess(const std::vector<std::string> &files, const int total)
+{
+	pid_t id[4];
+	for (int i = 0; i < 4; ++i) {
+		if (!(id[i] = fork())) {
+			IndexSingle(files[i].c_str(), total);
+			exit(0);
+		}
+	}
+	int status;
+	for (int i = 0; i < 4; ++i)
+		waitpid(id[i], &status, 0);
 }
 
 bool MushroomDB::Close()

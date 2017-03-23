@@ -10,8 +10,6 @@
 #include <string>
 #include <chrono>
 #include <iomanip>
-#include <unistd.h>
-#include <sys/wait.h>
 
 #include "../src/db.hpp"
 
@@ -33,29 +31,23 @@ int main(int argc, char **argv)
 	});
 
 	MushroomDB db("../mushroom", key_len);
+	std::cout << "\ntotal: " << total << "\n";
+	auto beg = std::chrono::high_resolution_clock::now();
+	db.IndexMultipleProcess(files, total == 1 ? total : (total/4));
+	auto end = std::chrono::high_resolution_clock::now();
+	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	std::cout << "put time: " << std::setw(8) << Time << "  s\n";
 
-	pid_t id = fork();
-	if (!id) {
-		auto beg = std::chrono::high_resolution_clock::now();
-		db.IndexSingle(files[0].c_str(), total);
-		auto end = std::chrono::high_resolution_clock::now();
-		auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-		std::cout << "\ntotal: " << total << "\n";
-		std::cout << "put time: " << std::setw(8) << Time << "  s\n";
+	beg = std::chrono::high_resolution_clock::now();
+	bool flag = db.FindMultiple(files, total == 1 ? total : (total/4));
+	end = std::chrono::high_resolution_clock::now();
+	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	std::cout << "get time: " << std::setw(8) << Time << "  s\n";
+	if (!flag) {
+		std::cout << "\033[31mFail :(\033[0m\n";
 	} else {
-		int status;
-		waitpid(id, &status, 0);
-		auto beg = std::chrono::high_resolution_clock::now();
-		bool flag = db.FindSingle(files[0].c_str(), total);
-		auto end = std::chrono::high_resolution_clock::now();
-		auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-		std::cout << "get time: " << std::setw(8) << Time << "  s\n";
-		if (!flag) {
-			std::cout << "\033[31mFail :(\033[0m\n";
-		} else {
-			std::cout << "\033[32mSuccess :)\033[0m\n";
-		}
-		db.Close();
+		std::cout << "\033[32mSuccess :)\033[0m\n";
 	}
+	db.Close();
 	return 0;
 }

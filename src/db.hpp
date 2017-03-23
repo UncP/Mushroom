@@ -25,7 +25,9 @@ class MushroomDB
 
 		void IndexSingle(const char *file, const int total);
 
-		void IndexMultiple(const std::vector<std::string> &files, const int total);
+		void IndexMultipleThread(const std::vector<std::string> &files, const int total);
+
+		void IndexMultipleProcess(const std::vector<std::string> &files, const int total);
 
 		bool FindSingle(const char *file, const int total);
 
