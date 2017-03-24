@@ -10,7 +10,6 @@
 #include <sys/mman.h>
 #include <fstream>
 #include <cassert>
-#include <iostream>
 
 #include "db.hpp"
 #include "page_manager.hpp"
@@ -26,8 +25,6 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	uint32_t latch_byte = sizeof(LatchManager);
 	uint32_t map_bytes = BTreePage::PageSize * PageManager::LatchPages;
 	assert(latch_byte + 2 * page_byte <= map_bytes);
-
-	std::cout << latch_byte << std::endl;
 
 	assert((fd_ = open(name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) > 0);
 

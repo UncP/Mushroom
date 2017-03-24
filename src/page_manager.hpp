@@ -8,6 +8,7 @@
 #ifndef _PAGE_MANAGER_HPP_
 #define _PAGE_MANAGER_HPP_
 
+#include "latch.hpp"
 #include "btree_page.hpp"
 
 namespace Mushroom {
@@ -16,6 +17,7 @@ class PageManager
 {
 	public:
 		PageManager(int fd, page_id *cur);
+		~PageManager();
 
 		page_id Total() const { return *cur_; }
 
@@ -32,7 +34,7 @@ class PageManager
 		static const uint32_t LatchPages = 4;
 
 		static const uint32_t SegBits  = 4;
-		static const uint32_t Segment  = 16;
+		static const uint32_t SegSize  = 16;
 		static const uint32_t PoolMask = 15;
 		static const uint32_t PoolSize = 4800;
 		static const uint32_t HashMask = 1023;
@@ -41,7 +43,7 @@ class PageManager
 		struct PagePool {
 			PagePool():pin_(0), base_(0), mem_(0), prev_(0), next_(0) { }
 
-			void Initialize();
+			void Initialize(page_id page_no);
 
 			BTreePage* GetPage(page_id page_no);
 

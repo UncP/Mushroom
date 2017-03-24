@@ -1,7 +1,7 @@
 ## Mushroom: Concurrent B<sup>link</sup> Tree Index
 [中文版 README](./README.md)
 
-### Warning, Mushroom has extremely high performance!
+### Behold, the power of Mushroom! 
 
 ### Feature
 + Concurrent B<sup>link</sup> Tree Index
@@ -31,6 +31,7 @@
 | 0.4.4  |  Yes  |  No  |\   |  latch manager refactoring |
 | 0.5.0  |  Yes  |  No  |11.70 / 9.00   | fix **BUG**(atomic operation bug) that exists from 0.4.1 to 0.4.4 |
 | 0.6.0  |  Yes  |  Yes  |\   | multi-process supported, fix B<sup>link</sup> tree search **bug**| 
+| 0.6.1  |  Yes  |  No |18.69 / 13.04| two-phase hashing page manager, implement lazy page allocation| 
 
 
 ### Other
