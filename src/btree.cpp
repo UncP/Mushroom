@@ -146,10 +146,11 @@ void BTree::SplitRoot(Set &set)
 
 bool BTree::Get(KeySlice *key) const
 {
-	uint16_t idx = 0;
 	Set set;
+
 	DescendToLeaf(key, set);
-	for (; !set.page_->Search(key, &idx);) {
+
+	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
 			set.latch_->UnlockShared();
 			printf("%s", key->ToString(key_len_).c_str());
@@ -164,8 +165,8 @@ bool BTree::Get(KeySlice *key) const
 		set.latch_->LockShared();
 		pre->UnlockShared();
 	}
-	set.latch_->UnlockShared();
 
+	set.latch_->UnlockShared();
 	return true;
 }
 

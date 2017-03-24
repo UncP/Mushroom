@@ -22,8 +22,12 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 {
 	if (!access(name, F_OK)) assert(!remove(name));
 
-	assert((sizeof(LatchManager) + 2 * sizeof(page_id)) ==
-		BTreePage::PageSize * PageManager::LatchPages);
+	uint32_t page_byte = sizeof(page_id);
+	uint32_t latch_byte = sizeof(LatchManager);
+	uint32_t map_bytes = BTreePage::PageSize * PageManager::LatchPages;
+	assert(latch_byte + 2 * page_byte <= map_bytes);
+
+	std::cout << latch_byte << std::endl;
 
 	assert((fd_ = open(name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) > 0);
 
@@ -31,26 +35,30 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	memset(&lock, 0, sizeof(lock));
 	lock.l_type = F_WRLCK;
 	lock.l_whence = SEEK_SET;
-	lock.l_len = BTreePage::PageSize * PageManager::LatchPages;
+	lock.l_len = map_bytes;
 
 	assert(fcntl(fd_, F_SETLKW, &lock) != -1);
 	if (!lseek(fd_, 0, SEEK_END)) {
 		page_id page_no[2] = {0, 0};
-		assert(write(fd_, (void *)page_no, 2 * sizeof(page_id)) == 2 * sizeof(page_id));
+		assert(write(fd_, (void *)page_no, 2 * page_byte) == 2 * page_byte);
 		LatchManager tmp;
-		assert(write(fd_, (void *)&tmp, sizeof(LatchManager)) == sizeof(LatchManager));
+		assert(write(fd_, (void *)&tmp, latch_byte) == latch_byte);
+		uint32_t left = map_bytes - 2 * page_byte - latch_byte;
+		if (left) {
+			char fill[left] = {0};
+			assert(write(fd_, (void *)fill, left) == left);
+		}
 	}
 
-	mapped_ = (char *)mmap(0, BTreePage::PageSize * PageManager::LatchPages,
-		PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+	mapped_ = (char *)mmap(0, map_bytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
 	assert(mapped_ != MAP_FAILED);
 
-	LatchManager *latch_manager = (LatchManager *)(mapped_ + 2*sizeof(page_id));
-	PageManager *page_manager = new PageManager(-1, (page_id *)mapped_+1);
+	LatchManager *latch_manager = (LatchManager *)(mapped_ + 2 * page_byte);
+	PageManager *page_manager = new PageManager(-1, (page_id *)mapped_ + 1);
 
 	btree_ = new BTree(key_len, latch_manager, page_manager, (page_id *)mapped_);
 
-	if (!*((page_id *)mapped_+1)) btree_->Initialize();
+	if (!*((page_id *)mapped_ + 1)) btree_->Initialize();
 
 	lock.l_type = F_UNLCK;
 	assert(fcntl(fd_, F_SETLKW, &lock) != -1);

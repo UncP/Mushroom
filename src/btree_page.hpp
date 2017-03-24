@@ -15,8 +15,6 @@
 
 namespace Mushroom {
 
-class BTree;
-
 typedef enum { InsertOk, ExistedKey, MoveRight } InsertStatus;
 
 class BTreePage
@@ -27,8 +25,8 @@ class BTreePage
 
 		static const uint32_t PageSize  = 4096;
 
-		static const uint16_t PageByte  = sizeof(page_id);
-		static const uint16_t IndexByte = 2;
+		static const uint32_t PageByte  = sizeof(page_id);
+		static const uint32_t IndexByte = 2;
 
 		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0);
 

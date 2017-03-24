@@ -19,24 +19,16 @@ class LatchManager
 
 		Latch* GetLatch(page_id page_no);
 
-		static const uint16_t pages = 3;
-
 	private:
-		struct LatchSet {
-			LatchSet():slot_(0) { }
-			SpinLatch         latch_;
-			volatile uint16_t slot_;
-		};
-
 		void Link(uint16_t hashidx, uint16_t victim, page_id page_no);
 
-		static const uint16_t total = 148;
-		static const uint16_t mask  = 55;
+		static const uint16_t total = 208;
+		static const uint16_t mask  = 209;
 
-		uint16_t deployed_;
-		uint16_t victim_;
-		LatchSet latch_set_[mask-1];
-		Latch    latches_[total];
+		uint16_t  deployed_;
+		uint16_t  victim_;
+		HashEntry entries_[mask-1];
+		Latch     latches_[total];
 };
 
 } // namespace Mushroom

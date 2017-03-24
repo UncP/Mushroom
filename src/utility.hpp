@@ -15,7 +15,7 @@ namespace Mushroom {
 typedef uint32_t page_id;
 
 class BTreePage;
-
+class BTree;
 class LatchManager;
 
 } // namespace Mushroom

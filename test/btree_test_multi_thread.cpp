@@ -87,11 +87,12 @@ int main(int argc, char **argv)
 	end = std::chrono::high_resolution_clock::now();
 	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+	db.Close();
+
 	if (!flag)
 		std::cerr << "\033[31mFail :(\033[0m\n";
 	else
 		std::cerr << "\033[32mSuccess :)\033[0m\n";
 
-	db.Close();
 	return 0;
 }

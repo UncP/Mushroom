@@ -73,17 +73,17 @@ class SpinLatch
 		}
 
 	private:
-		volatile uint8_t  mutex_;
-		volatile uint8_t  exclusive_;
-		volatile uint8_t  pending_;
-		volatile uint16_t share_;
+		volatile uint8_t mutex_;
+		volatile uint8_t exclusive_;
+		volatile uint8_t pending_;
+		volatile uint8_t share_;
 };
 
 class Latch
 {
 	friend class LatchManager;
 	public:
-		Latch():pin_(0), prev_(0), next_(0), hash_(0), page_no_(0xFFFFFFFF) {
+		Latch():pin_(0), hash_(0), prev_(0), next_(0), page_no_(0xFFFFFFFF) {
 			pthread_rwlockattr_t attr;
 			pthread_rwlockattr_init(&attr);
 			pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
@@ -125,12 +125,19 @@ class Latch
 
 	private:
 		volatile uint16_t pin_;
+		volatile uint16_t hash_;
 		volatile uint16_t prev_;
 		volatile uint16_t next_;
-		volatile uint16_t hash_;
 		volatile page_id  page_no_;
 		SpinLatch         busy_;
 		pthread_rwlock_t  lock_[1];
+};
+
+class HashEntry {
+	public:
+		HashEntry():slot_(0) { }
+		SpinLatch         latch_;
+		volatile uint16_t slot_;
 };
 
 } // namespace Mushroom

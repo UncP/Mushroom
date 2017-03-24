@@ -6,6 +6,7 @@
 ### Feature
 + Concurrent B<sup>link</sup> Tree Index
 + Prefix Compression (Lazy)
++ Two-Phase Hashing Page Manager
 + Mulit-Thread (Latch Manager, Thread Pool, Bounded Thread-Safe Queue)
 + Multi-Process (Shared Memory Mapping)
 
@@ -30,3 +31,7 @@
 | 0.4.4  |  Yes  |  No  |\   |  latch manager refactoring |
 | 0.5.0  |  Yes  |  No  |11.70 / 9.00   | fix **BUG**(atomic operation bug) that exists from 0.4.1 to 0.4.4 |
 | 0.6.0  |  Yes  |  Yes  |\   | multi-process supported, fix B<sup>link</sup> tree search **bug**| 
+
+
+### Other
++ Version 0.6.0 is the first stable version

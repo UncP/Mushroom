@@ -1,11 +1,12 @@
 ## Mushroom（蘑菇）：并发B<sup>link</sup>树索引
 [English Version of README](./README.en.md)
 
-### 警告，Mushroom具有极高的性能！
+### 警告，Mushroom具有非常强悍的性能！
 
 ### Feature
 + 并发B<sup>link</sup>树索引
 + 前缀压缩（懒惰）
++ 二次哈希页面管理器
 + 多线程（锁管理器、线程池、二次映射有界队列）
 + 多进程（共享内存映射） 
 
@@ -32,4 +33,6 @@
 | 0.6.0  |  是  |  是  |     \      |使用共享内存映射支持多进程，同时修复B<sup>link</sup>树搜索**bug**|
 
 
-#### 你可以在[这里](https://zhuanlan.zhihu.com/p/24800198)找到B<sup>link</sup>树的并发控制协议介绍及证明
+### 其他
++ 版本0.6.0是第一个稳定版本
++ 你可以在[这里](https://zhuanlan.zhihu.com/p/24800198)找到B<sup>link</sup>树的并发控制协议介绍及证明

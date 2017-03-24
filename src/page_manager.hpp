@@ -17,24 +17,46 @@ class PageManager
 	public:
 		PageManager(int fd, page_id *cur);
 
+		page_id Total() const { return *cur_; }
+
 		BTreePage* GetPage(page_id page_no);
 		BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		bool Free();
-
-		page_id Total() const { return *cur_; }
 
 		PageManager(const PageManager &) = delete;
 		PageManager(const PageManager &&) = delete;
 		PageManager& operator=(const PageManager &) = delete;
 		PageManager& operator=(const PageManager &&) = delete;
 
-		static const page_id LatchPages = 3;
+		static const uint32_t LatchPages = 4;
+
+		static const uint32_t SegBits  = 4;
+		static const uint32_t Segment  = 16;
+		static const uint32_t PoolMask = 15;
+		static const uint32_t PoolSize = 4800;
+		static const uint32_t HashMask = 1023;
 
 	private:
-		int   fd_;
-		volatile page_id *cur_;
-		char *mem_;
+		struct PagePool {
+			PagePool():pin_(0), base_(0), mem_(0), prev_(0), next_(0) { }
+
+			void Initialize();
+
+			BTreePage* GetPage(page_id page_no);
+
+			uint16_t  pin_;
+			page_id   base_;
+			char     *mem_;
+			PagePool *prev_;
+			PagePool *next_;
+		};
+
+		int        fd_;
+		page_id   *cur_;
+		uint16_t   tot_;
+		HashEntry *entries_;
+		PagePool  *pool_;
 };
 
 } // namespace Mushroom
