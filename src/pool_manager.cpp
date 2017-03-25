@@ -11,8 +11,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#include <iostream>
-
 #include "pool_manager.hpp"
 
 namespace Mushroom {
@@ -79,16 +77,15 @@ BTreePage* PoolManager::GetPage(page_id page_no)
 		return page;
 	}
 	assert(0);
-	__sync_fetch_and_add(&tot_, -1);
+	// __sync_fetch_and_add(&tot_, -1);
 
-	for (; --victim;) {
-		PagePool *pool = pool_ + victim;
-		uint16_t idx = (pool->base_ >> PagePool::SegBits) & HashMask;
+	// for (; --victim;) {
+	// 	PagePool *pool = pool_ + victim;
+	// 	uint16_t idx = (pool->base_ >> PagePool::SegBits) & HashMask;
 
-		if (!entries_[idx].latch_.SpinWriteTry())
-			continue;
-	}
-	return page;
+	// 	if (!entries_[idx].latch_.SpinWriteTry())
+	// 		continue;
+	// }
 }
 
 BTreePage* PoolManager::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree)

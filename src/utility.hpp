@@ -19,6 +19,7 @@ class BTreePage;
 class BTree;
 class LatchManager;
 class PageManager;
+class ThreadPool;
 
 } // namespace Mushroom
 

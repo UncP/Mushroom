@@ -9,10 +9,11 @@
 #include <ctime>
 #include <string>
 #include <fstream>
-#include <vector>
-#include <thread>
 #include <sstream>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <cassert>
 
 namespace Mushroom {
 
@@ -34,27 +35,22 @@ class MushroomDBTestData
 			total /= file_num;
 			std::ostringstream os;
 			os << total;
-			// if (access("data", F_OK))
-				// assert(mkdir("data", S_IRUSR | S_IWUSR | S_IROTH) >= 0);
+			if (access("data", F_OK))
+				assert(mkdir("data", S_IRUSR | S_IWUSR | S_IROTH) >= 0);
 			std::string base("data/"+os.str());
-			std::vector<std::thread> vector;
 			for (int i = 0; i != file_num; ++i) {
-				vector.push_back(std::thread([&, i] {
-					std::ostringstream o;
-					o << i;
-					std::ofstream out(base+"_"+o.str());
-					char key[key_len+1];
-					key[key_len] = '\n';
-					for (int j = 0; j != total; ++j) {
-						for (int k = 0; k != key_len; ++k)
-							key[k] = choice[distribution(generator)];
-						out.write(key, key_len+1);
-					}
-					out.close();
-				}));
+				std::ostringstream o;
+				o << i;
+				std::ofstream out(base+"_"+o.str());
+				char key[key_len+1];
+				key[key_len] = '\n';
+				for (int j = 0; j != total; ++j) {
+					for (int k = 0; k != key_len; ++k)
+						key[k] = choice[distribution(generator)];
+					out.write(key, key_len+1);
+				}
+				out.close();
 			}
-			for (auto &e : vector)
-				e.join();
 		}
 
 	private:
@@ -68,6 +64,6 @@ int main()
 	using namespace Mushroom;
 
 	MushroomDBTestData data(time(0));
-	data.Generate(1000, 4, 16);
+	data.Generate(100000000, 4, 16);
 	return 0;
 }

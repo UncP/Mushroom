@@ -17,23 +17,19 @@ void Thread::Start()
 
 void Thread::Stop()
 {
-	if (thread_.joinable())
-		thread_.join();
+	thread_.join();
 }
 
 ThreadPool::ThreadPool(Queue *queue):queue_(queue), working_(false)
 {
-	int thread_num = std::thread::hardware_concurrency();
-
-	std::vector<std::shared_ptr<Thread>> threads(thread_num);
-	threads_.swap(threads);
-
-	for (auto &each : threads_) {
-		each = ThreadPool::CreateThread([this]() { Run(); });
-		each->Start();
-	}
+	threads_ = new Thread*[thread_num];
 
 	working_ = true;
+
+	for (int i = 0; i != thread_num; ++i) {
+		threads_[i] = ThreadPool::CreateThread([this]() { Run(); });
+		threads_[i]->Start();
+	}
 }
 
 void ThreadPool::AddTask(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
@@ -54,8 +50,9 @@ void ThreadPool::Clear()
 	if (!working_) return ;
 	queue_->Clear();
 	working_ = false;
-	for (auto e : threads_)
-		e->Stop();
+
+	for (int i = 0; i != thread_num; ++i)
+		threads_[i]->Stop();
 }
 
 ThreadPool::~ThreadPool()
@@ -63,6 +60,9 @@ ThreadPool::~ThreadPool()
 	if (working_)
 		Clear();
 	working_ = false;
+	for (int i = 0; i != thread_num; ++i)
+		delete threads_[i];
+	delete [] threads_;
 	delete queue_;
 }
 

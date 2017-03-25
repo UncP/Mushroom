@@ -21,10 +21,14 @@ int main(int argc, char **argv)
 	using namespace Mushroom;
 
 	const std::vector<std::string> files = {
-		std::string("../data/16_2500000_0_random"),
-		std::string("../data/16_2500000_1_random"),
-		std::string("../data/16_2500000_2_random"),
-		std::string("../data/16_2500000_3_random")
+		std::string("../data/2500000_0"),
+		std::string("../data/2500000_1"),
+		std::string("../data/2500000_2"),
+		std::string("../data/2500000_3")
+		// std::string("../data/25000000_0"),
+		// std::string("../data/25000000_1"),
+		// std::string("../data/25000000_2"),
+		// std::string("../data/25000000_3")
 	};
 	assert(argc > 4);
 	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
@@ -75,20 +79,22 @@ int main(int argc, char **argv)
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "\ntotal: " << (all * files.size()) << "\n";
 	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
-
-	beg = std::chrono::high_resolution_clock::now();
 	bool flag = true;
-	std::vector<std::thread> vec2;
-	for (size_t i = 0; i != files.size(); ++i)
-		vec2.push_back(std::thread([&, i] {
-			if (!db.FindSingle(files[i].c_str(), all))
-				__sync_bool_compare_and_swap(&flag, true, false);
-		}));
-	for (auto &e : vec2)
-		e.join();
-	end = std::chrono::high_resolution_clock::now();
-	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+
+	// beg = std::chrono::high_resolution_clock::now();
+	// bool flag = true;
+	// std::vector<std::thread> vec2;
+	// for (size_t i = 0; i != files.size(); ++i)
+	// 	vec2.push_back(std::thread([&, i] {
+	// 		if (!db.FindSingle(files[i].c_str(), all))
+	// 			__sync_bool_compare_and_swap(&flag, true, false);
+	// 	}));
+	// for (auto &e : vec2)
+	// 	e.join();
+	// end = std::chrono::high_resolution_clock::now();
+	// Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	// std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+
 	db.Close();
 
 	if (!flag)

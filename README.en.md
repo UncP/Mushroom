@@ -36,3 +36,4 @@
 
 ### Other
 + Version 0.6.0 is the first stable version
++ Latest Test: 100 million keys, 16 bytes each, sorting time 142.5s, occupy memory 2.7G

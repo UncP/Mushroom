@@ -10,15 +10,12 @@
 
 #include <thread>
 #include <functional>
-#include <vector>
-#include <memory>
 
+#include "utility.hpp"
 #include "task.hpp"
 #include "queue.hpp"
 
 namespace Mushroom {
-
-class ThreadPool;
 
 class Thread
 {
@@ -45,9 +42,8 @@ class Thread
 class ThreadPool
 {
 	public:
-
-		static std::shared_ptr<Thread> CreateThread(const std::function<void()> &func) {
-			return std::shared_ptr<Thread>(new Thread(func));
+		static Thread* CreateThread(const std::function<void()> &func) {
+			return new Thread(func);
 		}
 
 		ThreadPool(Queue *queue);
@@ -61,9 +57,11 @@ class ThreadPool
 		~ThreadPool();
 
 	private:
-		std::vector<std::shared_ptr<Thread>> threads_;
-		Queue                               *queue_;
-		bool                                 working_;
+		static const int thread_num = 4;
+
+		Thread **threads_;
+		Queue   *queue_;
+		bool     working_;
 };
 
 } // namespace Mushroom
