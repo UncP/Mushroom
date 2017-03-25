@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <fstream>
 #include <cassert>
 
 #include "db.hpp"
@@ -76,11 +75,7 @@ bool MushroomDB::Get(KeySlice *key)
 
 bool MushroomDB::FindSingle(const char *file, const int total)
 {
-	std::ifstream in(file);
-	assert(in.is_open());
-	bool flag = btree_->KeyCheck(in, total);
-	in.close();
-	return flag;
+	return btree_->Check(file, total);
 }
 
 bool MushroomDB::Close()

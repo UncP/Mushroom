@@ -5,6 +5,10 @@
  *    > Created Time:  2016-10-07 20:12:13
 **/
 
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+
 #include <cassert>
 #include <sstream>
 
@@ -195,17 +199,37 @@ bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 	return leaf->Ascend(key, page_no, index);
 }
 
-bool BTree::KeyCheck(std::ifstream &in, int total) const
+bool BTree::Check(const char *file, int total) const
 {
-	std::string val;
-	char buf[BTreePage::PageByte + key_len_] = {0};
-	KeySlice *key = (KeySlice *)buf;
-
-	for (int i = 0; !in.eof() && i != total; ++i) {
-		in >> val;
-		memcpy(key->Data(), val.c_str(), key_len_);
-		if (!Get(key)) return false;
+	char tmp[BTreePage::PageByte + key_len_] = {0};
+	KeySlice *key = (KeySlice *)tmp;
+	int fd = open(file, O_RDONLY);
+	assert(fd > 0);
+	char buf[8192];
+	int curr = 0, ptr = 0, count = 0;
+	bool flag = true;
+	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
+		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
+		if (ptr) buf[ptr++] = '\0';
+		else break;
+		for (int i = 0; i < ptr;) {
+			int j = 0;
+			char *tmp = buf + i;
+			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
+			tmp[j] = '\0';
+			memcpy(key->Data(), tmp, key_len_);
+			if (!Get(key)) {
+				close(fd);
+				return false;
+			}
+			if (++count == total) {
+				flag = false;
+				break;
+			}
+			++i;
+		}
 	}
+	close(fd);
 	return true;
 }
 

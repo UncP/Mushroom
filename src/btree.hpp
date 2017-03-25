@@ -8,7 +8,6 @@
 #ifndef _BTREE_HPP_
 #define _BTREE_HPP_
 
-#include <fstream>
 #include <string>
 
 #include "utility.hpp"
@@ -37,7 +36,7 @@ class BTree
 
 		bool Next(KeySlice *key, page_id *page_no, uint16_t *index) const;
 
-		bool KeyCheck(std::ifstream &in, int total) const;
+		bool Check(const char *file, int total) const;
 
 		BTree(const BTree &) = delete;
 		BTree(const BTree &&) = delete;

@@ -66,16 +66,18 @@ int main(int argc, char **argv)
 	}
 	close(fd);
 	pool->Clear();
+	flag = true;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	std::cerr << "\ntotal: " << total << "\n";
 	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
 
-	beg = std::chrono::high_resolution_clock::now();
-	flag = db.FindSingle(file, total);
-	end = std::chrono::high_resolution_clock::now();
-	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+	// beg = std::chrono::high_resolution_clock::now();
+	// flag = db.FindSingle(file, total);
+	// end = std::chrono::high_resolution_clock::now();
+	// Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	// std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+
 	if (!flag)
 		std::cerr << "\033[31mFail :(\033[0m\n";
 	else
