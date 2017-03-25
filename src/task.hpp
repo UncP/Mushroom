@@ -8,7 +8,7 @@
 #ifndef _TASK_HPP_
 #define _TASK_HPP_
 
-#include "btree.hpp"
+#include "utility.hpp"
 #include "slice.hpp"
 
 namespace Mushroom {

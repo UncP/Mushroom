@@ -5,7 +5,6 @@
  *    > Created Time:  2016-10-07 20:12:13
 **/
 
-#include <iostream>
 #include <cassert>
 #include <sstream>
 
@@ -153,8 +152,6 @@ bool BTree::Get(KeySlice *key) const
 	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
 			set.latch_->UnlockShared();
-			printf("%s", key->ToString(key_len_).c_str());
-			std::cout << set.page_->ToString();
 			return false;
 		}
 		set.page_no_ = set.page_->Next();

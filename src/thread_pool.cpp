@@ -9,15 +9,20 @@
 
 namespace Mushroom {
 
-void Thread::Start()
+static inline void* run(void *pool)
 {
-	std::thread thread(func_);
-	thread_.swap(thread);
+	((ThreadPool *)pool)->Run();
+	return 0;
 }
 
-void Thread::Stop()
+bool Thread::Start()
 {
-	thread_.join();
+	return !pthread_create(&id_, 0, func_, pool_);
+}
+
+bool Thread::Stop()
+{
+	return !pthread_join(id_, 0);
 }
 
 ThreadPool::ThreadPool(Queue *queue):queue_(queue), working_(false)
@@ -27,8 +32,8 @@ ThreadPool::ThreadPool(Queue *queue):queue_(queue), working_(false)
 	working_ = true;
 
 	for (int i = 0; i != thread_num; ++i) {
-		threads_[i] = ThreadPool::CreateThread([this]() { Run(); });
-		threads_[i]->Start();
+		threads_[i] = new Thread(&run, this);
+		assert(threads_[i]->Start());
 	}
 }
 
@@ -52,7 +57,7 @@ void ThreadPool::Clear()
 	working_ = false;
 
 	for (int i = 0; i != thread_num; ++i)
-		threads_[i]->Stop();
+		assert(threads_[i]->Stop());
 }
 
 ThreadPool::~ThreadPool()

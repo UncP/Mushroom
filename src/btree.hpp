@@ -65,7 +65,7 @@ class BTree
 		LatchManager *latch_manager_;
 		PoolManager  *page_manager_;
 
-		page_id *root_;
+		page_id      *root_;
 
 		uint8_t       key_len_;
 		uint16_t      degree_;

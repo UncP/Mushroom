@@ -9,6 +9,7 @@
 #define _BTREE_PAGE_HPP_
 
 #include <cassert>
+#include <string>
 
 #include "utility.hpp"
 #include "slice.hpp"

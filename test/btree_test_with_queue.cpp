@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const char *file = "../data/16_10000000_random";
+	const char *file = "../data/10000000";
 
 	assert(argc > 4);
 	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;

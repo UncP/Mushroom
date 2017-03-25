@@ -8,11 +8,9 @@
 #ifndef _THREAD_POOL_HPP_
 #define _THREAD_POOL_HPP_
 
-#include <thread>
-#include <functional>
+#include <pthread.h>
 
 #include "utility.hpp"
-#include "task.hpp"
 #include "queue.hpp"
 
 namespace Mushroom {
@@ -20,30 +18,29 @@ namespace Mushroom {
 class Thread
 {
 	friend class ThreadPool;
-
 	public:
-		void Start();
+		bool Start();
 
-		void Stop();
-
-		auto Id() const { return thread_.get_id(); }
+		bool Stop();
 
 		Thread(const Thread &) = delete;
+		Thread(const Thread &&) = delete;
 		Thread& operator=(const Thread &) = delete;
+		Thread& operator=(const Thread &&) = delete;
 
 	private:
+		Thread(void* (*func)(void *), ThreadPool *pool):func_(func), pool_(pool) { }
 
-		Thread(const std::function<void()> &func):func_(func) { }
-
-		std::function<void()>   func_;
-		std::thread             thread_;
+		void* (*func_)(void *);
+		ThreadPool *pool_;
+		pthread_t id_;
 };
 
 class ThreadPool
 {
 	public:
-		static Thread* CreateThread(const std::function<void()> &func) {
-			return new Thread(func);
+		static Thread* CreateThread(void* (*func)(void *), ThreadPool *pool) {
+			return new Thread(func, pool);
 		}
 
 		ThreadPool(Queue *queue);
