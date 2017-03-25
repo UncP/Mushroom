@@ -13,7 +13,7 @@
 
 namespace Mushroom {
 
-BTree::BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager,
+BTree::BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager,
 	page_id *root)
 :latch_manager_(latch_manager), page_manager_(page_manager), root_(root),
  key_len_((uint8_t)key_len)
@@ -154,7 +154,6 @@ bool BTree::Get(KeySlice *key) const
 		if (idx != set.page_->total_key_) {
 			set.latch_->UnlockShared();
 			printf("%s", key->ToString(key_len_).c_str());
-			set.page_->Analyze();
 			std::cout << set.page_->ToString();
 			return false;
 		}
@@ -197,21 +196,6 @@ bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 	leaf = page_manager_->GetPage(*page_no);
 
 	return leaf->Ascend(key, page_no, index);
-}
-
-void BTree::Traverse(int level) const
-{
-	BTreePage *page = First(nullptr, level);
-	if (!page) return ;
-	for (;;) {
-		std::cout << page->ToString();
-		page_id page_no = page->Next();
-		if (!page_no) break;
-
-		page = page_manager_->GetPage(page_no);
-
-		assert(page->level_ == level);
-	}
 }
 
 bool BTree::KeyCheck(std::ifstream &in, int total) const

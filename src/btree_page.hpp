@@ -21,20 +21,18 @@ class BTreePage
 {
 	friend class BTree;
 	public:
+
+		static uint32_t PageSize;
+
 		static enum { ROOT = 0, BRANCH, LEAF } TYPE;
-
-		static const uint32_t PageSize  = 4096;
-
 		static const uint32_t PageByte  = sizeof(page_id);
 		static const uint32_t IndexByte = 2;
+
+		static void SetPageInfo(uint32_t page_size);
 
 		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0);
 
 		void Initialize(page_id page_no, int type, uint8_t key_len, uint8_t level, uint16_t degree);
-
-		bool Read(const page_id page_no, const int fd);
-
-		bool Write(const int);
 
 		page_id Next() const {
 			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);
@@ -59,8 +57,6 @@ class BTreePage
 		void Split(BTreePage *that, KeySlice *slice);
 
 		bool NeedSplit();
-
-		void Analyze() const;
 
 		std::string ToString() const;
 

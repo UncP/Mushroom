@@ -12,18 +12,21 @@
 #include <cassert>
 
 #include "db.hpp"
-#include "page_manager.hpp"
+#include "pool_manager.hpp"
 #include "latch_manager.hpp"
 
 namespace Mushroom {
 
-MushroomDB::MushroomDB(const char *name, const int key_len)
+MushroomDB::MushroomDB(const char *name, const int key_len, uint32_t page_size,
+	uint32_t pool_size, uint8_t hash_bits, uint8_t seg_bits)
 {
+	PoolManager::SetPoolManagerInfo(page_size, pool_size, hash_bits, seg_bits);
+
 	if (!access(name, F_OK)) assert(!remove(name));
 
 	uint32_t page_byte = sizeof(page_id);
 	uint32_t latch_byte = sizeof(LatchManager);
-	uint32_t map_bytes = BTreePage::PageSize * PageManager::LatchPages;
+	uint32_t map_bytes = BTreePage::PageSize * PoolManager::LatchPages;
 	assert(latch_byte + 2 * page_byte <= map_bytes);
 
 	assert((fd_ = open(name, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR)) > 0);
@@ -51,7 +54,7 @@ MushroomDB::MushroomDB(const char *name, const int key_len)
 	assert(mapped_ != MAP_FAILED);
 
 	LatchManager *latch_manager = (LatchManager *)(mapped_ + 2 * page_byte);
-	PageManager *page_manager = new PageManager(-1, (page_id *)mapped_ + 1);
+	PoolManager *page_manager = new PoolManager(-1, (page_id *)mapped_ + 1);
 
 	btree_ = new BTree(key_len, latch_manager, page_manager, (page_id *)mapped_);
 
@@ -83,7 +86,7 @@ bool MushroomDB::FindSingle(const char *file, const int total)
 bool MushroomDB::Close()
 {
 	btree_->Free();
-	assert(!munmap(mapped_, BTreePage::PageSize * PageManager::LatchPages));
+	assert(!munmap(mapped_, BTreePage::PageSize * PoolManager::LatchPages));
 	close(fd_);
 	return true;
 }

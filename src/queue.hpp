@@ -9,16 +9,11 @@
 #define _QUEUE_HPP_
 
 #include <cassert>
-#include <queue>
-#include <vector>
 #include <mutex>
-#include <thread>
 #include <condition_variable>
-#include <algorithm>
 
+#include "utility.hpp"
 #include "task.hpp"
-#include "slice.hpp"
-#include "btree.hpp"
 
 namespace Mushroom {
 
@@ -38,9 +33,9 @@ class Queue
 	private:
 		bool                    clear_;
 		int                     capacity_;
-		std::vector<Task *>     queue_;
-		std::vector<int>        avail_;
-		std::vector<int>        work_;
+		Task*                  *queue_;
+		int                    *avail_;
+		int                    *work_;
 		int                     front_;
 		int                     avail_back_;
 		int                     work_back_;

@@ -31,10 +31,6 @@ int main(int argc, char **argv)
 		std::string("../data/16_2500000_3_random")
 	};
 
-	KeySlice::SetStringFormat([](const KeySlice *key, uint8_t len) {
-		return std::string(key->Data(), len) + "\n";
-	});
-
 	std::cerr << "\ntotal: " << total << "\n";
 	auto beg = std::chrono::high_resolution_clock::now();
 	int child = 4;

@@ -5,15 +5,18 @@
  *    > Created Time:  2016-10-22 09:10:01
 **/
 
-#include <iostream>
-#include <unistd.h>
 #include <sstream>
-#include <set>
 
 #include "btree_page.hpp"
-#include "utility.hpp"
 
 namespace Mushroom {
+
+uint32_t BTreePage::PageSize;
+
+void BTreePage::SetPageInfo(uint32_t page_size)
+{
+	PageSize = page_size;
+}
 
 uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 {
@@ -223,24 +226,6 @@ bool BTreePage::NeedSplit()
 	return false;
 }
 
-bool BTreePage::Read(const page_id page_no, const int fd)
-{
-	if (pread(fd, this, PageSize, page_no * PageSize) != PageSize)
-		return false;
-	assert(page_no_ == page_no);
-	return true;
-}
-
-bool BTreePage::Write(const int fd)
-{
-	if (dirty_) {
-		dirty_ = 0;
-		if (pwrite(fd, this, PageSize, page_no_ * PageSize) != PageSize)
-			return false;
-	}
-	return true;
-}
-
 std::string BTreePage::ToString() const
 {
 	std::ostringstream os;
@@ -274,30 +259,6 @@ std::string BTreePage::ToString() const
 	}
 	os << "\nnext: " << Key(index, total_key_-1)->PageNo() << "\n";
 	return os.str();
-}
-
-void BTreePage::Analyze() const
-{
-	std::set<uint16_t> offsets;
-	std::set<std::string> keys;
-	uint16_t *index = Index();
-	for (uint16_t i = 0; i != total_key_; ++i)
-		if (offsets.find(index[i]) == offsets.end())
-			offsets.insert(index[i]);
-		else
-			std::cout << "repeated index " << index[i] << std::endl;
-	std::string pre;
-	for (uint16_t i = 0; i != total_key_; ++i) {
-		KeySlice *key = (KeySlice *)(data_ + index[i]);
-		std::string tmp(key->Data(), key_len_);
-		if (pre.size() && pre >= tmp)
-			std::cout << pre << " " << tmp << std::endl;
-		if (keys.find(tmp) == keys.end())
-			keys.insert(tmp);
-		else
-			std::cout << "repeated key " << tmp << std::endl;
-		pre = tmp;
-	}
 }
 
 } // namespace Mushroom

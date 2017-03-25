@@ -20,20 +20,22 @@ int main(int argc, char **argv)
 {
 	using namespace Mushroom;
 
-	const int total = (argc == 2) ? atoi(argv[1]) : 1;
-	const int key_len = 16;
 	const std::vector<std::string> files = {
 		std::string("../data/16_2500000_0_random"),
 		std::string("../data/16_2500000_1_random"),
 		std::string("../data/16_2500000_2_random"),
 		std::string("../data/16_2500000_3_random")
 	};
+	assert(argc > 4);
+	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
+	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
+	uint8_t  hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 1024;
+	uint8_t  seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
 
-	MushroomDB db("../mushroom", key_len);
+	const int total = (argc == 6) ? atoi(argv[5]) : 1;
+	const int key_len = 16;
 
-	KeySlice::SetStringFormat([](const KeySlice *key, uint8_t len) {
-		return std::string(key->Data(), len) + "\n";
-	});
+	MushroomDB db("../mushroom", key_len, page_size, pool_size, hash_bits, seg_bits);
 
 	auto beg = std::chrono::high_resolution_clock::now();
 	std::vector<std::thread> vec1;
@@ -71,7 +73,7 @@ int main(int argc, char **argv)
 		e.join();
 	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "\ntotal: " << (int(total / files.size()) * 4) << "\n";
+	std::cerr << "\ntotal: " << (all * files.size()) << "\n";
 	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
 
 	beg = std::chrono::high_resolution_clock::now();

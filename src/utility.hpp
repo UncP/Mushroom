@@ -14,9 +14,11 @@ namespace Mushroom {
 
 typedef uint32_t page_id;
 
+class KeySlice;
 class BTreePage;
 class BTree;
 class LatchManager;
+class PageManager;
 
 } // namespace Mushroom
 

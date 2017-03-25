@@ -14,15 +14,18 @@ front_(0), avail_back_(0), work_back_(0)
 {
 	if (capacity <= 0 || capacity_ > 1024)
 		capacity_ = 1024;
-	queue_.reserve(capacity_);
+
+	queue_ = new Task*[capacity_];
 	for (int i = 0; i != capacity_; ++i)
-		queue_.push_back(new Task(len));
-	std::vector<int> tmp1(capacity_);
-	avail_.swap(tmp1);
+		queue_[i] = new Task(len);
+
+	avail_ = new int[capacity_];
 	for (int i = 0; i != capacity_; ++i)
 		avail_[i] = i;
-	std::vector<int> tmp2(capacity_, -1);
-	work_.swap(tmp2);
+
+	work_ = new int[capacity_];
+	for (int i = 0; i != capacity_; ++i)
+		work_[i] = -1;
 }
 
 void Queue::Push(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
@@ -74,9 +77,13 @@ Queue::~Queue()
 {
 	if (!clear_)
 		Clear();
-	std::for_each(queue_.begin(), queue_.end(), [](Task *task) {
-		delete task;
-	});
+
+	delete [] avail_;
+	delete [] work_;
+
+	for (int i = capacity_; i;)
+		delete queue_[--i];
+	delete [] queue_;
 }
 
 } // namespace Mushroom

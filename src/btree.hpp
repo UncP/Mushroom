@@ -14,7 +14,7 @@
 #include "utility.hpp"
 #include "slice.hpp"
 #include "latch_manager.hpp"
-#include "page_manager.hpp"
+#include "pool_manager.hpp"
 
 namespace Mushroom {
 
@@ -23,7 +23,7 @@ class BTree
 	public:
 		static const uint32_t MAX_KEY_LENGTH = 256;
 
-		BTree(int key_len, LatchManager *latch_manager, PageManager *page_manager, page_id *root);
+		BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager, page_id *root);
 
 		void Initialize();
 
@@ -36,8 +36,6 @@ class BTree
 		BTreePage* First(page_id *page_no, int level) const;
 
 		bool Next(KeySlice *key, page_id *page_no, uint16_t *index) const;
-
-		void Traverse(int level) const;
 
 		bool KeyCheck(std::ifstream &in, int total) const;
 
@@ -65,9 +63,9 @@ class BTree
 		void Insert(Set &set, KeySlice *key);
 
 		LatchManager *latch_manager_;
-		PageManager  *page_manager_;
+		PoolManager  *page_manager_;
 
-		volatile page_id *root_;
+		page_id *root_;
 
 		uint8_t       key_len_;
 		uint16_t      degree_;
