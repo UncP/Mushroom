@@ -10,5 +10,6 @@ branches:
   - master
 
 script:
-  - "cd src"
-  - "make all"
+  - cd src
+  - make all
+  - ./btree_test_multi_thread
