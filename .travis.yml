@@ -6,10 +6,22 @@ compiler:
 os:
   - linux
 
+sudo: required
+
 branches:
   - master
+
+before_script:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
+       export CC="gcc-4.8";
+       export CXX="g++-4.8";
+    fi
 
 script:
   - cd src
   - make all
-  - ./btree_test_multi_thread
+
+notifications:
+  email:
+    on_success: always
+    on_failure: never

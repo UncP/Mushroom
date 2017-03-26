@@ -1,9 +1,9 @@
 ## Mushroom（蘑菇）：并发B<sup>link</sup>树索引
 [English Version of README](./README.en.md)
 
-[![Version](https://img.shields.io/badge/Version-0.6.2-green.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.6.2-blue.svg)]()
 [![Build](https://travis-ci.org/UncP/Mushroom.svg?branch=master)](https://travis-ci.org/UncP/Mushroom)
-[![License](https://img.shields.io/badge/License-BSD--3-blue.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/License-BSD--3-green.svg)](./LICENSE)
 
 ### 警告，Mushroom具有非常强悍的性能！
 
