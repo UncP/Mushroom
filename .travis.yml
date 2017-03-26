@@ -11,7 +11,7 @@ sudo: required
 branches:
   - master
 
-install:
+before_script:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
   addons:
     apt:

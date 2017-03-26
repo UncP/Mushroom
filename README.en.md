@@ -4,6 +4,7 @@
 [![Version](https://img.shields.io/badge/Version-0.6.2-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-green.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD--3-red.svg)](./LICENSE)
+[![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](./LICENSE)
 
 ### Behold, the power of Mushroom! 
 

@@ -41,7 +41,6 @@ class PagePool
 		PagePool& operator=(const PagePool &&) = delete;
 
 	private:
-
 		static uint32_t SegBits;
 		static uint32_t SegSize;
 		static uint32_t SegMask;
