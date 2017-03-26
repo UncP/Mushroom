@@ -2,8 +2,8 @@
 [中文版 README](./README.md)
 
 [![Version](https://img.shields.io/badge/Version-0.6.2-blue.svg)]()
-[![Build](https://travis-ci.org/UncP/Mushroom.svg?branch=master)](https://travis-ci.org/UncP/Mushroom)
-[![License](https://img.shields.io/badge/License-BSD--3-green.svg)](./LICENSE)
+[![Build](https://img.shields.io/badge/Build-Passing-green.svg)](https://travis-ci.org/UncP/Mushroom)
+[![License](https://img.shields.io/badge/License-BSD--3-red.svg)](./LICENSE)
 
 ### Behold, the power of Mushroom! 
 

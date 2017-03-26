@@ -11,11 +11,14 @@ sudo: required
 branches:
   - master
 
-before_script:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
-       export CC="gcc-4.8";
-       export CXX="g++-4.8";
-    fi
+install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
+  addons:
+    apt:
+      sources:
+      - ubuntu-toolchain-r-test
+      packages:
+      - g++-4.8
 
 script:
   - cd src
