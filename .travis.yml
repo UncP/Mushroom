@@ -1,11 +1,14 @@
 language: cpp
 
-compiler: gcc
+compiler:
+  - gcc
 
-os: linux
+os:
+  - linux
 
-branches: master
+branches:
+  - master
 
 script:
   - "cd src"
-  - "make"
+  - "make all"

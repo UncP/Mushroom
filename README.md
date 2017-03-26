@@ -1,7 +1,7 @@
 ## Mushroom（蘑菇）：并发B<sup>link</sup>树索引
 [English Version of README](./README.en.md)
 
-[![Version](https://img.shields.io/badge/Version-0.6.2-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.6.2-yellow.svg)]()
 [![Build](https://travis-ci.org/UncP/Mushroom.svg?branch=master)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD--3-blue.svg)](./LICENSE)
 
@@ -12,7 +12,7 @@
 + 前缀压缩（懒惰）
 + 二次哈希页面管理器
 + 多线程（锁管理器、线程池、二次映射有界队列）
-+ 多进程（共享内存映射） 
++ 多进程（共享内存映射）
 
 ******
 
