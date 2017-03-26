@@ -1,6 +1,11 @@
 language: cpp
+
 compiler: gcc
+
 os: linux
+
 branches: master
-before_script: cd src
-script: make
+
+script:
+  - "cd src"
+  - "make"
