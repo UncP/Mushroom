@@ -1,0 +1,4 @@
+language: cpp
+compiler: g++
+os: linux
+branches: master
