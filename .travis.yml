@@ -1,4 +1,6 @@
 language: cpp
-compiler: g++
+compiler: gcc
 os: linux
 branches: master
+before_script: cd src
+script: make
