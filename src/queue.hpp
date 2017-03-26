@@ -8,12 +8,9 @@
 #ifndef _QUEUE_HPP_
 #define _QUEUE_HPP_
 
-#include <cassert>
-#include <mutex>
-#include <condition_variable>
+#include <pthread.h>
 
 #include "utility.hpp"
-#include "task.hpp"
 
 namespace Mushroom {
 
@@ -22,7 +19,7 @@ class Queue
 	public:
 		Queue(int capacity, uint8_t key_len);
 
-		void Push(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
+		void Push(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key);
 
 		void Pull();
 
@@ -39,9 +36,9 @@ class Queue
 		int                     front_;
 		int                     avail_back_;
 		int                     work_back_;
-		std::mutex              mutex_;
-		std::condition_variable ready_;
-		std::condition_variable empty_;
+		pthread_mutex_t         mutex_[1];
+		pthread_cond_t          ready_[1];
+		pthread_cond_t          empty_[1];
 };
 
 } // namespace Mushroom

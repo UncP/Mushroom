@@ -8,7 +8,7 @@
 #ifndef _MUSHROOM_DB_HPP_
 #define _MUSHROOM_DB_HPP_
 
-#include "btree.hpp"
+#include "utility.hpp"
 
 namespace Mushroom {
 
@@ -22,7 +22,7 @@ class MushroomDB
 
 		bool Get(KeySlice *key);
 
-		bool FindSingle(const char *file, const int total);
+		bool FindSingle(int fd, int total);
 
 		bool Close();
 
@@ -31,9 +31,7 @@ class MushroomDB
 		MushroomDB& operator=(const MushroomDB &) = delete;
 		MushroomDB& operator=(const MushroomDB &&) = delete;
 
-		BTree* Btree() const { return btree_; }
-
-		~MushroomDB() { delete btree_; }
+		~MushroomDB();
 
 	private:
 		int    fd_;

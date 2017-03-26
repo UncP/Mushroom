@@ -5,7 +5,10 @@
  *    > Created Time:  2016-10-17 14:21:54
 **/
 
+#include <cassert>
+
 #include "queue.hpp"
+#include "task.hpp"
 
 namespace Mushroom {
 
@@ -26,57 +29,76 @@ front_(0), avail_back_(0), work_back_(0)
 	work_ = new int[capacity_];
 	for (int i = 0; i != capacity_; ++i)
 		work_[i] = -1;
+
+	assert(pthread_mutex_init(mutex_, 0) == 0);
+	assert(pthread_cond_init(ready_, 0) == 0);
+	assert(pthread_cond_init(empty_, 0) == 0);
 }
 
-void Queue::Push(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
+void Queue::Push(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key)
 {
-	std::unique_lock<std::mutex> lock(mutex_);
-	empty_.wait(lock, [this]{ return avail_[front_] >= 0; });
+	pthread_mutex_lock(mutex_);
+	while (avail_[front_] < 0)
+		pthread_cond_wait(empty_, mutex_);
 	int seq = avail_[front_];
 	Task *task = queue_[seq];
-	task->Assign(fun, btree, key);
+	task->Assign(fun, db, key);
 	avail_[front_] = -1;
 	work_[front_++] = seq;
 	if (front_ == capacity_)
 		front_ = 0;
-	ready_.notify_one();
+	pthread_mutex_unlock(mutex_);
+	pthread_cond_signal(ready_);
 }
 
 void Queue::Pull()
 {
-	std::unique_lock<std::mutex> lock(mutex_);
-	ready_.wait(lock, [this]{ return work_[work_back_] >= 0 || clear_; });
-	if (clear_)
+	pthread_mutex_lock(mutex_);
+	while (work_[work_back_] < 0 && !clear_)
+		pthread_cond_wait(ready_, mutex_);
+
+	if (clear_) {
+		pthread_mutex_unlock(mutex_);
 		return ;
+	}
+
 	int seq = work_[work_back_];
 	Task *task = queue_[seq];
 	work_[work_back_++] = -1;
 	if (work_back_ == capacity_)
 		work_back_ = 0;
-	lock.unlock();
+	pthread_mutex_unlock(mutex_);
 
 	(*task)();
 
-	lock.lock();
+	pthread_mutex_lock(mutex_);
 	avail_[avail_back_++] = seq;
 	if (avail_back_ == capacity_)
 		avail_back_ = 0;
+	pthread_mutex_unlock(mutex_);
 	if (avail_back_ == work_back_)
-		empty_.notify_one();
+		pthread_cond_signal(empty_);
 }
 
 void Queue::Clear()
 {
-	std::unique_lock<std::mutex> lock(mutex_);
-	empty_.wait(lock, [this]{ return front_ == avail_back_ && front_ == work_back_; });
+	pthread_mutex_lock(mutex_);
+	while (front_ != avail_back_ || front_ != work_back_)
+		pthread_cond_wait(empty_, mutex_);
 	clear_ = true;
-	ready_.notify_all();
+	pthread_mutex_unlock(mutex_);
+
+	pthread_cond_broadcast(ready_);
 }
 
 Queue::~Queue()
 {
 	if (!clear_)
 		Clear();
+
+	assert(pthread_mutex_destroy(mutex_) == 0);
+	assert(pthread_cond_destroy(ready_) == 0);
+	assert(pthread_cond_destroy(empty_) == 0);
 
 	delete [] avail_;
 	delete [] work_;

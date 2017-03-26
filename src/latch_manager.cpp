@@ -9,7 +9,17 @@
 
 namespace Mushroom {
 
-LatchManager::LatchManager():deployed_(0), victim_(0) { }
+LatchManager::LatchManager():deployed_(0), victim_(0)
+{
+	entries_ = new HashEntry[total];
+	latches_ = new Latch[total];
+}
+
+LatchManager::~LatchManager()
+{
+	delete [] latches_;
+	delete [] entries_;
+}
 
 void LatchManager::Link(uint16_t hashidx, uint16_t victim, page_id page_no)
 {
@@ -27,7 +37,7 @@ void LatchManager::Link(uint16_t hashidx, uint16_t victim, page_id page_no)
 
 Latch* LatchManager::GetLatch(page_id page_no)
 {
-	uint16_t hashidx = page_no % mask;
+	uint16_t hashidx = page_no & mask;
 	Latch *latch;
 
 	entries_[hashidx].latch_.SpinReadLock();

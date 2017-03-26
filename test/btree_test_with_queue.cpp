@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "../src/slice.hpp"
 #include "../src/db.hpp"
 #include "../src/thread_pool.hpp"
 
@@ -37,7 +38,7 @@ int main(int argc, char **argv)
 
 	auto beg = std::chrono::high_resolution_clock::now();
 
-	char tmp[BTreePage::PageByte + key_len] = {0};
+	char tmp[sizeof(page_id) + key_len] = {0};
 	KeySlice *key = (KeySlice *)tmp;
 	int fd = open(file, O_RDONLY);
 	assert(fd > 0);
@@ -45,7 +46,6 @@ int main(int argc, char **argv)
 	int curr = 0, ptr = 0, count = 0;
 	bool flag = true;
 
-	BTree *btree = db.Btree();
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
 		if (ptr) buf[ptr++] = '\0';
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len);
-			pool->AddTask(&BTree::Put, btree, key);
+			pool->AddTask(&MushroomDB::Put, &db, key);
 			if (++count == total) {
 				flag = false;
 				break;

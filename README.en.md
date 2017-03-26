@@ -32,6 +32,7 @@
 | 0.5.0  |  Yes  |  No  |11.70 / 9.00   | fix **BUG**(atomic operation bug) that exists from 0.4.1 to 0.4.4 |
 | 0.6.0  |  Yes  |  Yes  |\   | multi-process supported, fix B<sup>link</sup> tree search **bug**| 
 | 0.6.1  |  Yes  |  No |18.69 / 13.04| two-phase hashing page manager, implement lazy page allocation| 
+| 0.6.2  |  Yes  |  No |11.89 / 8.14| reduce dependency on standard library, speed up compile, reduce program size about 33%| 
 
 
 ### Other

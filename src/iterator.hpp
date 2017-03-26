@@ -8,10 +8,7 @@
 #ifndef _ITERATOR_HPP_
 #define _ITERATOR_HPP_
 
-#include <cassert>
-
-#include "slice.hpp"
-#include "btree.hpp"
+#include "utility.hpp"
 
 namespace Mushroom {
 
@@ -28,9 +25,7 @@ class Iterator
 
 		bool CheckBtree();
 
-		const KeySlice* Key() const { return key_; }
-
-		~Iterator() { delete [] key_; }
+		~Iterator();
 
 	private:
 		const BTree *btree_;

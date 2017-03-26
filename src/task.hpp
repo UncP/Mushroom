@@ -16,22 +16,30 @@ namespace Mushroom {
 class Task
 {
 	public:
-		Task(uint8_t key_len);
+		Task(uint8_t key_len):fun_(0), db_(0), key_len_(key_len) {
+			char *buf = new char[key_len_ + sizeof(page_id)];
+			key_ = (KeySlice *)buf;
+		}
 
-		void Assign(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
 
-		bool operator()() { return (btree_->*fun_)(key_); }
+		void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
+			fun_ = fun;
+			db_  = db;
+			CopyKey(key_, key, 0, key_len_);
+		}
+
+		bool operator()() { return (db_->*fun_)(key_); }
 
 		Task(const Task &) = delete;
 		Task(const Task &&) = delete;
 		Task& operator=(const Task &) = delete;
 		Task& operator=(const Task &&) = delete;
 
-		~Task();
+		~Task() { delete [] key_; }
 
 	private:
-		bool         (BTree::*(fun_))(KeySlice *);
-		BTree        *btree_;
+		bool         (MushroomDB::*(fun_))(KeySlice *);
+		MushroomDB   *db_;
 		KeySlice     *key_;
 		uint8_t       key_len_;
 };

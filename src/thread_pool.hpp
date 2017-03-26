@@ -45,7 +45,7 @@ class ThreadPool
 
 		ThreadPool(Queue *queue);
 
-		void AddTask(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key);
+		void AddTask(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key);
 
 		void Run();
 

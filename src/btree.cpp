@@ -5,20 +5,22 @@
  *    > Created Time:  2016-10-07 20:12:13
 **/
 
-#include <fcntl.h>
 #include <unistd.h>
-#include <sys/stat.h>
-
+#include <cstring>
 #include <cassert>
 #include <sstream>
 
 #include "btree.hpp"
+#include "slice.hpp"
+#include "latch.hpp"
+#include "btree_page.hpp"
+#include "latch_manager.hpp"
+#include "pool_manager.hpp"
 
 namespace Mushroom {
 
-BTree::BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager,
-	page_id *root)
-:latch_manager_(latch_manager), page_manager_(page_manager), root_(root),
+BTree::BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager)
+:latch_manager_(latch_manager), page_manager_(page_manager), root_(0),
  key_len_((uint8_t)key_len)
 {
 	degree_ = BTreePage::CalculateDegree(key_len_);
@@ -27,9 +29,8 @@ BTree::BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager
 void BTree::Initialize()
 {
 	Set set;
-	set.page_no_ = *root_;
-	assert(!set.page_no_);
-	set.latch_ = latch_manager_->GetLatch(*root_);
+	set.page_no_ = root_;
+	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	assert(set.latch_->TryWriteLock());
 	set.page_ = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
 	char buf[BTreePage::PageByte + key_len_] = {0};
@@ -54,7 +55,7 @@ bool BTree::Free()
 
 void BTree::DescendToLeaf(const KeySlice *key, Set &set) const
 {
-	set.page_no_ = *root_;
+	set.page_no_ = root_;
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	set.page_ = page_manager_->GetPage(set.page_no_);
 	set.latch_->LockShared();
@@ -144,7 +145,7 @@ void BTree::SplitRoot(Set &set)
 	page_id page_no = 0;
 	assert(new_root->Insert(limit, page_no) == InsertOk);
 	assert(new_root->Insert(slice, page_no) == InsertOk);
-	__sync_val_compare_and_swap(root_, *root_, new_root->page_no_);
+	__sync_val_compare_and_swap(&root_, root_, new_root->page_no_);
 }
 
 bool BTree::Get(KeySlice *key) const
@@ -172,7 +173,7 @@ bool BTree::Get(KeySlice *key) const
 
 BTreePage* BTree::First(page_id *page_no, int level) const
 {
-	BTreePage *page = page_manager_->GetPage(*root_);
+	BTreePage *page = page_manager_->GetPage(root_);
 	if (level > page->level_)
 		return nullptr;
 	if (level == -1)
@@ -199,16 +200,14 @@ bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 	return leaf->Ascend(key, page_no, index);
 }
 
-bool BTree::Check(const char *file, int total) const
+bool BTree::Check(int fd, int total) const
 {
+	assert(fd > 0);
 	char tmp[BTreePage::PageByte + key_len_] = {0};
 	KeySlice *key = (KeySlice *)tmp;
-	int fd = open(file, O_RDONLY);
-	assert(fd > 0);
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;
-	bool flag = true;
-	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
+	for (; (ptr = pread(fd, buf, 8192, curr)) > 0; curr += ptr) {
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
 		if (ptr) buf[ptr++] = '\0';
 		else break;
@@ -218,18 +217,12 @@ bool BTree::Check(const char *file, int total) const
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len_);
-			if (!Get(key)) {
-				close(fd);
-				return false;
-			}
-			if (++count == total) {
-				flag = false;
-				break;
-			}
+			if (!Get(key)) return false;
+			if (++count == total)
+				return true;
 			++i;
 		}
 	}
-	close(fd);
 	return true;
 }
 

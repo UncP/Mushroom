@@ -8,12 +8,7 @@
 #ifndef _BTREE_HPP_
 #define _BTREE_HPP_
 
-#include <string>
-
 #include "utility.hpp"
-#include "slice.hpp"
-#include "latch_manager.hpp"
-#include "pool_manager.hpp"
 
 namespace Mushroom {
 
@@ -22,7 +17,7 @@ class BTree
 	public:
 		static const uint32_t MAX_KEY_LENGTH = 256;
 
-		BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager, page_id *root);
+		BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager);
 
 		void Initialize();
 
@@ -36,7 +31,7 @@ class BTree
 
 		bool Next(KeySlice *key, page_id *page_no, uint16_t *index) const;
 
-		bool Check(const char *file, int total) const;
+		bool Check(int fd, int total) const;
 
 		BTree(const BTree &) = delete;
 		BTree(const BTree &&) = delete;
@@ -64,7 +59,7 @@ class BTree
 		LatchManager *latch_manager_;
 		PoolManager  *page_manager_;
 
-		page_id      *root_;
+		page_id       root_;
 
 		uint8_t       key_len_;
 		uint16_t      degree_;

@@ -5,15 +5,18 @@
  *    > Created Time:   2017-03-16 17:04:27
 **/
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <cstring>
 #include <iostream>
+#include <cassert>
 #include <chrono>
 #include <iomanip>
 #include <string>
 #include <vector>
 #include <thread>
-#include <unistd.h>
-#include <fcntl.h>
 
+#include "../src/slice.hpp"
 #include "../src/db.hpp"
 
 int main(int argc, char **argv)
@@ -46,7 +49,7 @@ int main(int argc, char **argv)
 	int all = total == 1 ? 1 : total/files.size();
 	for (size_t i = 0; i != files.size(); ++i)
 		vec1.push_back(std::thread([&, i] {
-			char tmp[BTreePage::PageByte + key_len] = {0};
+			char tmp[sizeof(page_id) + key_len] = {0};
 			KeySlice *key = (KeySlice *)tmp;
 			int fd = open(files[i].c_str(), O_RDONLY);
 			assert(fd > 0);
@@ -86,8 +89,10 @@ int main(int argc, char **argv)
 	// std::vector<std::thread> vec2;
 	// for (size_t i = 0; i != files.size(); ++i)
 	// 	vec2.push_back(std::thread([&, i] {
-	// 		if (!db.FindSingle(files[i].c_str(), all))
+	// 		int fd = open(files[i].c_str(), O_RDONLY);
+	// 		if (!db.FindSingle(fd, all))
 	// 			__sync_bool_compare_and_swap(&flag, true, false);
+	// 		close(fd);
 	// 	}));
 	// for (auto &e : vec2)
 	// 	e.join();

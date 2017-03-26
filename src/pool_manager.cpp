@@ -5,11 +5,9 @@
  *    > Created Time:  2017-03-19 13:13:52
 **/
 
-#define __USE_LARGEFILE64
-#define __USE_FILE_OFFSET64
-
-#include <unistd.h>
-#include <sys/mman.h>
+#include "latch.hpp"
+#include "btree_page.hpp"
+#include "page_pool.hpp"
 
 #include "pool_manager.hpp"
 
@@ -27,8 +25,7 @@ void PoolManager::SetPoolManagerInfo(uint32_t page_size, uint32_t pool_size, uin
 	PagePool::SetPoolInfo(seg_bits);
 }
 
-PoolManager::PoolManager(int fd, page_id *cur)
-:fd_(fd), cur_(cur), tot_(0)
+PoolManager::PoolManager():cur_(0), tot_(0)
 {
 	entries_ = new HashEntry[HashMask+1];
 	pool_ = new PagePool[PoolSize];
@@ -77,20 +74,11 @@ BTreePage* PoolManager::GetPage(page_id page_no)
 		return page;
 	}
 	assert(0);
-	// __sync_fetch_and_add(&tot_, -1);
-
-	// for (; --victim;) {
-	// 	PagePool *pool = pool_ + victim;
-	// 	uint16_t idx = (pool->base_ >> PagePool::SegBits) & HashMask;
-
-	// 	if (!entries_[idx].latch_.SpinWriteTry())
-	// 		continue;
-	// }
 }
 
 BTreePage* PoolManager::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
-	page_id page_no = __sync_fetch_and_add(cur_, 1);
+	page_id page_no = __sync_fetch_and_add(&cur_, 1);
 	BTreePage *page = GetPage(page_no);
 	page->Initialize(page_no, type, key_len, level, degree);
 	return page;

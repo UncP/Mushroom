@@ -16,19 +16,20 @@ class LatchManager
 {
 	public:
 		LatchManager();
+		~LatchManager();
 
 		Latch* GetLatch(page_id page_no);
 
 	private:
 		void Link(uint16_t hashidx, uint16_t victim, page_id page_no);
 
-		static const uint16_t total = 208;
-		static const uint16_t mask  = 209;
+		static const uint16_t total = 256;
+		static const uint16_t mask  = total-1;
 
-		uint16_t  deployed_;
-		uint16_t  victim_;
-		HashEntry entries_[mask-1];
-		Latch     latches_[total];
+		uint16_t   deployed_;
+		uint16_t   victim_;
+		HashEntry *entries_;
+		Latch     *latches_;
 };
 
 } // namespace Mushroom

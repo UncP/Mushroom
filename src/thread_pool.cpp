@@ -5,6 +5,8 @@
  *    > Created Time:  2016-10-16 19:02:14
 **/
 
+#include <cassert>
+
 #include "thread_pool.hpp"
 
 namespace Mushroom {
@@ -37,9 +39,9 @@ ThreadPool::ThreadPool(Queue *queue):queue_(queue), working_(false)
 	}
 }
 
-void ThreadPool::AddTask(bool (BTree::*(fun))(KeySlice *), BTree *btree, KeySlice *key)
+void ThreadPool::AddTask(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key)
 {
-	queue_->Push(fun, btree, key);
+	queue_->Push(fun, db, key);
 }
 
 void ThreadPool::Run()

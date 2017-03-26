@@ -84,11 +84,11 @@ class Latch
 	friend class LatchManager;
 	public:
 		Latch():pin_(0), hash_(0), prev_(0), next_(0), page_no_(0xFFFFFFFF) {
-			pthread_rwlockattr_t attr;
-			pthread_rwlockattr_init(&attr);
-			pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
-			assert(pthread_rwlock_init(lock_, &attr) == 0);
-			pthread_rwlockattr_destroy(&attr);
+			// pthread_rwlockattr_t attr;
+			// pthread_rwlockattr_init(&attr);
+			// pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+			assert(pthread_rwlock_init(lock_, 0) == 0);
+			// pthread_rwlockattr_destroy(&attr);
 		}
 
 		void Pin() { __sync_fetch_and_add(&pin_, 1); }

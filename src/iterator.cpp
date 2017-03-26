@@ -5,9 +5,11 @@
  *    > Created Time:  2016-10-14 10:55:44
 **/
 
-#include <iostream>
+#include <cassert>
 
 #include "iterator.hpp"
+#include "slice.hpp"
+#include "btree.hpp"
 
 namespace Mushroom {
 
@@ -16,6 +18,11 @@ Iterator::Iterator(const BTree *btree, int level)
 	char *buf = new char[BTree::MAX_KEY_LENGTH + sizeof(page_id)];
 	assert(buf);
 	key_ = (KeySlice *)buf;
+}
+
+Iterator::~Iterator()
+{
+	delete [] key_;
 }
 
 bool Iterator::Seek(const char *key)
@@ -57,7 +64,7 @@ bool Iterator::CheckBtree()
 			}
 			memcpy(pre, key_, sizeof(page_id) + key_len);
 		}
-		std::cout << "\nlevel: " << level_ << "  total: " << count << std::endl;
+		printf("\nlevel: %d  total: %d\n", level_, count);
 	}
 	return true;
 }
