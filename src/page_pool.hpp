@@ -24,11 +24,7 @@ class PagePool
 			SegMask = SegSize - 1;
 		}
 
-		PagePool():pin_(0), base_(0), mem_(0), prev_(0), next_(0) { }
-
-		void Pin() { __sync_fetch_and_add(&pin_, 1); }
-
-		void Unpin() { __sync_fetch_and_add(&pin_, -1); }
+		PagePool():base_(0), mem_(0), prev_(0), next_(0) { }
 
 		void Initialize(page_id page_no) {
 			base_ = page_no & ~SegMask;
@@ -50,7 +46,6 @@ class PagePool
 		static uint32_t SegSize;
 		static uint32_t SegMask;
 
-		uint8_t   pin_;
 		page_id   base_;
 		char     *mem_;
 		PagePool *prev_;

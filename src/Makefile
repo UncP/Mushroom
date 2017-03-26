@@ -10,9 +10,6 @@ btree_test_with_queue:$(OBJ) ../test/btree_test_with_queue.cpp
 btree_test_multi_thread:$(OBJ) ../test/btree_test_multi_thread.cpp
 	$(CPP) $(CPPFLAGS) -o btree_test_multi_thread $(OBJ) ../test/btree_test_multi_thread.cpp
 
-btree_test_multi_process:$(OBJ) ../test/btree_test_multi_process.cpp
-	$(CPP) $(CPPFLAGS) -o btree_test_multi_process $(OBJ) ../test/btree_test_multi_process.cpp
-
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp
 
