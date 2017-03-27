@@ -5,11 +5,8 @@
  *    > Created Time:  2016-11-20 12:37:41
 **/
 
-#include <iostream>
 #include <cassert>
-#include <string>
 #include <chrono>
-#include <iomanip>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -36,8 +33,6 @@ int main(int argc, char **argv)
 
 	ThreadPool *pool = new ThreadPool(new Queue(1024, key_len));
 
-	auto beg = std::chrono::high_resolution_clock::now();
-
 	char tmp[sizeof(page_id) + key_len] = {0};
 	KeySlice *key = (KeySlice *)tmp;
 	int fd = open(file, O_RDONLY);
@@ -46,6 +41,7 @@ int main(int argc, char **argv)
 	int curr = 0, ptr = 0, count = 0;
 	bool flag = true;
 
+	auto beg = std::chrono::high_resolution_clock::now();
 	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
 		if (ptr) buf[ptr++] = '\0';
@@ -69,8 +65,7 @@ int main(int argc, char **argv)
 	flag = true;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "\ntotal: " << total << "\n";
-	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
+	printf("\ntotal: %d\nput time: %f  s\n", total, Time);
 
 	// beg = std::chrono::high_resolution_clock::now();
 	// flag = db.FindSingle(file, total);
@@ -79,9 +74,9 @@ int main(int argc, char **argv)
 	// std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
 
 	if (!flag)
-		std::cerr << "\033[31mFail :(\033[0m\n";
+		printf("\033[31mFail :(\033[0m\n");
 	else
-		std::cerr << "\033[32mSuccess :)\033[0m\n";
+		printf("\033[32mSuccess :)\033[0m\n");
 
 	db.Close();
 

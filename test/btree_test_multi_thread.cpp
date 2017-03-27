@@ -8,31 +8,68 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <cstring>
-#include <iostream>
 #include <cassert>
 #include <chrono>
-#include <iomanip>
-#include <string>
-#include <vector>
-#include <thread>
+#include <pthread.h>
 
 #include "../src/slice.hpp"
 #include "../src/db.hpp"
 
+using namespace Mushroom;
+
+static const int key_len = 16;
+
+static const char *files[] = {
+	"../data/2500000_0",
+	"../data/2500000_1",
+	"../data/2500000_2",
+	"../data/2500000_3"
+};
+
+struct ThreadArg
+{
+	ThreadArg() { }
+	int i;
+	int all;
+	MushroomDB *db;
+};
+
+void* run(void *arg)
+{
+	int all = ((ThreadArg *)arg)->all;
+	MushroomDB *db = ((ThreadArg *)arg)->db;
+
+	char tmp[sizeof(page_id) + key_len] = {0};
+	KeySlice *key = (KeySlice *)tmp;
+	int fd = open(files[((ThreadArg *)arg)->i], O_RDONLY);
+	assert(fd > 0);
+	char buf[8192];
+	int curr = 0, ptr = 0, count = 0;
+	bool flag = true;
+	for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
+		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
+		if (ptr) buf[ptr++] = '\0';
+		else break;
+		for (int i = 0; i < ptr;) {
+			int j = 0;
+			char *tmp = buf + i;
+			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
+			tmp[j] = '\0';
+			memcpy(key->Data(), tmp, key_len);
+			db->Put(key);
+			if (++count == all) {
+				flag = false;
+				break;
+			}
+			++i;
+		}
+	}
+	close(fd);
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
-	using namespace Mushroom;
-
-	const std::vector<std::string> files = {
-		std::string("../data/2500000_0"),
-		std::string("../data/2500000_1"),
-		std::string("../data/2500000_2"),
-		std::string("../data/2500000_3")
-		// std::string("../data/25000000_0"),
-		// std::string("../data/25000000_1"),
-		// std::string("../data/25000000_2"),
-		// std::string("../data/25000000_3")
-	};
 	assert(argc > 4);
 	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
 	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
@@ -40,54 +77,31 @@ int main(int argc, char **argv)
 	uint8_t  seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
 
 	const int total = (argc == 6) ? atoi(argv[5]) : 1;
-	const int key_len = 16;
 
 	MushroomDB db("../mushroom", key_len, page_size, pool_size, hash_bits, seg_bits);
 
+	int thread_num = 4;
 	auto beg = std::chrono::high_resolution_clock::now();
-	std::vector<std::thread> vec1;
-	int all = total == 1 ? 1 : total/files.size();
-	for (size_t i = 0; i != files.size(); ++i)
-		vec1.push_back(std::thread([&, i] {
-			char tmp[sizeof(page_id) + key_len] = {0};
-			KeySlice *key = (KeySlice *)tmp;
-			int fd = open(files[i].c_str(), O_RDONLY);
-			assert(fd > 0);
-			char buf[8192];
-			int curr = 0, ptr = 0, count = 0;
-			bool flag = true;
-			for (; (ptr = pread(fd, buf, 8192, curr)) > 0 && flag; curr += ptr) {
-				while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
-				if (ptr) buf[ptr++] = '\0';
-				else break;
-				for (int i = 0; i < ptr;) {
-					int j = 0;
-					char *tmp = buf + i;
-					for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
-					tmp[j] = '\0';
-					memcpy(key->Data(), tmp, key_len);
-					db.Put(key);
-					if (++count == all) {
-						flag = false;
-						break;
-					}
-					++i;
-				}
-			}
-			close(fd);
-		}));
-	for (auto &e : vec1)
-		e.join();
+	int all = total == 1 ? 1 : total / thread_num;
+	pthread_t ids[thread_num];
+	ThreadArg args[thread_num];
+	for (int i = 0; i != thread_num; ++i) {
+		args[i].i = i;
+		args[i].all = all;
+		args[i].db = &db;
+		assert(pthread_create(&ids[i], 0, run, &args[i]) == 0);
+	}
+	for (int i = 0; i != thread_num; ++i)
+		assert(pthread_join(ids[i], 0) == 0);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	std::cerr << "\ntotal: " << (all * files.size()) << "\n";
-	std::cerr << "put time: " << std::setw(8) << Time << "  s\n";
+	printf("\ntotal: %d\nput time: %f  s\n", all * thread_num, Time);
 	bool flag = true;
 
 	// beg = std::chrono::high_resolution_clock::now();
 	// bool flag = true;
 	// std::vector<std::thread> vec2;
-	// for (size_t i = 0; i != files.size(); ++i)
+	// for (size_t i = 0; i != thread_num; ++i)
 	// 	vec2.push_back(std::thread([&, i] {
 	// 		int fd = open(files[i].c_str(), O_RDONLY);
 	// 		if (!db.FindSingle(fd, all))
@@ -103,9 +117,9 @@ int main(int argc, char **argv)
 	db.Close();
 
 	if (!flag)
-		std::cerr << "\033[31mFail :(\033[0m\n";
+		printf("\033[31mFail :(\033[0m\n");
 	else
-		std::cerr << "\033[32mSuccess :)\033[0m\n";
+		printf("\033[32mSuccess :)\033[0m\n");
 
 	return 0;
 }
