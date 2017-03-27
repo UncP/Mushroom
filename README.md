@@ -4,7 +4,7 @@
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](https://github.com/UncP)
 [![Version](https://img.shields.io/badge/Version-0.6.2-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
-[![License](https://img.shields.io/badge/License-BSD 3-red.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
 ### 警告，Mushroom具有非常强悍的性能！
 
