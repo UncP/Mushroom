@@ -39,7 +39,10 @@
 | 0.6.1  |  Yes  |  No |18.69 / 13.04| two-phase hashing page manager, implement lazy page allocation| 
 | 0.6.2  |  Yes  |  No |11.89 / 8.14| reduce dependency on standard library, speed up compile, reduce program size about 42.1%| 
 
+### Extreme Test
+| Version | Sorting Time(s) |       Improvements       |
+|:------:|:------:|:-----------------------------------:|
+| 0.6.1 | 142.5 | 100 million keys, 16 bytes each, B<sup>link</sup> tree occupies memory about 2.7G |
 
 ### Other
 + Version 0.6.0 is the first stable version
-+ Latest Test: 100 million keys, 16 bytes each, sorting time 142.5s, occupy memory 2.7G
