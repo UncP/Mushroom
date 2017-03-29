@@ -33,7 +33,8 @@ void BTree::Initialize()
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	assert(set.latch_->TryWriteLock());
 	set.page_ = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
-	char buf[BTreePage::PageByte + key_len_] = {0};
+	char buf[BTreePage::PageByte + key_len_];
+	memset(buf, 0, BTreePage::PageByte + key_len_);
 	KeySlice *key = (KeySlice *)buf;
 	memset(key->Data(), 0xFF, key_len_);
 	page_id next = 0;
@@ -131,13 +132,15 @@ void BTree::SplitRoot(Set &set)
 	BTreePage *right = page_manager_->NewPage(level ? BTreePage::BRANCH : BTreePage::LEAF,
 	 	set.page_->key_len_, level, degree_);
 
-	char buf[BTreePage::PageByte + key_len_] = {0};
+	char buf[BTreePage::PageByte + key_len_];
+	memset(buf, 0, BTreePage::PageByte + key_len_);
 	KeySlice *slice = (KeySlice *)buf;
 
 	set.page_->type_ = level ? BTreePage::BRANCH : BTreePage::LEAF;
 	set.page_->Split(right, slice);
 
-	char tmp[BTreePage::PageByte + key_len_] = {0};
+	char tmp[BTreePage::PageByte + key_len_];
+	memset(tmp, 0, BTreePage::PageByte + key_len_);
 	KeySlice *limit = (KeySlice *)tmp;
 	memset(limit->Data(), 0xFF, key_len_);
 
@@ -203,7 +206,8 @@ bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 bool BTree::Check(int fd, int total) const
 {
 	assert(fd > 0);
-	char tmp[BTreePage::PageByte + key_len_] = {0};
+	char tmp[BTreePage::PageByte + key_len_];
+	memset(tmp, 0, BTreePage::PageByte + key_len_);
 	KeySlice *key = (KeySlice *)tmp;
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;
