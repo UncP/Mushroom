@@ -13,12 +13,13 @@ branches:
 
 before_script:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
-  addons:
-    apt:
-      sources:
-      - ubuntu-toolchain-r-test
-      packages:
-      - g++-4.8
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-4.8
 
 script:
   - cd src
@@ -28,3 +29,4 @@ notifications:
   email:
     on_success: always
     on_failure: never
+    on_error: never

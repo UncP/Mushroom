@@ -26,6 +26,8 @@ static const char *files[] = {
 	"../data/2500000_3"
 };
 
+static bool flag = true;
+
 struct ThreadArg
 {
 	ThreadArg() { }
@@ -34,7 +36,7 @@ struct ThreadArg
 	MushroomDB *db;
 };
 
-void* run(void *arg)
+void* put(void *arg)
 {
 	int all = ((ThreadArg *)arg)->all;
 	MushroomDB *db = ((ThreadArg *)arg)->db;
@@ -68,6 +70,16 @@ void* run(void *arg)
 	return 0;
 }
 
+void* get(void *arg)
+{
+	int fd = open(files[((ThreadArg *)arg)->i], O_RDONLY);
+	assert(fd > 0);
+	if (!((ThreadArg *)arg)->db->FindSingle(fd, ((ThreadArg *)arg)->all))
+		__sync_bool_compare_and_swap(&flag, true, false);
+	close(fd);
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	assert(argc > 4);
@@ -89,30 +101,26 @@ int main(int argc, char **argv)
 		args[i].i = i;
 		args[i].all = all;
 		args[i].db = &db;
-		assert(pthread_create(&ids[i], 0, run, &args[i]) == 0);
+		assert(pthread_create(&ids[i], 0, put, &args[i]) == 0);
 	}
 	for (int i = 0; i != thread_num; ++i)
 		assert(pthread_join(ids[i], 0) == 0);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	printf("\ntotal: %d\nput time: %f  s\n", all * thread_num, Time);
-	bool flag = true;
 
 	// beg = std::chrono::high_resolution_clock::now();
-	// bool flag = true;
-	// std::vector<std::thread> vec2;
-	// for (size_t i = 0; i != thread_num; ++i)
-	// 	vec2.push_back(std::thread([&, i] {
-	// 		int fd = open(files[i].c_str(), O_RDONLY);
-	// 		if (!db.FindSingle(fd, all))
-	// 			__sync_bool_compare_and_swap(&flag, true, false);
-	// 		close(fd);
-	// 	}));
-	// for (auto &e : vec2)
-	// 	e.join();
+	// for (int i = 0; i != thread_num; ++i) {
+	// 	args[i].i = i;
+	// 	args[i].all = all;
+	// 	args[i].db = &db;
+	// 	assert(pthread_create(&ids[i], 0, get, &args[i]) == 0);
+	// }
+	// for (int i = 0; i != thread_num; ++i)
+	// 	assert(pthread_join(ids[i], 0) == 0);
 	// end = std::chrono::high_resolution_clock::now();
 	// Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	// std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+	// printf("get time: %f  s\n", Time);
 
 	db.Close();
 

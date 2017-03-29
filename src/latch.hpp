@@ -84,11 +84,7 @@ class Latch
 	friend class LatchManager;
 	public:
 		Latch():pin_(0), hash_(0), prev_(0), next_(0), page_no_(0xFFFFFFFF) {
-			// pthread_rwlockattr_t attr;
-			// pthread_rwlockattr_init(&attr);
-			// pthread_rwlockattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
 			assert(pthread_rwlock_init(lock_, 0) == 0);
-			// pthread_rwlockattr_destroy(&attr);
 		}
 
 		void Pin() { __sync_fetch_and_add(&pin_, 1); }
@@ -125,10 +121,10 @@ class Latch
 
 	private:
 		volatile uint16_t pin_;
-		volatile uint16_t hash_;
-		volatile uint16_t prev_;
-		volatile uint16_t next_;
-		volatile page_id  page_no_;
+		uint16_t          hash_;
+		uint16_t          prev_;
+		uint16_t          next_;
+		page_id           page_no_;
 		SpinLatch         busy_;
 		pthread_rwlock_t  lock_[1];
 };
@@ -136,8 +132,8 @@ class Latch
 class HashEntry {
 	public:
 		HashEntry():slot_(0) { }
-		SpinLatch         latch_;
-		volatile uint16_t slot_;
+		SpinLatch latch_;
+		uint16_t  slot_;
 };
 
 } // namespace Mushroom

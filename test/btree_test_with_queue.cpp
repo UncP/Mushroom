@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 	// flag = db.FindSingle(file, total);
 	// end = std::chrono::high_resolution_clock::now();
 	// Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	// std::cerr << "get time: " << std::setw(8) << Time << "  s\n";
+	// printf("get time: %f  s\n", Time);
 
 	if (!flag)
 		printf("\033[31mFail :(\033[0m\n");
