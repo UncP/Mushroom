@@ -19,7 +19,7 @@
 
 ### B<sup>link</sup> Tree BenchFuck
 `关键值长度： 16 字节`  
-`关键值数量： 1000 万组`  
+`关键值数量： 1000 万条`  
 `总大小：160 M`  
 `CPU信息: Intel i3  2.1GHz  4核`
 
