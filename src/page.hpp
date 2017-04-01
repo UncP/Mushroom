@@ -78,7 +78,6 @@ class Page
 		uint8_t  level_;
 		uint8_t  key_len_;
 		uint8_t  pre_len_;
-		uint8_t  dirty_;
 		char     data_[0];
 };
 

@@ -110,7 +110,6 @@ InsertStatus Page::Insert(const KeySlice *key, page_id &page_no)
 	if (pos) memmove(&index[0], &index[1], pos << 1);
 	index[pos] = end;
 	++total_key_;
-	dirty_ = true;
 	return InsertOk;
 }
 
@@ -185,8 +184,6 @@ void Page::Split(Page *that, KeySlice *slice)
 
 	this->total_key_ = left;
 	that->total_key_ = right;
-	this->dirty_ = true;
-	that->dirty_ = true;
 }
 
 bool Page::NeedSplit()
@@ -238,10 +235,6 @@ std::string Page::ToString() const
 	os << "tot_key: " << total_key_ << " ";
 	os << "level: " << (int)level_ << " ";
 	os << "key_len: " << (int)key_len_ << " ";
-	if (dirty_)
-		os << "dirty: true\n";
-	else
-		os << "dirty: false\n";
 
 	if (pre_len_) {
 		os << "pre_len: " << (int)pre_len_ << " ";
