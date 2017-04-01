@@ -24,8 +24,8 @@ class PoolManager
 
 		page_id Total() const { return cur_; }
 
-		BTreePage* GetPage(page_id page_no);
-		BTreePage* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
+		Page* GetPage(page_id page_no);
+		Page* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		bool Free();
 

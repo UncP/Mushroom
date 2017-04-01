@@ -6,7 +6,7 @@
 **/
 
 #include "db.hpp"
-#include "btree.hpp"
+#include "blinktree.hpp"
 #include "pool_manager.hpp"
 #include "latch_manager.hpp"
 
@@ -21,34 +21,34 @@ MushroomDB::MushroomDB(const char *name, const int key_len, uint32_t page_size,
 
 	PoolManager *page_manager = new PoolManager();
 
-	btree_ = new BTree(key_len, latch_manager, page_manager);
+	blinktree_ = new BLinkTree(key_len, latch_manager, page_manager);
 
-	btree_->Initialize();
+	blinktree_->Initialize();
 }
 
 MushroomDB::~MushroomDB()
 {
-	delete btree_;
+	delete blinktree_;
 }
 
 bool MushroomDB::Put(KeySlice *key)
 {
-	return btree_->Put(key);
+	return blinktree_->Put(key);
 }
 
 bool MushroomDB::Get(KeySlice *key)
 {
-	return btree_->Get(key);
+	return blinktree_->Get(key);
 }
 
 bool MushroomDB::FindSingle(int fd, int total)
 {
-	return btree_->Check(fd, total);
+	return blinktree_->Check(fd, total);
 }
 
 bool MushroomDB::Close()
 {
-	btree_->Free();
+	blinktree_->Free();
 	return true;
 }
 

@@ -7,25 +7,25 @@
 
 #include <sstream>
 
-#include "btree_page.hpp"
+#include "page.hpp"
 
 namespace Mushroom {
 
-uint32_t BTreePage::PageSize;
+uint32_t Page::PageSize;
 
-void BTreePage::SetPageInfo(uint32_t page_size)
+void Page::SetPageInfo(uint32_t page_size)
 {
 	PageSize = page_size;
 }
 
-uint16_t BTreePage::CalculateDegree(uint8_t key_len, uint8_t pre_len)
+uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 {
-	BTreePage *page = nullptr;
+	Page *page = nullptr;
 	uint16_t offset = (char *)page->data_ - (char *)page + pre_len;
 	return (PageSize - offset) / (PageByte + IndexByte + key_len);
 }
 
-void BTreePage::Initialize(page_id page_no, int type, uint8_t key_len, uint8_t level,
+void Page::Initialize(page_id page_no, int type, uint8_t key_len, uint8_t level,
 	uint16_t degree)
 {
 	memset(this, 0, PageSize);
@@ -36,7 +36,7 @@ void BTreePage::Initialize(page_id page_no, int type, uint8_t key_len, uint8_t l
 	level_   = level;
 }
 
-bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type) const
+bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type) const
 {
 	uint16_t low = 0, high = total_key_, mid = 0;
 	uint16_t *index = Index();
@@ -74,7 +74,7 @@ bool BTreePage::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, i
 	return false;
 }
 
-page_id BTreePage::Descend(const KeySlice *key) const
+page_id Page::Descend(const KeySlice *key) const
 {
 	uint16_t index;
 	KeySlice *slice = nullptr;
@@ -82,13 +82,13 @@ page_id BTreePage::Descend(const KeySlice *key) const
 	return index ? slice->PageNo() : first_;
 }
 
-bool BTreePage::Search(KeySlice *key, uint16_t *index) const
+bool Page::Search(KeySlice *key, uint16_t *index) const
 {
 	KeySlice *slice = nullptr;
 	return Traverse(key, index, &slice);
 }
 
-InsertStatus BTreePage::Insert(const KeySlice *key, page_id &page_no)
+InsertStatus Page::Insert(const KeySlice *key, page_id &page_no)
 {
 	uint16_t pos;
 	KeySlice *slice = nullptr;
@@ -114,7 +114,7 @@ InsertStatus BTreePage::Insert(const KeySlice *key, page_id &page_no)
 	return InsertOk;
 }
 
-bool BTreePage::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
+bool Page::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
 {
 	uint16_t *index = Index();
 	if (*idx < (total_key_ - 1)) {
@@ -130,7 +130,7 @@ bool BTreePage::Ascend(KeySlice *key, page_id *page_no, uint16_t *idx)
 	}
 }
 
-void BTreePage::Split(BTreePage *that, KeySlice *slice)
+void Page::Split(Page *that, KeySlice *slice)
 {
 	uint16_t left = total_key_ >> 1, right = total_key_ - left, index = left;
 	uint16_t *l_idx = this->Index();
@@ -189,7 +189,7 @@ void BTreePage::Split(BTreePage *that, KeySlice *slice)
 	that->dirty_ = true;
 }
 
-bool BTreePage::NeedSplit()
+bool Page::NeedSplit()
 {
 	if (total_key_ < degree_) return false;
 	uint16_t *index = Index();
@@ -205,7 +205,7 @@ bool BTreePage::NeedSplit()
 	if (degree <= degree_)
 		return true;
 	char buf[PageSize];
-	BTreePage *copy = (BTreePage *)buf;
+	Page *copy = (Page *)buf;
 	memcpy(copy, this, PageSize);
 	memcpy(data_ + pre_len_, prefix, pre_len);
 	char *curr = data_ + pre_len_ + pre_len;
@@ -226,7 +226,7 @@ bool BTreePage::NeedSplit()
 	return false;
 }
 
-std::string BTreePage::ToString() const
+std::string Page::ToString() const
 {
 	std::ostringstream os;
 	os << "type: ";

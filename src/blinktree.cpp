@@ -8,33 +8,32 @@
 #include <unistd.h>
 #include <cstring>
 #include <cassert>
-#include <sstream>
 
-#include "btree.hpp"
+#include "blinktree.hpp"
 #include "slice.hpp"
 #include "latch.hpp"
-#include "btree_page.hpp"
+#include "page.hpp"
 #include "latch_manager.hpp"
 #include "pool_manager.hpp"
 
 namespace Mushroom {
 
-BTree::BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager)
+BLinkTree::BLinkTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager)
 :latch_manager_(latch_manager), page_manager_(page_manager), root_(0),
  key_len_((uint8_t)key_len)
 {
-	degree_ = BTreePage::CalculateDegree(key_len_);
+	degree_ = Page::CalculateDegree(key_len_);
 }
 
-void BTree::Initialize()
+void BLinkTree::Initialize()
 {
 	Set set;
 	set.page_no_ = root_;
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	assert(set.latch_->TryWriteLock());
-	set.page_ = page_manager_->NewPage(BTreePage::ROOT, key_len_, 0, degree_);
-	char buf[BTreePage::PageByte + key_len_];
-	memset(buf, 0, BTreePage::PageByte + key_len_);
+	set.page_ = page_manager_->NewPage(Page::ROOT, key_len_, 0, degree_);
+	char buf[Page::PageByte + key_len_];
+	memset(buf, 0, Page::PageByte + key_len_);
 	KeySlice *key = (KeySlice *)buf;
 	memset(key->Data(), 0xFF, key_len_);
 	page_id next = 0;
@@ -42,19 +41,19 @@ void BTree::Initialize()
 	set.latch_->Unlock();
 }
 
-BTree::~BTree()
+BLinkTree::~BLinkTree()
 {
 	delete page_manager_;
 }
 
-bool BTree::Free()
+bool BLinkTree::Free()
 {
 	printf("total page: %u\n", page_manager_->Total());
 	page_manager_->Free();
 	return true;
 }
 
-void BTree::DescendToLeaf(const KeySlice *key, Set &set) const
+void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set) const
 {
 	set.page_no_ = root_;
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
@@ -73,7 +72,7 @@ void BTree::DescendToLeaf(const KeySlice *key, Set &set) const
 	}
 }
 
-void BTree::Insert(Set &set, KeySlice *key)
+void BLinkTree::Insert(Set &set, KeySlice *key)
 {
 	InsertStatus status;
 	for (; (status = set.page_->Insert(key, set.page_no_));) {
@@ -94,7 +93,7 @@ void BTree::Insert(Set &set, KeySlice *key)
 	}
 }
 
-bool BTree::Put(KeySlice *key)
+bool BLinkTree::Put(KeySlice *key)
 {
 	Set set;
 
@@ -104,8 +103,8 @@ bool BTree::Put(KeySlice *key)
 	Insert(set, key);
 
 	for (; set.page_->NeedSplit(); ) {
-		if (set.page_->type_ != BTreePage::ROOT) {
-			BTreePage *right = page_manager_->NewPage(set.page_->type_, set.page_->key_len_,
+		if (set.page_->type_ != Page::ROOT) {
+			Page *right = page_manager_->NewPage(set.page_->type_, set.page_->key_len_,
 				set.page_->level_, set.page_->degree_);
 			set.page_->Split(right, key);
 			Latch *pre = set.latch_;
@@ -125,22 +124,22 @@ bool BTree::Put(KeySlice *key)
 	return true;
 }
 
-void BTree::SplitRoot(Set &set)
+void BLinkTree::SplitRoot(Set &set)
 {
 	uint8_t level = set.page_->level_;
-	BTreePage *new_root = page_manager_->NewPage(BTreePage::ROOT, key_len_, level+1, degree_);
-	BTreePage *right = page_manager_->NewPage(level ? BTreePage::BRANCH : BTreePage::LEAF,
+	Page *new_root = page_manager_->NewPage(Page::ROOT, key_len_, level+1, degree_);
+	Page *right = page_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
 	 	set.page_->key_len_, level, degree_);
 
-	char buf[BTreePage::PageByte + key_len_];
-	memset(buf, 0, BTreePage::PageByte + key_len_);
+	char buf[Page::PageByte + key_len_];
+	memset(buf, 0, Page::PageByte + key_len_);
 	KeySlice *slice = (KeySlice *)buf;
 
-	set.page_->type_ = level ? BTreePage::BRANCH : BTreePage::LEAF;
+	set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
 	set.page_->Split(right, slice);
 
-	char tmp[BTreePage::PageByte + key_len_];
-	memset(tmp, 0, BTreePage::PageByte + key_len_);
+	char tmp[Page::PageByte + key_len_];
+	memset(tmp, 0, Page::PageByte + key_len_);
 	KeySlice *limit = (KeySlice *)tmp;
 	memset(limit->Data(), 0xFF, key_len_);
 
@@ -151,7 +150,7 @@ void BTree::SplitRoot(Set &set)
 	__sync_val_compare_and_swap(&root_, root_, new_root->page_no_);
 }
 
-bool BTree::Get(KeySlice *key) const
+bool BLinkTree::Get(KeySlice *key) const
 {
 	Set set;
 
@@ -174,9 +173,9 @@ bool BTree::Get(KeySlice *key) const
 	return true;
 }
 
-BTreePage* BTree::First(page_id *page_no, int level) const
+Page* BLinkTree::First(page_id *page_no, int level) const
 {
-	BTreePage *page = page_manager_->GetPage(root_);
+	Page *page = page_manager_->GetPage(root_);
 	if (level > page->level_)
 		return nullptr;
 	if (level == -1)
@@ -190,9 +189,9 @@ BTreePage* BTree::First(page_id *page_no, int level) const
 	return page;
 }
 
-bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
+bool BLinkTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 {
-	BTreePage *leaf = page_manager_->GetPage(*page_no);
+	Page *leaf = page_manager_->GetPage(*page_no);
 
 	bool flag = leaf->Ascend(key, page_no, index);
 	if (flag) return true;
@@ -203,11 +202,11 @@ bool BTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 	return leaf->Ascend(key, page_no, index);
 }
 
-bool BTree::Check(int fd, int total) const
+bool BLinkTree::Check(int fd, int total) const
 {
 	assert(fd > 0);
-	char tmp[BTreePage::PageByte + key_len_];
-	memset(tmp, 0, BTreePage::PageByte + key_len_);
+	char tmp[Page::PageByte + key_len_];
+	memset(tmp, 0, Page::PageByte + key_len_);
 	KeySlice *key = (KeySlice *)tmp;
 	char buf[8192];
 	int curr = 0, ptr = 0, count = 0;

@@ -18,9 +18,9 @@ namespace Mushroom {
 
 typedef enum { InsertOk, ExistedKey, MoveRight } InsertStatus;
 
-class BTreePage
+class Page
 {
-	friend class BTree;
+	friend class BLinkTree;
 	public:
 
 		static uint32_t PageSize;
@@ -51,11 +51,11 @@ class BTreePage
 
 		InsertStatus Insert(const KeySlice *key, page_id &page_no);
 
-		void Insert(BTreePage *that, KeySlice *key);
+		void Insert(Page *that, KeySlice *key);
 
 		bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
 
-		void Split(BTreePage *that, KeySlice *slice);
+		void Split(Page *that, KeySlice *slice);
 
 		bool NeedSplit();
 

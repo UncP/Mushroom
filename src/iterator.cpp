@@ -9,13 +9,13 @@
 
 #include "iterator.hpp"
 #include "slice.hpp"
-#include "btree.hpp"
+#include "blinktree.hpp"
 
 namespace Mushroom {
 
-Iterator::Iterator(const BTree *btree, int level)
+Iterator::Iterator(const BLinkTree *btree, int level)
 :btree_(btree), level_(level), curr_(0), index_(0) {
-	char *buf = new char[BTree::MAX_KEY_LENGTH + sizeof(page_id)];
+	char *buf = new char[BLinkTree::MAX_KEY_LENGTH + sizeof(page_id)];
 	assert(buf);
 	key_ = (KeySlice *)buf;
 }
@@ -28,14 +28,14 @@ Iterator::~Iterator()
 bool Iterator::Seek(const char *key)
 {
 	size_t len = strlen(key);
-	if (len > BTree::MAX_KEY_LENGTH) return false;
+	if (len > BLinkTree::MAX_KEY_LENGTH) return false;
 	memcpy(key_->Data(), key, len);
 	return btree_->Get(key_);
 }
 
 bool Iterator::Begin()
 {
-	memset(key_->Data(), 0, BTree::MAX_KEY_LENGTH);
+	memset(key_->Data(), 0, BLinkTree::MAX_KEY_LENGTH);
 	if (btree_->First(&curr_, level_))
 		return true;
 	return false;
@@ -48,9 +48,9 @@ bool Iterator::Next()
 
 bool Iterator::CheckBtree()
 {
-	uint32_t key_len = BTree::MAX_KEY_LENGTH;
+	uint32_t key_len = BLinkTree::MAX_KEY_LENGTH;
 
-	char buf[BTree::MAX_KEY_LENGTH + sizeof(page_id)] = { 0 };
+	char buf[BLinkTree::MAX_KEY_LENGTH + sizeof(page_id)] = { 0 };
 	KeySlice *pre = (KeySlice *)buf;
 
 	for (level_ = 0; ; ++level_) {

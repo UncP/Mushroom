@@ -34,9 +34,9 @@ class MushroomDB
 		~MushroomDB();
 
 	private:
-		int    fd_;
-		char  *mapped_;
-		BTree *btree_;
+		int        fd_;
+		char      *mapped_;
+		BLinkTree *blinktree_;
 };
 
 } // namespace Mushroom

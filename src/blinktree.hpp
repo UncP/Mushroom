@@ -5,19 +5,19 @@
  *    > Created Time:  2016-10-07 20:10:30
 **/
 
-#ifndef _BTREE_HPP_
-#define _BTREE_HPP_
+#ifndef _B_LINK_TREE_HPP_
+#define _B_LINK_TREE_HPP_
 
 #include "utility.hpp"
 
 namespace Mushroom {
 
-class BTree
+class BLinkTree
 {
 	public:
 		static const uint32_t MAX_KEY_LENGTH = 256;
 
-		BTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager);
+		BLinkTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager);
 
 		void Initialize();
 
@@ -27,27 +27,27 @@ class BTree
 
 		bool Get(KeySlice *key) const;
 
-		BTreePage* First(page_id *page_no, int level) const;
+		Page* First(page_id *page_no, int level) const;
 
 		bool Next(KeySlice *key, page_id *page_no, uint16_t *index) const;
 
 		bool Check(int fd, int total) const;
 
-		BTree(const BTree &) = delete;
-		BTree(const BTree &&) = delete;
-		BTree& operator=(const BTree &) = delete;
-		BTree& operator=(const BTree &&) = delete;
+		BLinkTree(const BLinkTree &) = delete;
+		BLinkTree(const BLinkTree &&) = delete;
+		BLinkTree& operator=(const BLinkTree &) = delete;
+		BLinkTree& operator=(const BLinkTree &&) = delete;
 
-		~BTree();
+		~BLinkTree();
 
 	private:
 		struct Set {
 			Set():depth_(0) { }
-			page_id    page_no_;
-			Latch     *latch_;
-			BTreePage *page_;
-			page_id    stack_[8];
-			uint8_t    depth_;
+			page_id   page_no_;
+			Latch    *latch_;
+			Page     *page_;
+			page_id   stack_[8];
+			uint8_t   depth_;
 		};
 
 		void DescendToLeaf(const KeySlice *key, Set &set) const;
@@ -67,4 +67,4 @@ class BTree
 
 } // namespace Mushroom
 
-#endif /* _BTREE_HPP_ */
+#endif /* _B_LINK_TREE_HPP_ */

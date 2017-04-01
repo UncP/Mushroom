@@ -9,7 +9,7 @@
 #define _PAGE_POOL_HPP_
 
 #include "utility.hpp"
-#include "btree_page.hpp"
+#include "page.hpp"
 
 namespace Mushroom {
 
@@ -28,11 +28,11 @@ class PagePool
 
 		void Initialize(page_id page_no) {
 			base_ = page_no & ~SegMask;
-			mem_ = new char[BTreePage::PageSize * SegSize];
+			mem_ = new char[Page::PageSize * SegSize];
 		}
 
-		BTreePage* GetPage(page_id page_no) {
-			return (BTreePage *)(mem_ + BTreePage::PageSize * (page_no & SegMask));
+		Page* GetPage(page_id page_no) {
+			return (Page *)(mem_ + Page::PageSize * (page_no & SegMask));
 		}
 
 		PagePool(const PagePool &) = delete;

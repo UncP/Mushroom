@@ -15,16 +15,18 @@ namespace Mushroom {
 typedef uint32_t page_id;
 
 class KeySlice;
+class SpinLatch;
 class Latch;
-class BTreePage;
-class BTree;
+class HashEntry;
+class Page;
+class BLinkTree;
+class LSMTree;
 class LatchManager;
 class PagePool;
 class PoolManager;
 class MushroomDB;
 class Task;
 class ThreadPool;
-class HashEntry;
 
 } // namespace Mushroom
 
