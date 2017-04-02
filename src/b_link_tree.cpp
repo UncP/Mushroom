@@ -9,7 +9,7 @@
 #include <cstring>
 #include <cassert>
 
-#include "blinktree.hpp"
+#include "b_link_tree.hpp"
 #include "slice.hpp"
 #include "latch.hpp"
 #include "page.hpp"

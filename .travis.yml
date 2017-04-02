@@ -1,26 +1,21 @@
 language: cpp
 
 compiler:
-  - gcc
-
-os:
-  - linux
+  - g++
 
 sudo: required
 
-branches:
-  - master
-
-before_script:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
-
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - g++-4.8
-
+matrix:
+  include:
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++-5.4 CC=gcc-5.4
+      addons:
+        apt:
+          packages:
+            - gcc-5.4
+            - g++-5.4
+          sources: &sources
+            - ubuntu-toolchain-r-test
 script:
   - cd src
   - make all

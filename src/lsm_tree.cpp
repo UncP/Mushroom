@@ -5,7 +5,7 @@
  *    > Created Time:  2017-04-01 13:22:35
 **/
 
-#include "lsmtree.hpp"
+#include "lsm_tree.hpp"
 
 namespace Mushroom {
 

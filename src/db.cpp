@@ -6,7 +6,7 @@
 **/
 
 #include "db.hpp"
-#include "blinktree.hpp"
+#include "b_link_tree.hpp"
 #include "pool_manager.hpp"
 #include "latch_manager.hpp"
 
