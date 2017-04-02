@@ -25,6 +25,12 @@ BLinkTree::BLinkTree(int key_len, LatchManager *latch_manager, PoolManager *page
 	degree_ = Page::CalculateDegree(key_len_);
 }
 
+BLinkTree::~BLinkTree()
+{
+	delete page_manager_;
+	delete latch_manager_;
+}
+
 void BLinkTree::Initialize()
 {
 	Set set;
@@ -39,11 +45,6 @@ void BLinkTree::Initialize()
 	page_id next = 0;
 	assert(set.page_->Insert(key, next) == InsertOk);
 	set.latch_->Unlock();
-}
-
-BLinkTree::~BLinkTree()
-{
-	delete page_manager_;
 }
 
 bool BLinkTree::Free()

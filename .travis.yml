@@ -16,6 +16,7 @@ matrix:
             - g++-5.4
           sources: &sources
             - ubuntu-toolchain-r-test
+
 script:
   - cd src
   - make all
