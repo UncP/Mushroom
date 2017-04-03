@@ -227,7 +227,7 @@ Page* BLinkTree::First(page_id *page_no, int level) const
 {
 	Page *page = page_manager_->GetPage(root_);
 	if (level > page->level_)
-		return nullptr;
+		return 0;
 	if (level == -1)
 		level = page->level_;
 

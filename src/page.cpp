@@ -20,12 +20,12 @@ void Page::SetPageInfo(uint32_t page_size)
 
 uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 {
-	Page *page = nullptr;
+	Page *page = 0;
 	uint16_t offset = (char *)page->data_ - (char *)page + pre_len;
 	return (PageSize - offset) / (PageByte + IndexByte + key_len);
 }
 
-void Page::Initialize(page_id page_no, int type, uint8_t key_len, uint8_t level,
+void Page::Initialize(page_id page_no, Type type, uint8_t key_len, uint8_t level,
 	uint16_t degree)
 {
 	memset(this, 0, PageSize);
@@ -51,7 +51,7 @@ bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int ty
 			return false;
 		}
 	}
-	KeySlice *curr = nullptr;
+	KeySlice *curr = 0;
 	while (low != high) {
 		mid = low + ((high - low) >> 1);
 		curr = Key(index, mid);
@@ -77,21 +77,21 @@ bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int ty
 page_id Page::Descend(const KeySlice *key) const
 {
 	uint16_t index;
-	KeySlice *slice = nullptr;
+	KeySlice *slice = 0;
 	Traverse(key, &index, &slice, 0);
 	return index ? slice->PageNo() : first_;
 }
 
 bool Page::Search(KeySlice *key, uint16_t *index) const
 {
-	KeySlice *slice = nullptr;
+	KeySlice *slice = 0;
 	return Traverse(key, index, &slice);
 }
 
 InsertStatus Page::Insert(const KeySlice *key, page_id &page_no)
 {
 	uint16_t pos;
-	KeySlice *slice = nullptr;
+	KeySlice *slice = 0;
 	bool flag = Traverse(key, &pos, &slice);
 	if (flag) return ExistedKey;
 	if (pos == total_key_ && pos) {

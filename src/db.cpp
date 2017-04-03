@@ -16,7 +16,7 @@
 namespace Mushroom {
 
 MushroomDB::MushroomDB(const int key_len, uint32_t page_size,
-	uint32_t pool_size, uint8_t hash_bits, uint8_t seg_bits)
+	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits)
 {
 	#ifndef NOLATCH
 	LatchManager *latch_manager = new LatchManager();

@@ -15,21 +15,20 @@ namespace Mushroom {
 class PoolManager
 {
 	public:
-		PoolManager(uint32_t page_size, uint32_t pool_size, uint8_t hash_bits, uint8_t seg_bits);
+		PoolManager(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits,
+			uint32_t step);
 
 		~PoolManager();
 
 		page_id Total() const { return cur_; }
 
 		Page* GetPage(page_id page_no);
-		Page* NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree);
+		Page* NewPage(Page::Type type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		bool Free();
 
 		PoolManager(const PoolManager &) = delete;
-		PoolManager(const PoolManager &&) = delete;
 		PoolManager& operator=(const PoolManager &) = delete;
-		PoolManager& operator=(const PoolManager &&) = delete;
 
 	private:
 
@@ -37,6 +36,8 @@ class PoolManager
 
 		uint32_t   pool_size_;
 		uint32_t   hash_mask_;
+		uint32_t   step_;
+		page_id    threshold_;
 		page_id    cur_;
 		uint16_t   tot_;
 		HashEntry *entries_;

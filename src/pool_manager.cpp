@@ -13,12 +13,14 @@
 
 namespace Mushroom {
 
-PoolManager::PoolManager(uint32_t page_size, uint32_t pool_size, uint8_t hash_bits,
-	uint8_t seg_bits)
-:pool_size_(pool_size), hash_mask_((1<<hash_bits)-1), cur_(0), tot_(0)
+PoolManager::PoolManager(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits,
+	uint32_t seg_bits, uint32_t step)
+:pool_size_(pool_size), hash_mask_((1<<hash_bits)-1), step_(step), cur_(0), tot_(0)
 {
 	Page::SetPageInfo(page_size);
 	PagePool::SetPoolInfo(seg_bits);
+
+	threshold_ = pool_size_ * PagePool::SegSize;
 
 	entries_ = new HashEntry[hash_mask_+1];
 	pool_ = new PagePool[pool_size_];
@@ -75,9 +77,14 @@ Page* PoolManager::GetPage(page_id page_no)
 	assert(0);
 }
 
-Page* PoolManager::NewPage(int type, uint8_t key_len, uint8_t level, uint16_t degree)
+Page* PoolManager::NewPage(Page::Type type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
 	page_id page_no = __sync_fetch_and_add(&cur_, 1);
+	if (page_no == threshold_)
+		return 0;
+		// uint32_t all = pool_size_ * PagePool::SegSize;
+		// page_no %= all;
+		// threshold_ = (threshold_ + step_) % all;
 	Page *page = GetPage(page_no);
 	page->Initialize(page_no, type, key_len, level, degree);
 	return page;

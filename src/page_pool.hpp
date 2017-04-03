@@ -18,7 +18,7 @@ class PagePool
 	friend class PoolManager;
 
 	public:
-		static void SetPoolInfo(uint8_t seg_bits) {
+		static void SetPoolInfo(uint32_t seg_bits) {
 			SegBits = seg_bits;
 			SegSize = 1 << seg_bits;
 			SegMask = SegSize - 1;
@@ -38,9 +38,10 @@ class PagePool
 		PagePool(const PagePool &) = delete;
 		PagePool& operator=(const PagePool &) = delete;
 
+		static uint32_t SegSize;
+
 	private:
 		static uint32_t SegBits;
-		static uint32_t SegSize;
 		static uint32_t SegMask;
 
 		page_id   base_;
