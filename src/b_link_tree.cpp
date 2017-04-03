@@ -13,30 +13,45 @@
 #include "slice.hpp"
 #include "latch.hpp"
 #include "page.hpp"
+#ifndef NOLATCH
 #include "latch_manager.hpp"
+#endif
 #include "pool_manager.hpp"
 
 namespace Mushroom {
 
+#ifndef NOLATCH
 BLinkTree::BLinkTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager)
 :latch_manager_(latch_manager), page_manager_(page_manager), root_(0),
  key_len_((uint8_t)key_len)
 {
 	degree_ = Page::CalculateDegree(key_len_);
 }
+#else
+BLinkTree::BLinkTree(int key_len, PoolManager *page_manager)
+:page_manager_(page_manager), root_(0),
+ key_len_((uint8_t)key_len)
+{
+	degree_ = Page::CalculateDegree(key_len_);
+}
+#endif
 
 BLinkTree::~BLinkTree()
 {
-	delete page_manager_;
+	#ifndef NOLATCH
 	delete latch_manager_;
+	#endif
+	delete page_manager_;
 }
 
 void BLinkTree::Initialize()
 {
 	Set set;
 	set.page_no_ = root_;
+	#ifndef NOLATCH
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	assert(set.latch_->TryWriteLock());
+	#endif
 	set.page_ = page_manager_->NewPage(Page::ROOT, key_len_, 0, degree_);
 	char buf[Page::PageByte + key_len_];
 	memset(buf, 0, Page::PageByte + key_len_);
@@ -44,7 +59,9 @@ void BLinkTree::Initialize()
 	memset(key->Data(), 0xFF, key_len_);
 	page_id next = 0;
 	assert(set.page_->Insert(key, next) == InsertOk);
+	#ifndef NOLATCH
 	set.latch_->Unlock();
+	#endif
 }
 
 bool BLinkTree::Free()
@@ -57,17 +74,25 @@ bool BLinkTree::Free()
 void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set) const
 {
 	set.page_no_ = root_;
+	#ifndef NOLATCH
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
+	#endif
 	set.page_ = page_manager_->GetPage(set.page_no_);
+	#ifndef NOLATCH
 	set.latch_->LockShared();
+	#endif
 	for (; set.page_->level_;) {
 		page_id pre_no = set.page_->page_no_;
 		uint8_t pre_le = set.page_->level_;
 		set.page_no_ = set.page_->Descend(key);
+		#ifndef NOLATCH
 		set.latch_->UnlockShared();
 		set.latch_ = latch_manager_->GetLatch(set.page_no_);
+		#endif
 		set.page_ = page_manager_->GetPage(set.page_no_);
+		#ifndef NOLATCH
 		set.latch_->LockShared();
+		#endif
 		if (set.page_->level_ != pre_le)
 			set.stack_[set.depth_++] = pre_no;
 	}
@@ -79,11 +104,15 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 	for (; (status = set.page_->Insert(key, set.page_no_));) {
 		switch (status) {
 			case MoveRight: {
+				#ifndef NOLATCH
 				Latch *pre = set.latch_;
 				set.latch_ = latch_manager_->GetLatch(set.page_no_);
+				#endif
 				set.page_ = page_manager_->GetPage(set.page_no_);
+				#ifndef NOLATCH
 				set.latch_->Lock();
 				pre->Unlock();
+				#endif
 				break;
 			}
 			default: {
@@ -99,7 +128,9 @@ bool BLinkTree::Put(KeySlice *key)
 	Set set;
 
 	DescendToLeaf(key, set);
+	#ifndef NOLATCH
 	set.latch_->Upgrade();
+	#endif
 
 	Insert(set, key);
 
@@ -108,20 +139,30 @@ bool BLinkTree::Put(KeySlice *key)
 			Page *right = page_manager_->NewPage(set.page_->type_, set.page_->key_len_,
 				set.page_->level_, set.page_->degree_);
 			set.page_->Split(right, key);
+			#ifndef NOLATCH
 			Latch *pre = set.latch_;
+			#endif
 			assert(set.depth_ != 0);
 			set.page_no_ = set.stack_[--set.depth_];
+			#ifndef NOLATCH
 			set.latch_ = latch_manager_->GetLatch(set.page_no_);
+			#endif
 			set.page_ = page_manager_->GetPage(set.page_no_);
+			#ifndef NOLATCH
 			set.latch_->Lock();
+			#endif
 			Insert(set, key);
+			#ifndef NOLATCH
 			pre->Unlock();
+			#endif
 		} else {
 			SplitRoot(set);
 			break;
 		}
 	}
+	#ifndef NOLATCH
 	set.latch_->Unlock();
+	#endif
 	return true;
 }
 
@@ -159,18 +200,26 @@ bool BLinkTree::Get(KeySlice *key) const
 
 	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
+			#ifndef NOLATCH
 			set.latch_->UnlockShared();
+			#endif
 			return false;
 		}
 		set.page_no_ = set.page_->Next();
+		#ifndef NOLATCH
 		Latch *pre = set.latch_;
 		set.latch_ = latch_manager_->GetLatch(set.page_no_);
+		#endif
 		set.page_ = page_manager_->GetPage(set.page_no_);
+		#ifndef NOLATCH
 		set.latch_->LockShared();
 		pre->UnlockShared();
+		#endif
 	}
 
+	#ifndef NOLATCH
 	set.latch_->UnlockShared();
+	#endif
 	return true;
 }
 

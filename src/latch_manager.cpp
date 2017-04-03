@@ -9,6 +9,8 @@
 
 namespace Mushroom {
 
+#ifndef NOLATCH
+
 LatchManager::LatchManager():deployed_(0), victim_(0)
 {
 	entries_ = new HashEntry[total];
@@ -125,5 +127,7 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		return latch;
   }
 }
+
+#endif
 
 } // namespace Mushroom

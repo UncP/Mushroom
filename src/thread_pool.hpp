@@ -24,9 +24,7 @@ class Thread
 		bool Stop();
 
 		Thread(const Thread &) = delete;
-		Thread(const Thread &&) = delete;
 		Thread& operator=(const Thread &) = delete;
-		Thread& operator=(const Thread &&) = delete;
 
 	private:
 		Thread(void* (*func)(void *), ThreadPool *pool):func_(func), pool_(pool) { }

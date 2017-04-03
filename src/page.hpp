@@ -26,6 +26,7 @@ class Page
 		static uint32_t PageSize;
 
 		static enum { ROOT = 0, BRANCH, LEAF } TYPE;
+
 		static const uint32_t PageByte  = sizeof(page_id);
 		static const uint32_t IndexByte = 2;
 

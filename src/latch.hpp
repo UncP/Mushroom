@@ -15,6 +15,8 @@
 
 namespace Mushroom {
 
+#ifndef NOLATCH
+
 class SpinLatch
 {
 	public:
@@ -129,10 +131,14 @@ class Latch
 		pthread_rwlock_t  lock_[1];
 };
 
+#endif
+
 class HashEntry {
 	public:
 		HashEntry():slot_(0) { }
+		#ifndef NOLATCH
 		SpinLatch latch_;
+		#endif
 		uint16_t  slot_;
 };
 

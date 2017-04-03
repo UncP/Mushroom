@@ -15,7 +15,7 @@ namespace Mushroom {
 class MushroomDB
 {
 	public:
-		MushroomDB(const char *name, const int key_len, uint32_t page_size, uint32_t pool_size,
+		MushroomDB(const int key_len, uint32_t page_size, uint32_t pool_size,
 			uint8_t hash_bits, uint8_t seg_bits);
 
 		bool Put(KeySlice *key);
@@ -27,16 +27,14 @@ class MushroomDB
 		bool Close();
 
 		MushroomDB(const MushroomDB &) = delete;
-		MushroomDB(const MushroomDB &&) = delete;
 		MushroomDB& operator=(const MushroomDB &) = delete;
-		MushroomDB& operator=(const MushroomDB &&) = delete;
 
 		~MushroomDB();
 
 	private:
 		int        fd_;
 		char      *mapped_;
-		BLinkTree *blinktree_;
+		BLinkTree *b_link_tree_;
 };
 
 } // namespace Mushroom

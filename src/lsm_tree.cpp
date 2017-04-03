@@ -9,5 +9,18 @@
 
 namespace Mushroom {
 
+LSMTree::LSMTree(BLinkTree *small, BLinkTree *big):small_(small), big_(big) { }
+
+LSMTree::~LSMTree()
+{
+	delete small_;
+	delete big_;
+}
+
+LSMTree::Free()
+{
+	small_->Free();
+	big_->Free();
+}
 
 } // namespace Mushroom

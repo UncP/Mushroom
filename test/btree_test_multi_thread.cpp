@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
 	const int total = (argc == 6) ? atoi(argv[5]) : 1;
 
-	MushroomDB db("../mushroom", key_len, page_size, pool_size, hash_bits, seg_bits);
+	MushroomDB db(key_len, page_size, pool_size, hash_bits, seg_bits);
 
 	int thread_num = 4;
 	auto beg = std::chrono::high_resolution_clock::now();

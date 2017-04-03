@@ -31,9 +31,7 @@ class Task
 		bool operator()() { return (db_->*fun_)(key_); }
 
 		Task(const Task &) = delete;
-		Task(const Task &&) = delete;
 		Task& operator=(const Task &) = delete;
-		Task& operator=(const Task &&) = delete;
 
 		~Task() { delete [] key_; }
 

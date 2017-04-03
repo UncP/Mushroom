@@ -12,7 +12,10 @@
 
 #include "../src/slice.hpp"
 #include "../src/db.hpp"
+
+#ifndef NOLATCH
 #include "../src/thread_pool.hpp"
+#endif
 
 int main(int argc, char **argv)
 {
@@ -29,10 +32,13 @@ int main(int argc, char **argv)
 	const int total = (argc == 6) ? atoi(argv[5]) : 1;
 	const int key_len = 16;
 
-	MushroomDB db("../mushroom", key_len, page_size, pool_size, hash_bits, seg_bits);
+	MushroomDB db(key_len, page_size, pool_size, hash_bits, seg_bits);
 
+	#ifndef NOLATCH
 	ThreadPool *pool = new ThreadPool(new Queue(1024, key_len));
-
+	#else
+	printf("NOLATCH defined, using single thread ;)\n");
+	#endif
 	char tmp[sizeof(page_id) + key_len] = {0};
 	KeySlice *key = (KeySlice *)tmp;
 	int fd = open(file, O_RDONLY);
@@ -52,7 +58,11 @@ int main(int argc, char **argv)
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len);
+			#ifndef NOLATCH
 			pool->AddTask(&MushroomDB::Put, &db, key);
+			#else
+			db.Put(key);
+			#endif
 			if (++count == total) {
 				flag = false;
 				break;
@@ -61,14 +71,18 @@ int main(int argc, char **argv)
 		}
 	}
 	close(fd);
+	#ifndef NOLATCH
 	pool->Clear();
+	#endif
 	flag = true;
 	auto end = std::chrono::high_resolution_clock::now();
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	printf("\ntotal: %d\nput time: %f  s\n", total, Time);
 
 	// beg = std::chrono::high_resolution_clock::now();
-	// flag = db.FindSingle(file, total);
+	// fd = open(file, O_RDONLY);
+	// flag = db.FindSingle(fd, total);
+	// close(fd);
 	// end = std::chrono::high_resolution_clock::now();
 	// Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	// printf("get time: %f  s\n", Time);
@@ -80,6 +94,8 @@ int main(int argc, char **argv)
 
 	db.Close();
 
+	#ifndef NOLATCH
 	delete pool;
+	#endif
 	return 0;
 }

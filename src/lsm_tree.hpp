@@ -15,19 +15,22 @@ namespace Mushroom {
 class LSMTree
 {
 	public:
-		LSMTree() { }
+		LSMTree(BLinkTree *small, BLinkTree *big);
+
+		~LSMTree();
+
+		bool Free();
 
 		bool Put(KeySlice *key);
 
 		bool Get(KeySlice *key) const;
 
 		LSMTree(const LSMTree &) = delete;
-		LSMTree(const LSMTree &&) = delete;
 		LSMTree& operator=(const LSMTree &) = delete;
-		LSMTree& operator=(const LSMTree &&) = delete;
 
 	private:
-
+		BLinkTree *small_;
+		BLinkTree *big_;
 };
 
 } // namespace Mushroom

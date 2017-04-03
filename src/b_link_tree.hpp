@@ -15,9 +15,13 @@ namespace Mushroom {
 class BLinkTree
 {
 	public:
-		static const uint32_t MAX_KEY_LENGTH = 256;
+		static const uint32_t MAX_KEY_LENGTH = 255;
 
+		#ifndef NOLATCH
 		BLinkTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager);
+		#else
+		BLinkTree(int key_len, PoolManager *page_manager);
+		#endif
 
 		void Initialize();
 
@@ -34,9 +38,7 @@ class BLinkTree
 		bool Check(int fd, int total) const;
 
 		BLinkTree(const BLinkTree &) = delete;
-		BLinkTree(const BLinkTree &&) = delete;
 		BLinkTree& operator=(const BLinkTree &) = delete;
-		BLinkTree& operator=(const BLinkTree &&) = delete;
 
 		~BLinkTree();
 
@@ -44,7 +46,9 @@ class BLinkTree
 		struct Set {
 			Set():depth_(0) { }
 			page_id   page_no_;
+			#ifndef NOLATCH
 			Latch    *latch_;
+			#endif
 			Page     *page_;
 			page_id   stack_[8];
 			uint8_t   depth_;
@@ -56,7 +60,9 @@ class BLinkTree
 
 		void Insert(Set &set, KeySlice *key);
 
+		#ifndef NOLATCH
 		LatchManager *latch_manager_;
+		#endif
 		PoolManager  *page_manager_;
 
 		page_id       root_;

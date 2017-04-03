@@ -8,47 +8,54 @@
 #include "db.hpp"
 #include "b_link_tree.hpp"
 #include "pool_manager.hpp"
+
+#ifndef NOLATCH
 #include "latch_manager.hpp"
+#endif
 
 namespace Mushroom {
 
-MushroomDB::MushroomDB(const char *name, const int key_len, uint32_t page_size,
+MushroomDB::MushroomDB(const int key_len, uint32_t page_size,
 	uint32_t pool_size, uint8_t hash_bits, uint8_t seg_bits)
 {
-	PoolManager::SetPoolManagerInfo(page_size, pool_size, hash_bits, seg_bits);
-
+	#ifndef NOLATCH
 	LatchManager *latch_manager = new LatchManager();
+	#endif
 
-	PoolManager *page_manager = new PoolManager();
+	PoolManager *page_manager = new PoolManager(page_size, pool_size, hash_bits, seg_bits);
 
-	blinktree_ = new BLinkTree(key_len, latch_manager, page_manager);
+	#ifndef NOLATCH
+	b_link_tree_ = new BLinkTree(key_len, latch_manager, page_manager);
+	#else
+	b_link_tree_ = new BLinkTree(key_len, page_manager);
+	#endif
 
-	blinktree_->Initialize();
+	b_link_tree_->Initialize();
 }
 
 MushroomDB::~MushroomDB()
 {
-	delete blinktree_;
+	delete b_link_tree_;
 }
 
 bool MushroomDB::Put(KeySlice *key)
 {
-	return blinktree_->Put(key);
+	return b_link_tree_->Put(key);
 }
 
 bool MushroomDB::Get(KeySlice *key)
 {
-	return blinktree_->Get(key);
+	return b_link_tree_->Get(key);
 }
 
 bool MushroomDB::FindSingle(int fd, int total)
 {
-	return blinktree_->Check(fd, total);
+	return b_link_tree_->Check(fd, total);
 }
 
 bool MushroomDB::Close()
 {
-	blinktree_->Free();
+	b_link_tree_->Free();
 	return true;
 }
 

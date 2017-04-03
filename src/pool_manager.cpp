@@ -13,22 +13,15 @@
 
 namespace Mushroom {
 
-uint32_t PoolManager::PoolSize;
-uint32_t PoolManager::HashMask;
-
-void PoolManager::SetPoolManagerInfo(uint32_t page_size, uint32_t pool_size, uint8_t hash_bits,
+PoolManager::PoolManager(uint32_t page_size, uint32_t pool_size, uint8_t hash_bits,
 	uint8_t seg_bits)
+:pool_size_(pool_size), hash_mask_((1<<hash_bits)-1), cur_(0), tot_(0)
 {
-	PoolSize = pool_size;
-	HashMask = (1 << hash_bits) - 1;
 	Page::SetPageInfo(page_size);
 	PagePool::SetPoolInfo(seg_bits);
-}
 
-PoolManager::PoolManager():cur_(0), tot_(0)
-{
-	entries_ = new HashEntry[HashMask+1];
-	pool_ = new PagePool[PoolSize];
+	entries_ = new HashEntry[hash_mask_+1];
+	pool_ = new PagePool[pool_size_];
 }
 
 void PoolManager::Link(uint16_t hash, uint16_t victim)
@@ -46,10 +39,12 @@ void PoolManager::Link(uint16_t hash, uint16_t victim)
 Page* PoolManager::GetPage(page_id page_no)
 {
 	page_id base = page_no & ~PagePool::SegMask;
-	page_id hash = (page_no >> PagePool::SegBits) & HashMask;
+	page_id hash = (page_no >> PagePool::SegBits) & hash_mask_;
 	Page *page = 0;
 
+	#ifndef NOLATCH
 	entries_[hash].latch_.SpinWriteLock();
+	#endif
 
 	uint16_t slot = entries_[hash].slot_;
 	if (slot) {
@@ -59,18 +54,22 @@ Page* PoolManager::GetPage(page_id page_no)
 				break;
 		if (pool) {
 			page = pool->GetPage(page_no);
+			#ifndef NOLATCH
 			entries_[hash].latch_.SpinReleaseWrite();
+			#endif
 			return page;
 		}
 	}
 
 	uint16_t victim = __sync_fetch_and_add(&tot_, 1) + 1;
 
-	if (victim < PoolSize) {
+	if (victim < pool_size_) {
 		pool_[victim].Initialize(page_no);
 		Link(hash, victim);
 		page = pool_[victim].GetPage(page_no);
+		#ifndef NOLATCH
 		entries_[hash].latch_.SpinReleaseWrite();
+		#endif
 		return page;
 	}
 	assert(0);
