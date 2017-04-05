@@ -6,7 +6,7 @@
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
-### 警告，Mushroom具有非常强悍的性能！
+### Behold, the power of Mushroom!
 
 ### Feature
 + 并发B<sup>link</sup>树索引
@@ -18,10 +18,8 @@
 ******
 
 ### B<sup>link</sup> Tree BenchFuck
-`关键值长度： 16 字节`  
-`关键值数量： 1000 万条`  
-`总大小：160 M`  
-`CPU信息: Intel i3  2.1GHz  4核`
+`关键值长度：16 字节　关键值数量：1000 万条　总大小：160 M`<br>
+`CPU: Intel i3　2.1GHz　4核　内存：4G`
 
 | 版本号 | 多线程 | 多进程 | 排序时间（秒）|           备注             |
 |:------:|:-----:|:-----:|:-----------:|:---------------------------:|
