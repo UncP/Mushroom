@@ -18,8 +18,9 @@
 ******
 
 ### B<sup>link</sup> Tree BenchFuck
-`key length: 16 bytes  total key: 10 million  total size: 160 M`<br>
-`CPU: Intel i3 2.1GHz 4 cores  Mem: 4G`
+|total key|key length| total size |     CPU    | Mem |
+|:-------:|:--------:|:---------:|:--------------:|:----:|
+|10 million | 16 bytes | 160 M| Intel i3　2.1GHz 4 cores|4 G|
 
 | Version | Multi-Thread | Multi-Process | Sorting Time(s) |       Improvements       |
 |:------:|:-------:|:---------:|:-----------:|:--------------------------:|
