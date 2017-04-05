@@ -6,7 +6,7 @@
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
-### Behold, the power of Mushroom! 
+### Behold, the power of Mushroom!
 
 ### Feature
 + Concurrent B<sup>link</sup> Tree Index
@@ -18,10 +18,8 @@
 ******
 
 ### B<sup>link</sup> Tree BenchFuck
-`key length: 16 bytes`  
-`total key: 10 million`  
-`total size: 160 M`  
-`CPU: Intel i3  2.1GHz  4 threads`
+`key length: 16 bytes  total key: 10 million  total size: 160 M`<br>
+`CPU: Intel i3 2.1GHz 4 cores  Mem: 4G`
 
 | Version | Multi-Thread | Multi-Process | Sorting Time(s) |       Improvements       |
 |:------:|:-------:|:---------:|:-----------:|:--------------------------:|
@@ -35,9 +33,9 @@
 | 0.4.3  |  Yes  |  No  |\   |  new test strategy, threads conduct operations without going through the queue |
 | 0.4.4  |  Yes  |  No  |\   |  latch manager refactoring |
 | 0.5.0  |  Yes  |  No  |11.70 / 9.00   | fix **BUG**(atomic operation bug) that exists from 0.4.1 to 0.4.4 |
-| 0.6.0  |  Yes  |  Yes  |\   | multi-process supported, fix B<sup>link</sup> tree search **bug**| 
-| 0.6.1  |  Yes  |  No |18.69 / 13.04| two-phase hashing page manager, implement lazy page allocation| 
-| 0.6.2  |  Yes  |  No |11.89 / 8.14| reduce dependency on standard library, speed up compile, reduce program size about 42.1%| 
+| 0.6.0  |  Yes  |  Yes  |\   | multi-process supported, fix B<sup>link</sup> tree search **bug**|
+| 0.6.1  |  Yes  |  No |18.69 / 13.04| two-phase hashing page manager, implement lazy page allocation|
+| 0.6.2  |  Yes  |  No |11.89 / 8.14| reduce dependency on standard library, speed up compile, reduce program size about 42.1%|
 
 ### Extreme Test
 | Version | Sorting Time(s) |       Improvements       |
