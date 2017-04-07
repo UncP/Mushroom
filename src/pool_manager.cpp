@@ -28,14 +28,18 @@ PoolManager::PoolManager(uint32_t page_size, uint32_t pool_size, uint32_t hash_b
 
 void PoolManager::Link(uint16_t hash, uint16_t victim)
 {
+	PagePool *pool = pool_ + victim;
+
 	uint16_t slot = entries_[hash].slot_;
+
 	if (slot) {
 		PagePool *next = pool_ + slot;
 		next->prev_ = pool_ + victim;
-		pool_[victim].next_ = next;
+		pool->next_ = next;
 	}
 	entries_[hash].slot_ = victim;
-	pool_[victim].prev_ = 0;
+	pool->prev_ = 0;
+	pool->hash_ = hash;
 }
 
 Page* PoolManager::GetPage(page_id page_no)
@@ -45,7 +49,7 @@ Page* PoolManager::GetPage(page_id page_no)
 	Page *page = 0;
 
 	#ifndef NOLATCH
-	entries_[hash].latch_.SpinWriteLock();
+	entries_[hash].latch_.Lock();
 	#endif
 
 	uint16_t slot = entries_[hash].slot_;
@@ -57,7 +61,7 @@ Page* PoolManager::GetPage(page_id page_no)
 		if (pool) {
 			page = pool->GetPage(page_no);
 			#ifndef NOLATCH
-			entries_[hash].latch_.SpinReleaseWrite();
+			entries_[hash].latch_.Unlock();
 			#endif
 			return page;
 		}
@@ -70,21 +74,16 @@ Page* PoolManager::GetPage(page_id page_no)
 		Link(hash, victim);
 		page = pool_[victim].GetPage(page_no);
 		#ifndef NOLATCH
-		entries_[hash].latch_.SpinReleaseWrite();
+		entries_[hash].latch_.Unlock();
 		#endif
 		return page;
 	}
 	assert(0);
 }
 
-Page* PoolManager::NewPage(Page::Type type, uint8_t key_len, uint8_t level, uint16_t degree)
+Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
 	page_id page_no = __sync_fetch_and_add(&cur_, 1);
-	if (page_no == threshold_)
-		return 0;
-		// uint32_t all = pool_size_ * PagePool::SegSize;
-		// page_no %= all;
-		// threshold_ = (threshold_ + step_) % all;
 	Page *page = GetPage(page_no);
 	page->Initialize(page_no, type, key_len, level, degree);
 	return page;

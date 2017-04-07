@@ -20,65 +20,28 @@ namespace Mushroom {
 class SpinLatch
 {
 	public:
-		SpinLatch():mutex_(0), exclusive_(0), pending_(0), share_(0) { }
-
-		void SpinReadLock() {
-			uint32_t prev;
-			for (;;) {
-				if (__sync_lock_test_and_set(&mutex_, 1))
-					continue;
-				if ((prev = !(exclusive_ | pending_)))
-					++share_;
-				__sync_lock_release(&mutex_);
-				if (prev) return ;
-				sched_yield();
-			}
+		SpinLatch() {
+			assert(!pthread_spin_init(lock_, 0));
 		}
 
-		void SpinWriteLock() {
-			uint32_t prev;
-			for (;;) {
-				if (__sync_lock_test_and_set(&mutex_, 1))
-					continue;
-				if ((prev = !(share_ | exclusive_)))
-					exclusive_ = 1, pending_ = 0;
-				else
-					pending_ = 1;
-				__sync_lock_release(&mutex_);
-				if (prev) return;
-				sched_yield();
-			}
+		void Lock() {
+			pthread_spin_lock(lock_);
 		}
 
-		uint32_t SpinWriteTry() {
-			uint32_t prev;
-			if (__sync_lock_test_and_set(&mutex_, 1))
-				return 0;
-			if ((prev = !(exclusive_ | share_)))
-				exclusive_ = 1;
-			__sync_lock_release(&mutex_);
-			return prev;
+		bool TryLock() {
+			return !pthread_spin_trylock(lock_);
 		}
 
-		void SpinReleaseWrite() {
-			while (__sync_lock_test_and_set(&mutex_, 1))
-				sched_yield();
-			exclusive_ = 0;
-			__sync_lock_release(&mutex_);
+		void Unlock() {
+			pthread_spin_unlock(lock_);
 		}
 
-		void SpinReleaseRead() {
-			while (__sync_lock_test_and_set(&mutex_, 1))
-				sched_yield();
-			--share_;
-			__sync_lock_release(&mutex_);
+		~SpinLatch() {
+			assert(!pthread_spin_destroy(lock_));
 		}
 
 	private:
-		volatile uint8_t mutex_;
-		volatile uint8_t exclusive_;
-		volatile uint8_t pending_;
-		volatile uint8_t share_;
+		pthread_spinlock_t lock_[1];
 };
 
 class Latch

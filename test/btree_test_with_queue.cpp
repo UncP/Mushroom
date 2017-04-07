@@ -26,8 +26,8 @@ int main(int argc, char **argv)
 	assert(argc > 4);
 	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
 	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
-	uint8_t  hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 1024;
-	uint8_t  seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
+	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 1024;
+	uint32_t seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
 
 	const int total = (argc == 6) ? atoi(argv[5]) : 1;
 	const int key_len = 16;

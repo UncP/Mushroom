@@ -34,7 +34,7 @@ class Page
 
 		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0);
 
-		void Initialize(page_id page_no, int type, uint8_t key_len, uint8_t level, uint16_t degree);
+		void Initialize(page_id id, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		page_id Next() const {
 			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);

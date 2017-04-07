@@ -25,7 +25,7 @@ uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 	return (PageSize - offset) / (PageByte + IndexByte + key_len);
 }
 
-void Page::Initialize(page_id page_no, Type type, uint8_t key_len, uint8_t level,
+void Page::Initialize(page_id page_no, uint8_t type, uint8_t key_len, uint8_t level,
 	uint16_t degree)
 {
 	memset(this, 0, PageSize);

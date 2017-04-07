@@ -42,24 +42,9 @@ Latch* LatchManager::GetLatch(page_id page_no)
 	uint16_t hashidx = page_no & mask;
 	Latch *latch;
 
-	entries_[hashidx].latch_.SpinReadLock();
+  entries_[hashidx].latch_.Lock();
 
-	uint16_t avail = 0, slot = entries_[hashidx].slot_;
-	for (; slot; slot = latch->next_) {
-		latch = latches_ + slot;
-		if (page_no == latch->page_no_)
-			break;
-	}
-
-	if (slot) latch->Pin();
-
-	entries_[hashidx].latch_.SpinReleaseRead();
-
-	if (slot) return latch;
-
-  entries_[hashidx].latch_.SpinWriteLock();
-
-	slot = entries_[hashidx].slot_;
+	uint16_t slot = entries_[hashidx].slot_, avail = 0;
 	for (; slot; slot = latch->next_) {
 		latch = latches_ + slot;
 		if (page_no == latch->page_no_)
@@ -72,7 +57,7 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		latch = latches_ + slot;
 		latch->Pin();
 		latch->page_no_ = page_no;
-		entries_[hashidx].latch_.SpinReleaseWrite();
+		entries_[hashidx].latch_.Unlock();
 		return latch;
   }
 
@@ -82,7 +67,7 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		latch = latches_ + victim;
 		latch->Pin();
 		Link(hashidx, victim, page_no);
-		entries_[hashidx].latch_.SpinReleaseWrite();
+		entries_[hashidx].latch_.Unlock();
 		return latch;
 	}
 
@@ -95,19 +80,19 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		else
 			continue;
 
-		if (latch->pin_ || !latch->busy_.SpinWriteTry())
+		if (latch->pin_ || !latch->busy_.TryLock())
 			continue;
 
 		uint16_t idx = latch->hash_;
 
-		if (!entries_[idx].latch_.SpinWriteTry()) {
-			latch->busy_.SpinReleaseWrite();
+		if (!entries_[idx].latch_.TryLock()) {
+			latch->busy_.Unlock();
 			continue;
 		}
 
 		if (latch->pin_) {
-			entries_[idx].latch_.SpinReleaseWrite();
-			latch->busy_.SpinReleaseWrite();
+			entries_[idx].latch_.Unlock();
+			latch->busy_.Unlock();
 			continue;
 		}
 
@@ -119,11 +104,11 @@ Latch* LatchManager::GetLatch(page_id page_no)
 		if (latch->next_)
 			latches_[latch->next_].prev_ = latch->prev_;
 
-		entries_[idx].latch_.SpinReleaseWrite();
+		entries_[idx].latch_.Unlock();
 		latch->Pin();
 		Link(hashidx, victim, page_no);
-		entries_[hashidx].latch_.SpinReleaseWrite();
-		latch->busy_.SpinReleaseWrite();
+		entries_[hashidx].latch_.Unlock();
+		latch->busy_.Unlock();
 		return latch;
   }
 }

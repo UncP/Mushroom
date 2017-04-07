@@ -45,6 +45,7 @@ class PagePool
 		static uint32_t SegMask;
 
 		page_id   base_;
+		uint16_t  hash_;
 		char     *mem_;
 		PagePool *prev_;
 		PagePool *next_;

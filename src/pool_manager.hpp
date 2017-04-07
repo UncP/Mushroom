@@ -16,14 +16,14 @@ class PoolManager
 {
 	public:
 		PoolManager(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits,
-			uint32_t step);
+			uint32_t step = 0);
 
 		~PoolManager();
 
-		page_id Total() const { return cur_; }
+		page_id TotalPage() const { return cur_; }
 
 		Page* GetPage(page_id page_no);
-		Page* NewPage(Page::Type type, uint8_t key_len, uint8_t level, uint16_t degree);
+		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		bool Free();
 

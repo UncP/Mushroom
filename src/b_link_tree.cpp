@@ -66,7 +66,7 @@ void BLinkTree::Initialize()
 
 bool BLinkTree::Free()
 {
-	printf("total page: %u\n", page_manager_->Total());
+	printf("total page: %u\n", page_manager_->TotalPage());
 	page_manager_->Free();
 	return true;
 }

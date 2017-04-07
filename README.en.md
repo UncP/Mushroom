@@ -20,7 +20,7 @@
 ### B<sup>link</sup> Tree BenchFuck
 |total key|key length| total size |     CPU    | Mem |
 |:-------:|:--------:|:---------:|:--------------:|:----:|
-|10 million | 16 bytes | 160 M| Intel i3　2.1GHz 4 cores|4 G|
+|10 million | 16 bytes | 160 M| Intel i3 2.1 GHz 4 cores|4 G|
 
 | Version | Multi-Thread | Multi-Process | Sorting Time(s) |       Improvements       |
 |:------:|:-------:|:---------:|:-----------:|:--------------------------:|
@@ -37,6 +37,7 @@
 | 0.6.0  |  Yes  |  Yes  |\   | multi-process supported, fix B<sup>link</sup> tree search **bug**|
 | 0.6.1  |  Yes  |  No |18.69 / 13.04| two-phase hashing page manager, implement lazy page allocation|
 | 0.6.2  |  Yes  |  No |11.89 / 8.14| reduce dependency on standard library, speed up compile, reduce program size about 42.1%|
+| 0.6.4  |  Yes  |  No  |10.56 / 7.58|using posix spin lock|
 
 ### Extreme Test
 | Version | Sorting Time(s) |       Improvements       |
