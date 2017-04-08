@@ -15,7 +15,7 @@ namespace Mushroom {
 class LSMTree
 {
 	public:
-		LSMTree(BLinkTree *small, BLinkTree *big);
+		LSMTree();
 
 		~LSMTree();
 
@@ -29,8 +29,8 @@ class LSMTree
 		LSMTree& operator=(const LSMTree &) = delete;
 
 	private:
-		BLinkTree *small_;
-		BLinkTree *big_;
+		BLinkTree *curr_;
+
 };
 
 } // namespace Mushroom

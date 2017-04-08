@@ -9,6 +9,7 @@
 #define _B_LINK_TREE_HPP_
 
 #include "utility.hpp"
+#include "latch.hpp"
 
 namespace Mushroom {
 
@@ -22,6 +23,7 @@ class BLinkTree
 		#else
 		BLinkTree(int key_len, PoolManager *page_manager);
 		#endif
+		~BLinkTree();
 
 		void Initialize();
 
@@ -35,10 +37,12 @@ class BLinkTree
 
 		bool Next(KeySlice *key, page_id *page_no, uint16_t *index) const;
 
+		inline bool NeedCompact() const;
+
+		void Clear();
+
 		BLinkTree(const BLinkTree &) = delete;
 		BLinkTree& operator=(const BLinkTree &) = delete;
-
-		~BLinkTree();
 
 	private:
 		struct Set {
@@ -59,11 +63,21 @@ class BLinkTree
 		void Insert(Set &set, KeySlice *key);
 
 		#ifndef NOLATCH
-		LatchManager *latch_manager_;
-		#endif
-		PoolManager  *page_manager_;
+		inline void Ref() { __sync_fetch_and_add(&ref_, 1); }
+		inline void Unref() {
+			__sync_fetch_and_add(&ref_, -1);
+			if (!ref_) cond_.Signal();
+		}
 
+		uint32_t          ref_;
+		Mutex             mutex_;
+		ConditionVariable cond_;
+		LatchManager     *latch_manager_;
+		#endif
+
+		PoolManager  *page_manager_;
 		page_id       root_;
+
 
 		uint8_t       key_len_;
 		uint16_t      degree_;

@@ -27,6 +27,7 @@ class PoolManager;
 class MushroomDB;
 class Task;
 class ThreadPool;
+class SSTable;
 
 } // namespace Mushroom
 

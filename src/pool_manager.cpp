@@ -14,13 +14,12 @@
 namespace Mushroom {
 
 PoolManager::PoolManager(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits,
-	uint32_t seg_bits, uint32_t step)
-:pool_size_(pool_size), hash_mask_((1<<hash_bits)-1), step_(step), cur_(0), tot_(0)
+	uint32_t seg_bits)
+:pool_size_(pool_size), hash_mask_((1<<hash_bits)-1), threshold_(pool_size_<<seg_bits), cur_(0),
+ tot_(0)
 {
 	Page::SetPageInfo(page_size);
 	PagePool::SetPoolInfo(seg_bits);
-
-	threshold_ = pool_size_ * PagePool::SegSize;
 
 	entries_ = new HashEntry[hash_mask_+1];
 	pool_ = new PagePool[pool_size_];

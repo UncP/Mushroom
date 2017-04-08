@@ -92,8 +92,8 @@ int main(int argc, char **argv)
 	double t1 = Do(file, &db, &MushroomDB::Put);
 	printf("total: %d\nput time: %f  s\n", total, t1);
 
-	double t2 = Do(file, &db, &MushroomDB::Get);
-	printf("get time: %f  s\n", t2);
+	// double t2 = Do(file, &db, &MushroomDB::Get);
+	// printf("get time: %f  s\n", t2);
 
 	db.Close();
 

@@ -10,12 +10,12 @@
 
 #include "b_link_tree.hpp"
 #include "slice.hpp"
-#include "latch.hpp"
 #include "page.hpp"
 #ifndef NOLATCH
 #include "latch_manager.hpp"
 #endif
 #include "pool_manager.hpp"
+#include "sstable.hpp"
 
 namespace Mushroom {
 
@@ -126,6 +126,10 @@ bool BLinkTree::Put(KeySlice *key)
 {
 	Set set;
 
+	#ifndef NOLATCH
+	Ref();
+	#endif
+
 	DescendToLeaf(key, set);
 	#ifndef NOLATCH
 	set.latch_->Upgrade();
@@ -161,6 +165,7 @@ bool BLinkTree::Put(KeySlice *key)
 	}
 	#ifndef NOLATCH
 	set.latch_->Unlock();
+	Unref();
 	#endif
 	return true;
 }
@@ -250,6 +255,22 @@ bool BLinkTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 	leaf = page_manager_->GetPage(*page_no);
 
 	return leaf->Ascend(key, page_no, index);
+}
+
+inline bool BLinkTree::NeedCompact() const
+{
+	return page_manager_->ReachMax();
+}
+
+void BLinkTree::Clear()
+{
+	#ifndef NOLATCH
+	if (!mutex_.TryLock())
+		return ;
+	while (ref_) cond_.Wait(&mutex_);
+	mutex_.Unlock();
+	assert(!ref_);
+	#endif
 }
 
 } // namespace Mushroom

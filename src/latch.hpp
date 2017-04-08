@@ -17,6 +17,59 @@ namespace Mushroom {
 
 #ifndef NOLATCH
 
+class ConditionVariable;
+
+class Mutex
+{
+	friend class ConditionVariable;
+	public:
+		Mutex() {
+			assert(!pthread_mutex_init(mutex_, 0));
+		}
+
+		void Lock() {
+			pthread_mutex_lock(mutex_);
+		}
+
+		bool TryLock() {
+			return !pthread_mutex_trylock(mutex_);
+		}
+
+		void Unlock() {
+			pthread_mutex_unlock(mutex_);
+		}
+
+		~Mutex() {
+			assert(!pthread_mutex_destroy(mutex_));
+		}
+
+	private:
+		pthread_mutex_t mutex_[1];
+};
+
+class ConditionVariable
+{
+	public:
+		ConditionVariable() {
+			assert(!pthread_cond_init(cond_, 0));
+		}
+
+		void Wait(Mutex *mutex) {
+			pthread_cond_wait(cond_, mutex->mutex_);
+		}
+
+		void Signal() {
+			pthread_cond_signal(cond_);
+		}
+
+		~ConditionVariable() {
+			assert(!pthread_cond_destroy(cond_));
+		}
+
+	private:
+		pthread_cond_t   cond_[1];
+};
+
 class SpinLatch
 {
 	public:

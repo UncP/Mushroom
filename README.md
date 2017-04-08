@@ -46,4 +46,4 @@
 
 ### 其他
 + 版本0.6.0是第一个稳定版本
-+ 你可以在[这里](https://zhuanlan.zhihu.com/p/24800198)找到B<sup>link</sup>树的并发控制协议介绍及证明
++ 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到Mushroom各模块的介绍
