@@ -37,7 +37,7 @@
 | 0.6.0  |  Yes  |  Yes  | \  | \ | multi-process supported, fix B<sup>link</sup> tree search **bug**|
 | 0.6.1  |  Yes  |  No |18.69 / 13.04| \ | two-phase hashing page manager, implement lazy page allocation|
 | 0.6.2  |  Yes  |  No |11.89 / 8.14| \ | reduce dependency on standard library, speed up compile, reduce program size about 42.1%|
-| 0.6.4  |  Yes  |  No  |10.56 / 7.58|9.89 / 7.53|using posix spin lock|
+| 0.6.4  |  Yes  |  No  |10.56 / 7.58|9.89 / 7.53|using posix spin lock, Optimize MushroomDB and BLinkTree structure|
 
 ### Extreme Test
 | Version | Sorting Time(s) |       Improvements       |
