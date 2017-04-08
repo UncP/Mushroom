@@ -1,11 +1,11 @@
 CPP  = g++
 CPPFLAGS = -std=c++11 -Wall -Wextra -O3 -pthread
 
-File = slice latch latch_manager page page_pool pool_manager b_link_tree task \
-	queue iterator thread_pool db
+File = slice latch latch_manager page page_pool pool_manager b_link_tree task queue \
+	thread_pool db
 
 OBJ = slice.o latch.o latch_manager.o page.o page_pool.o pool_manager.o b_link_tree.o task.o \
-	queue.o iterator.o thread_pool.o db.o
+	queue.o thread_pool.o db.o
 
 btree_test_single_thread:
 	for f in $(File); do \

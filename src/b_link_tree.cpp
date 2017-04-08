@@ -15,7 +15,6 @@
 #include "latch_manager.hpp"
 #endif
 #include "pool_manager.hpp"
-#include "sstable.hpp"
 
 namespace Mushroom {
 
@@ -125,12 +124,14 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 bool BLinkTree::Put(KeySlice *key)
 {
 	Set set;
-
 	#ifndef NOLATCH
+	#ifdef LSM
 	Ref();
+	#endif
 	#endif
 
 	DescendToLeaf(key, set);
+
 	#ifndef NOLATCH
 	set.latch_->Upgrade();
 	#endif
@@ -165,7 +166,9 @@ bool BLinkTree::Put(KeySlice *key)
 	}
 	#ifndef NOLATCH
 	set.latch_->Unlock();
+	#ifdef LSM
 	Unref();
+	#endif
 	#endif
 	return true;
 }
@@ -228,49 +231,59 @@ bool BLinkTree::Get(KeySlice *key) const
 	return true;
 }
 
-Page* BLinkTree::First(page_id *page_no, int level) const
+bool BLinkTree::First(Page **page, int32_t level) const
 {
-	Page *page = page_manager_->GetPage(root_);
-	if (level > page->level_)
-		return 0;
+	*page = page_manager_->GetPage(root_);
+	if (level > (*page)->level_)
+		return false;
 	if (level == -1)
-		level = page->level_;
+		level = (*page)->level_;
 
-	for (; page->level_ != level;)
-		page = page_manager_->GetPage(page->first_);
+	for (; (*page)->level_ != level;)
+		*page = page_manager_->GetPage((*page)->first_);
 
-	if (page_no)
-		*page_no = page->page_no_;
-	return page;
+	return true;
 }
 
-bool BLinkTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
+bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index) const
 {
-	Page *leaf = page_manager_->GetPage(*page_no);
-
-	bool flag = leaf->Ascend(key, page_no, index);
-	if (flag) return true;
-	if (!*page_no) return false;
-
-	leaf = page_manager_->GetPage(*page_no);
-
-	return leaf->Ascend(key, page_no, index);
+	page_id page_no;
+	if ((*page)->Ascend(key, &page_no, index))
+		return true;
+	if (page_no) {
+		*page = page_manager_->GetPage(page_no);
+		return (*page)->Ascend(key, &page_no, index);
+	}
+	return false;
 }
 
-inline bool BLinkTree::NeedCompact() const
-{
-	return page_manager_->ReachMax();
+BLinkTree::Iterator::Iterator(const BLinkTree *b_link_tree, int32_t level)
+:b_link_tree_(b_link_tree), level_(level), index_(0) {
+	char *buf = new char[MAX_KEY_LENGTH + Page::PageByte];
+	key_ = (KeySlice *)buf;
+	memset(key_->Data(), 0, BLinkTree::MAX_KEY_LENGTH);
 }
 
-void BLinkTree::Clear()
+BLinkTree::Iterator::~Iterator() { delete [] key_; }
+
+inline bool BLinkTree::Iterator::Begin() { return b_link_tree_->First(&curr_, level_); }
+
+inline bool BLinkTree::Iterator::Next() { return b_link_tree_->Next(key_, &curr_, &index_); }
+
+#ifdef LSM
+inline bool BLinkTree::NeedCompact() const { return page_manager_->ReachMax(); }
+
+bool BLinkTree::Clear()
 {
 	#ifndef NOLATCH
 	if (!mutex_.TryLock())
-		return ;
+		return false;
 	while (ref_) cond_.Wait(&mutex_);
 	mutex_.Unlock();
 	assert(!ref_);
 	#endif
+	return true;
 }
+#endif
 
 } // namespace Mushroom

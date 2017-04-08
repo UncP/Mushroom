@@ -46,4 +46,4 @@
 
 ### 其他
 + 版本0.6.0是第一个稳定版本
-+ 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到Mushroom各模块的介绍
++ 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到Mushroom相关的介绍

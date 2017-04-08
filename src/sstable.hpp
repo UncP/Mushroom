@@ -17,10 +17,13 @@ class SSTable
 	public:
 		SSTable(const BLinkTree *b_link_tree);
 
+		void Compact();
+
 	private:
-		uint32_t  total_;
-		KeySlice *smallest_;
-		KeySlice *largest_;
+		const BLinkTree *b_link_tree_;
+		uint32_t         total_;
+		KeySlice        *smallest_;
+		KeySlice        *largest_;
 };
 
 } // namespace Mushroom

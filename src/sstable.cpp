@@ -10,5 +10,15 @@
 
 namespace Mushroom {
 
+SSTable::SSTable(const BLinkTree *b_link_tree):b_link_tree_(b_link_tree) { }
+
+void SSTable::Compact()
+{
+	BLinkTree::Iterator iter(b_link_tree_);
+	assert(iter.Begin());
+	for (; iter.Next(); ) {
+
+	}
+}
 
 } // namespace Mushroom
