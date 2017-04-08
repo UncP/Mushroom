@@ -17,28 +17,19 @@
 #include "../src/thread_pool.hpp"
 #endif
 
-int main(int argc, char **argv)
+using namespace Mushroom;
+
+static const int key_len = 16;
+static int total;
+
+double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *))
 {
-	using namespace Mushroom;
-
-	const char *file = "../data/10000000";
-
-	assert(argc > 4);
-	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
-	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
-	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 1024;
-	uint32_t seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
-
-	const int total = (argc == 6) ? atoi(argv[5]) : 1;
-	const int key_len = 16;
-
-	MushroomDB db(key_len, page_size, pool_size, hash_bits, seg_bits);
-
 	#ifndef NOLATCH
 	ThreadPool *pool = new ThreadPool(new Queue(1024, key_len));
 	#else
 	printf("NOLATCH defined, using single thread ;)\n");
 	#endif
+
 	char tmp[sizeof(page_id) + key_len] = {0};
 	KeySlice *key = (KeySlice *)tmp;
 	int fd = open(file, O_RDONLY);
@@ -59,9 +50,9 @@ int main(int argc, char **argv)
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len);
 			#ifndef NOLATCH
-			pool->AddTask(&MushroomDB::Put, &db, key);
+			pool->AddTask(fun, db, key);
 			#else
-			db.Put(key);
+			(db->*fun)(key);
 			#endif
 			if (++count == total) {
 				flag = false;
@@ -74,28 +65,37 @@ int main(int argc, char **argv)
 	#ifndef NOLATCH
 	pool->Clear();
 	#endif
-	flag = true;
 	auto end = std::chrono::high_resolution_clock::now();
-	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	printf("\ntotal: %d\nput time: %f  s\n", total, Time);
-
-	// beg = std::chrono::high_resolution_clock::now();
-	// fd = open(file, O_RDONLY);
-	// flag = db.FindSingle(fd, total);
-	// close(fd);
-	// end = std::chrono::high_resolution_clock::now();
-	// Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	// printf("get time: %f  s\n", Time);
-
-	if (!flag)
-		printf("\033[31mFail :(\033[0m\n");
-	else
-		printf("\033[32mSuccess :)\033[0m\n");
-
-	db.Close();
 
 	#ifndef NOLATCH
 	delete pool;
 	#endif
+	auto t = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	return t;
+}
+
+int main(int argc, char **argv)
+{
+	const char *file = "../data/10000000";
+
+	assert(argc > 4);
+	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
+	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
+	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 1024;
+	uint32_t seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
+
+	total = (argc == 6) ? atoi(argv[5]) : 1;
+
+	MushroomDB db(key_len, page_size, pool_size, hash_bits, seg_bits);
+	printf("\n");
+
+	double t1 = Do(file, &db, &MushroomDB::Put);
+	printf("total: %d\nput time: %f  s\n", total, t1);
+
+	double t2 = Do(file, &db, &MushroomDB::Get);
+	printf("get time: %f  s\n", t2);
+
+	db.Close();
+
 	return 0;
 }

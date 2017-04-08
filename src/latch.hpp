@@ -48,13 +48,11 @@ class Latch
 {
 	friend class LatchManager;
 	public:
-		Latch():pin_(0), hash_(0), prev_(0), next_(0), page_no_(0xFFFFFFFF) {
-			assert(pthread_rwlock_init(lock_, 0) == 0);
+		Latch():pin_(0), hash_(0), prev_(0), next_(0), page_no_(~page_id(0)) {
+			assert(!pthread_rwlock_init(lock_, 0));
 		}
 
 		void Pin() { __sync_fetch_and_add(&pin_, 1); }
-
-		void Unpin() { __sync_fetch_and_add(&pin_, -1); }
 
 		void LockShared() {
 			pthread_rwlock_rdlock(lock_);
@@ -81,10 +79,12 @@ class Latch
 		}
 
 		~Latch() {
-			assert(pthread_rwlock_destroy(lock_) == 0);
+			assert(!pthread_rwlock_destroy(lock_));
 		}
 
 	private:
+		void Unpin() { __sync_fetch_and_add(&pin_, -1); }
+
 		volatile uint16_t pin_;
 		uint16_t          hash_;
 		uint16_t          prev_;

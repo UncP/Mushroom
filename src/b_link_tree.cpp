@@ -203,6 +203,7 @@ bool BLinkTree::Get(KeySlice *key) const
 			#ifndef NOLATCH
 			set.latch_->UnlockShared();
 			#endif
+			assert(0);
 			return false;
 		}
 		set.page_no_ = set.page_->Next();

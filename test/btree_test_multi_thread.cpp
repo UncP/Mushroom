@@ -109,18 +109,18 @@ int main(int argc, char **argv)
 	auto Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	printf("\ntotal: %d\nput time: %f  s\n", all * thread_num, Time);
 
-	// beg = std::chrono::high_resolution_clock::now();
-	// for (int i = 0; i != thread_num; ++i) {
-	// 	args[i].i = i;
-	// 	args[i].all = all;
-	// 	args[i].db = &db;
-	// 	assert(pthread_create(&ids[i], 0, get, &args[i]) == 0);
-	// }
-	// for (int i = 0; i != thread_num; ++i)
-	// 	assert(pthread_join(ids[i], 0) == 0);
-	// end = std::chrono::high_resolution_clock::now();
-	// Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	// printf("get time: %f  s\n", Time);
+	beg = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i != thread_num; ++i) {
+		args[i].i = i;
+		args[i].all = all;
+		args[i].db = &db;
+		assert(pthread_create(&ids[i], 0, get, &args[i]) == 0);
+	}
+	for (int i = 0; i != thread_num; ++i)
+		assert(pthread_join(ids[i], 0) == 0);
+	end = std::chrono::high_resolution_clock::now();
+	Time = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
+	printf("get time: %f  s\n", Time);
 
 	db.Close();
 
