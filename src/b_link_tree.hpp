@@ -35,8 +35,6 @@ class BLinkTree
 
 		bool Next(KeySlice *key, page_id *page_no, uint16_t *index) const;
 
-		bool Check(int fd, int total) const;
-
 		BLinkTree(const BLinkTree &) = delete;
 		BLinkTree& operator=(const BLinkTree &) = delete;
 

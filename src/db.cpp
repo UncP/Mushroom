@@ -48,11 +48,6 @@ bool MushroomDB::Get(KeySlice *key)
 	return b_link_tree_->Get(key);
 }
 
-bool MushroomDB::FindSingle(int fd, int total)
-{
-	return b_link_tree_->Check(fd, total);
-}
-
 bool MushroomDB::Close()
 {
 	b_link_tree_->Free();

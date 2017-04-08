@@ -26,20 +26,21 @@ static const char *files[] = {
 	"../data/2500000_3"
 };
 
-static bool flag = true;
-
 struct ThreadArg
 {
 	ThreadArg() { }
 	int i;
 	int all;
 	MushroomDB *db;
+	bool (MushroomDB::*(fun))(KeySlice *);
 };
 
-void* put(void *arg)
+void* Do(void *arg)
 {
 	int all = ((ThreadArg *)arg)->all;
 	MushroomDB *db = ((ThreadArg *)arg)->db;
+	bool (MushroomDB::*(fun))(KeySlice *);
+	fun = ((ThreadArg *)arg)->fun;
 
 	char tmp[sizeof(page_id) + key_len] = {0};
 	KeySlice *key = (KeySlice *)tmp;
@@ -58,7 +59,7 @@ void* put(void *arg)
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->Data(), tmp, key_len);
-			db->Put(key);
+			(db->*fun)(key);
 			if (++count == all) {
 				flag = false;
 				break;
@@ -66,16 +67,6 @@ void* put(void *arg)
 			++i;
 		}
 	}
-	close(fd);
-	return 0;
-}
-
-void* get(void *arg)
-{
-	int fd = open(files[((ThreadArg *)arg)->i], O_RDONLY);
-	assert(fd > 0);
-	if (!((ThreadArg *)arg)->db->FindSingle(fd, ((ThreadArg *)arg)->all))
-		__sync_bool_compare_and_swap(&flag, true, false);
 	close(fd);
 	return 0;
 }
@@ -101,7 +92,8 @@ int main(int argc, char **argv)
 		args[i].i = i;
 		args[i].all = all;
 		args[i].db = &db;
-		assert(pthread_create(&ids[i], 0, put, &args[i]) == 0);
+		args[i].fun = &MushroomDB::Put;
+		assert(pthread_create(&ids[i], 0, Do, &args[i]) == 0);
 	}
 	for (int i = 0; i != thread_num; ++i)
 		assert(pthread_join(ids[i], 0) == 0);
@@ -114,7 +106,8 @@ int main(int argc, char **argv)
 		args[i].i = i;
 		args[i].all = all;
 		args[i].db = &db;
-		assert(pthread_create(&ids[i], 0, get, &args[i]) == 0);
+		args[i].fun = &MushroomDB::Get;
+		assert(pthread_create(&ids[i], 0, Do, &args[i]) == 0);
 	}
 	for (int i = 0; i != thread_num; ++i)
 		assert(pthread_join(ids[i], 0) == 0);
@@ -123,11 +116,6 @@ int main(int argc, char **argv)
 	printf("get time: %f  s\n", Time);
 
 	db.Close();
-
-	if (!flag)
-		printf("\033[31mFail :(\033[0m\n");
-	else
-		printf("\033[32mSuccess :)\033[0m\n");
 
 	return 0;
 }

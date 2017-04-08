@@ -5,7 +5,6 @@
  *    > Created Time:  2016-10-07 20:12:13
 **/
 
-#include <unistd.h>
 #include <cstring>
 #include <cassert>
 
@@ -251,33 +250,6 @@ bool BLinkTree::Next(KeySlice *key, page_id *page_no, uint16_t *index) const
 	leaf = page_manager_->GetPage(*page_no);
 
 	return leaf->Ascend(key, page_no, index);
-}
-
-bool BLinkTree::Check(int fd, int total) const
-{
-	assert(fd > 0);
-	char tmp[Page::PageByte + key_len_];
-	memset(tmp, 0, Page::PageByte + key_len_);
-	KeySlice *key = (KeySlice *)tmp;
-	char buf[8192];
-	int curr = 0, ptr = 0, count = 0;
-	for (; (ptr = pread(fd, buf, 8192, curr)) > 0; curr += ptr) {
-		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
-		if (ptr) buf[ptr++] = '\0';
-		else break;
-		for (int i = 0; i < ptr;) {
-			int j = 0;
-			char *tmp = buf + i;
-			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
-			tmp[j] = '\0';
-			memcpy(key->Data(), tmp, key_len_);
-			if (!Get(key)) return false;
-			if (++count == total)
-				return true;
-			++i;
-		}
-	}
-	return true;
 }
 
 } // namespace Mushroom

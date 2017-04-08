@@ -22,8 +22,6 @@ class MushroomDB
 
 		bool Get(KeySlice *key);
 
-		bool FindSingle(int fd, int total);
-
 		bool Close();
 
 		MushroomDB(const MushroomDB &) = delete;
