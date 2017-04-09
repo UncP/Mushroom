@@ -9,30 +9,30 @@
 #include <cassert>
 
 #include "b_link_tree.hpp"
-#include "slice.hpp"
 #include "page.hpp"
+
 #ifndef NOLATCH
 #include "latch_manager.hpp"
 #endif
-#include "pool_manager.hpp"
 
 namespace Mushroom {
 
-#ifndef NOLATCH
-BLinkTree::BLinkTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager)
-:latch_manager_(latch_manager), page_manager_(page_manager), root_(0),
- key_len_((uint8_t)key_len)
+BLinkTree::BLinkTree(int key_len)
+:root_(0), key_len_((uint8_t)key_len)
 {
+	#ifndef NOLATCH
+	latch_manager_ = new LatchManager();
+	#ifdef LSM
+	ref_ = 0;
+	#endif
+	#endif
+
+	page_manager_ = new PoolManager();
+
 	degree_ = Page::CalculateDegree(key_len_);
+
+	Initialize();
 }
-#else
-BLinkTree::BLinkTree(int key_len, PoolManager *page_manager)
-:page_manager_(page_manager), root_(0),
- key_len_((uint8_t)key_len)
-{
-	degree_ = Page::CalculateDegree(key_len_);
-}
-#endif
 
 BLinkTree::~BLinkTree()
 {
@@ -124,9 +124,10 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 bool BLinkTree::Put(KeySlice *key)
 {
 	Set set;
+
 	#ifndef NOLATCH
 	#ifdef LSM
-	Ref();
+	__sync_fetch_and_add(&ref_, 1);
 	#endif
 	#endif
 
@@ -167,7 +168,7 @@ bool BLinkTree::Put(KeySlice *key)
 	#ifndef NOLATCH
 	set.latch_->Unlock();
 	#ifdef LSM
-	Unref();
+	__sync_fetch_and_add(&ref_, -1);
 	#endif
 	#endif
 	return true;
@@ -265,25 +266,5 @@ BLinkTree::Iterator::Iterator(const BLinkTree *b_link_tree, int32_t level)
 }
 
 BLinkTree::Iterator::~Iterator() { delete [] key_; }
-
-inline bool BLinkTree::Iterator::Begin() { return b_link_tree_->First(&curr_, level_); }
-
-inline bool BLinkTree::Iterator::Next() { return b_link_tree_->Next(key_, &curr_, &index_); }
-
-#ifdef LSM
-inline bool BLinkTree::NeedCompact() const { return page_manager_->ReachMax(); }
-
-bool BLinkTree::Clear()
-{
-	#ifndef NOLATCH
-	if (!mutex_.TryLock())
-		return false;
-	while (ref_) cond_.Wait(&mutex_);
-	mutex_.Unlock();
-	assert(!ref_);
-	#endif
-	return true;
-}
-#endif
 
 } // namespace Mushroom

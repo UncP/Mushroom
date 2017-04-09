@@ -60,15 +60,17 @@ class Page
 
 		bool NeedSplit();
 
+		inline uint16_t* Index() const {
+			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
+		}
+
+		inline KeySlice* Key(const uint16_t *index, int pos) const {
+			return (KeySlice *)(data_ + index[pos]);
+		}
+
 		std::string ToString() const;
 
 	private:
-		uint16_t* Index() const {
-			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
-		}
-		KeySlice* Key(const uint16_t *index, int pos) const {
-			return (KeySlice *)(data_ + index[pos]);
-		}
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
 		page_id  page_no_;

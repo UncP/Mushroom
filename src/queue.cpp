@@ -30,9 +30,9 @@ front_(0), avail_back_(0), work_back_(0)
 	for (int i = 0; i != capacity_; ++i)
 		work_[i] = -1;
 
-	assert(pthread_mutex_init(mutex_, 0) == 0);
-	assert(pthread_cond_init(ready_, 0) == 0);
-	assert(pthread_cond_init(empty_, 0) == 0);
+	assert(!pthread_mutex_init(mutex_, 0));
+	assert(!pthread_cond_init(ready_, 0));
+	assert(!pthread_cond_init(empty_, 0));
 }
 
 void Queue::Push(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key)
@@ -96,9 +96,9 @@ Queue::~Queue()
 	if (!clear_)
 		Clear();
 
-	assert(pthread_mutex_destroy(mutex_) == 0);
-	assert(pthread_cond_destroy(ready_) == 0);
-	assert(pthread_cond_destroy(empty_) == 0);
+	assert(!pthread_mutex_destroy(mutex_));
+	assert(!pthread_cond_destroy(ready_));
+	assert(!pthread_cond_destroy(empty_));
 
 	delete [] avail_;
 	delete [] work_;

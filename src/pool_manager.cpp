@@ -13,16 +13,28 @@
 
 namespace Mushroom {
 
-PoolManager::PoolManager(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits,
+uint32_t PoolManager::HashMask;
+uint32_t PoolManager::PoolSize;
+
+void PoolManager::SetManagerInfo(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits,
 	uint32_t seg_bits)
-:pool_size_(pool_size), hash_mask_((1<<hash_bits)-1), threshold_(pool_size_<<seg_bits), cur_(0),
- tot_(0)
 {
 	Page::SetPageInfo(page_size);
 	PagePool::SetPoolInfo(seg_bits);
+	PoolSize = pool_size;
+	HashMask = (1 << hash_bits) - 1;
+}
 
-	entries_ = new HashEntry[hash_mask_+1];
-	pool_ = new PagePool[pool_size_];
+PoolManager::PoolManager():cur_(0), tot_(0)
+{
+	entries_ = new HashEntry[HashMask+1];
+	pool_ = new PagePool[PoolSize];
+}
+
+PoolManager::~PoolManager()
+{
+	delete [] pool_;
+	delete [] entries_;
 }
 
 void PoolManager::Link(uint16_t hash, uint16_t victim)
@@ -44,7 +56,7 @@ void PoolManager::Link(uint16_t hash, uint16_t victim)
 Page* PoolManager::GetPage(page_id page_no)
 {
 	page_id base = page_no & ~PagePool::SegMask;
-	page_id hash = (page_no >> PagePool::SegBits) & hash_mask_;
+	page_id hash = (page_no >> PagePool::SegBits) & HashMask;
 	Page *page = 0;
 
 	#ifndef NOLATCH
@@ -68,7 +80,7 @@ Page* PoolManager::GetPage(page_id page_no)
 
 	uint16_t victim = __sync_fetch_and_add(&tot_, 1) + 1;
 
-	if (victim < pool_size_) {
+	if (victim < PoolSize) {
 		pool_[victim].Initialize(page_no);
 		Link(hash, victim);
 		page = pool_[victim].GetPage(page_no);
@@ -93,12 +105,6 @@ bool PoolManager::Free()
 	for (uint16_t i = 0; i != tot_; ++i)
 		delete [] pool_[i].mem_;
 	return true;
-}
-
-PoolManager::~PoolManager()
-{
-	delete [] pool_;
-	delete [] entries_;
 }
 
 } // namespace Mushroom

@@ -8,8 +8,12 @@
 #ifndef _B_LINK_TREE_HPP_
 #define _B_LINK_TREE_HPP_
 
-#include "utility.hpp"
+#ifndef NOLATCH
 #include "latch.hpp"
+#endif
+
+#include "utility.hpp"
+#include "pool_manager.hpp"
 
 namespace Mushroom {
 
@@ -21,8 +25,9 @@ class BLinkTree
 			public:
 				Iterator(const BLinkTree *b_link_tree, int32_t level = 0);
 				~Iterator();
-				inline bool Begin();
-				inline bool Next();
+				inline bool Begin() { return b_link_tree_->First(&curr_, level_); }
+
+				inline bool Next() { return b_link_tree_->Next(key_, &curr_, &index_); }
 
 				KeySlice        *key_;
 			private:
@@ -34,14 +39,13 @@ class BLinkTree
 
 		static const uint32_t MAX_KEY_LENGTH = 255;
 
-		#ifndef NOLATCH
-		BLinkTree(int key_len, LatchManager *latch_manager, PoolManager *page_manager);
-		#else
-		BLinkTree(int key_len, PoolManager *page_manager);
-		#endif
+		BLinkTree(int key_len);
+
 		~BLinkTree();
 
 		void Initialize();
+
+		uint8_t KeyLength() const { return key_len_; }
 
 		bool Free();
 
@@ -50,8 +54,12 @@ class BLinkTree
 		bool Get(KeySlice *key) const;
 
 		#ifdef LSM
-		inline bool NeedCompact() const;
-		bool Clear();
+		inline bool NeedCompact() const { return page_manager_->ReachMaxPool(); }
+		inline void Clear() const {
+			#ifndef NOLATCH
+			while (ref_) sched_yield();
+			#endif
+		}
 		#endif
 
 		BLinkTree(const BLinkTree &) = delete;
@@ -81,18 +89,10 @@ class BLinkTree
 		void Insert(Set &set, KeySlice *key);
 
 		#ifndef NOLATCH
+		LatchManager  *latch_manager_;
 		#ifdef LSM
-		inline void Ref() { __sync_fetch_and_add(&ref_, 1); }
-		inline void Unref() {
-			__sync_fetch_and_add(&ref_, -1);
-			if (!ref_) cond_.Signal();
-		}
-
-		uint32_t          ref_;
-		Mutex             mutex_;
-		ConditionVariable cond_;
+		uint32_t       ref_;
 		#endif
-		LatchManager     *latch_manager_;
 		#endif
 
 		PoolManager  *page_manager_;

@@ -6,7 +6,11 @@
 **/
 
 #include "db.hpp"
+#ifdef LSM
+#include "lsm_tree.hpp"
+#else
 #include "b_link_tree.hpp"
+#endif
 #include "pool_manager.hpp"
 
 #ifndef NOLATCH
@@ -15,42 +19,35 @@
 
 namespace Mushroom {
 
-MushroomDB::MushroomDB(const int key_len, uint32_t page_size,
+MushroomDB::MushroomDB(int key_len, uint32_t page_size,
 	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits)
 {
-	#ifndef NOLATCH
-	LatchManager *latch_manager = new LatchManager();
-	#endif
-
-	PoolManager *page_manager = new PoolManager(page_size, pool_size, hash_bits, seg_bits);
-
-	#ifndef NOLATCH
-	b_link_tree_ = new BLinkTree(key_len, latch_manager, page_manager);
+	PoolManager::SetManagerInfo(page_size, pool_size, hash_bits, seg_bits);
+	#ifdef LSM
+	tree_ = new LSMTree(key_len);
 	#else
-	b_link_tree_ = new BLinkTree(key_len, page_manager);
+	tree_ = new BLinkTree(key_len);
 	#endif
-
-	b_link_tree_->Initialize();
 }
 
 MushroomDB::~MushroomDB()
 {
-	delete b_link_tree_;
+	delete tree_;
 }
 
 bool MushroomDB::Put(KeySlice *key)
 {
-	return b_link_tree_->Put(key);
+	return tree_->Put(key);
 }
 
 bool MushroomDB::Get(KeySlice *key)
 {
-	return b_link_tree_->Get(key);
+	return tree_->Get(key);
 }
 
 bool MushroomDB::Close()
 {
-	b_link_tree_->Free();
+	tree_->Free();
 	return true;
 }
 

@@ -9,13 +9,16 @@
 #define _LSM_TREE_HPP_
 
 #include "utility.hpp"
+#ifndef NOLATCH
+#include "latch.hpp"
+#endif
 
 namespace Mushroom {
 
 class LSMTree
 {
 	public:
-		LSMTree();
+		LSMTree(int key_len);
 
 		~LSMTree();
 
@@ -30,7 +33,10 @@ class LSMTree
 
 	private:
 		BLinkTree *curr_;
-
+		#ifndef NOLATCH
+		Mutex      mutex_;
+		#endif
+		uint8_t    key_len_;
 };
 
 } // namespace Mushroom

@@ -22,6 +22,7 @@ class SSTable
 	private:
 		const BLinkTree *b_link_tree_;
 		uint32_t         total_;
+		Block           *head_;
 		KeySlice        *smallest_;
 		KeySlice        *largest_;
 };

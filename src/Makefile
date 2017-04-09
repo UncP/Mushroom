@@ -1,28 +1,41 @@
 CPP  = g++
 CPPFLAGS = -std=c++11 -Wall -Wextra -O3 -pthread
 
-File = slice latch latch_manager page page_pool pool_manager b_link_tree task queue \
+File = slice latch latch_manager page page_pool pool_manager b_link_tree lsm_tree task queue \
 	thread_pool db
 
-OBJ = slice.o latch.o latch_manager.o page.o page_pool.o pool_manager.o b_link_tree.o task.o \
-	queue.o thread_pool.o db.o
+OBJ = slice.o latch.o latch_manager.o page.o page_pool.o pool_manager.o b_link_tree.o \
+	lsm_tree.o task.o queue.o thread_pool.o db.o
 
-btree_test_single_thread:
+blinktree_single_thread:
 	for f in $(File); do \
 		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH && \
 		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH || exit ; \
 	done
-	$(CPP) $(CPPFLAGS) -o btree_test_single_thread $(OBJ) ../test/btree_test_with_queue.cpp \
-	-DNOLATCH
+	$(CPP) $(CPPFLAGS) -o blinktree_single_thread $(OBJ) ../test/queue.cpp -DNOLATCH
 
-btree_test_with_queue: $(OBJ) ../test/btree_test_with_queue.cpp
-	$(CPP) $(CPPFLAGS) -o btree_test_with_queue $(OBJ) ../test/btree_test_with_queue.cpp
+blinktree_with_queue: $(OBJ) ../test/queue.cpp
+	$(CPP) $(CPPFLAGS) -o blinktree_with_queue $(OBJ) ../test/queue.cpp
 
-btree_test_multi_thread: $(OBJ) ../test/btree_test_with_queue.cpp
-	$(CPP) $(CPPFLAGS) -o btree_test_multi_thread $(OBJ) ../test/btree_test_multi_thread.cpp
+blinktree_multi_thread: $(OBJ) ../test/multi_thread.cpp
+	$(CPP) $(CPPFLAGS) -o blinktree_multi_thread $(OBJ) ../test/multi_thread.cpp
+
+lsmtree_single_thread:
+	for f in $(File); do \
+		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DLSM && \
+		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DLSM || exit ; \
+	done
+	$(CPP) $(CPPFLAGS) -o lsmtree_single_thread $(OBJ) ../test/queue.cpp -DNOLATCH -DLSM
+
+lsmtree_with_queue:
+	for f in $(File); do \
+		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DLSM && \
+		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DLSM || exit ; \
+	done
+	$(CPP) $(CPPFLAGS) -o lsmtree_with_queue $(OBJ) ../test/queue.cpp -DLSM
 
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp
 
 clean:
-	rm *.o btree_test_* ../.tags
+	rm *.o blinktree_* lsmtree_* ../.tags

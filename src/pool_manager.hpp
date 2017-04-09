@@ -15,13 +15,18 @@ namespace Mushroom {
 class PoolManager
 {
 	public:
-		PoolManager(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits);
+		static void SetManagerInfo(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits,
+			uint32_t seg_bits);
+
+		PoolManager();
 
 		~PoolManager();
 
 		page_id TotalPage() const { return cur_; }
 
-		bool ReachMax() { return cur_ >= threshold_; }
+		#ifdef LSM
+		inline bool ReachMaxPool() { return tot_ >= PoolSize; }
+		#endif
 
 		Page* GetPage(page_id page_no);
 		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
@@ -33,11 +38,11 @@ class PoolManager
 
 	private:
 
+		static uint32_t HashMask;
+		static uint32_t PoolSize;
+
 		void Link(uint16_t hash, uint16_t victim);
 
-		uint32_t   pool_size_;
-		uint32_t   hash_mask_;
-		page_id    threshold_;
 		page_id    cur_;
 		uint16_t   tot_;
 		HashEntry *entries_;
