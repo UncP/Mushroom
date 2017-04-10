@@ -13,13 +13,4 @@ Block::Block():mem_(new char[BlockSize]), off_(0), prev_(0), next_(0) { }
 
 Block::~Block() { delete [] mem_; }
 
-inline bool Block::Append(const char *data, uint32_t len)
-{
-	if (off_ + len < BlockSize) {
-		memcpy(mem_, data, len);
-		return true;
-	}
-	return false;
-}
-
 } // namespace Mushroom

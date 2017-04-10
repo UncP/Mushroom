@@ -5,6 +5,8 @@
  *    > Created Time:  2017-04-01 13:22:35
 **/
 
+#ifdef LSM
+
 #include "lsm_tree.hpp"
 #include "b_link_tree.hpp"
 
@@ -58,3 +60,5 @@ bool LSMTree::Get(KeySlice *key) const
 }
 
 } // namespace Mushroom
+
+#endif

@@ -1,4 +1,5 @@
-btree_test_*
+blinktree_*
+lsmtree_*
 *.o
 run
 .tags*

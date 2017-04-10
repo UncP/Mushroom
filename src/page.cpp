@@ -36,6 +36,16 @@ void Page::Initialize(page_id page_no, uint8_t type, uint8_t key_len, uint8_t le
 	level_   = level;
 }
 
+void Page::InsertInfiniteKey()
+{
+	char buf[PageByte + key_len_];
+	memset(buf, 0, PageByte + key_len_);
+	KeySlice *key = (KeySlice *)buf;
+	memset(key->Data(), 0xFF, key_len_);
+	page_id page_no = 0;
+	assert(Insert(key, page_no) == InsertOk);
+}
+
 bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type) const
 {
 	uint16_t low = 0, high = total_key_, mid = 0;

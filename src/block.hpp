@@ -8,6 +8,8 @@
 #ifndef _BLOCK_HPP_
 #define _BLOCK_HPP_
 
+#include "utility.hpp"
+
 namespace Mushroom {
 
 class Block
@@ -19,12 +21,19 @@ class Block
 
 		~Block();
 
-		inline void Append(const char *data, uint32_t len);
+		inline bool Append(const char *data, uint32_t len) {
+			if (off_ + len < BlockSize) {
+				memcpy(mem_, data, len);
+				return true;
+			}
+			return false;
+		}
 
 	private:
-		char    *mem_;
-		uint32_t off_;
-		Block   *next_;
+		char     *mem_;
+		KeySlice *smallest_;
+		KeySlice *largest_;
+		uint32_t  off_;
 };
 
 } // namespace Mushroom

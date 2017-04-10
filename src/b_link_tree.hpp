@@ -29,7 +29,8 @@ class BLinkTree
 
 				inline bool Next() { return b_link_tree_->Next(key_, &curr_, &index_); }
 
-				KeySlice        *key_;
+				KeySlice *key_;
+
 			private:
 				const BLinkTree *b_link_tree_;
 				Page            *curr_;
@@ -43,9 +44,7 @@ class BLinkTree
 
 		~BLinkTree();
 
-		void Initialize();
-
-		uint8_t KeyLength() const { return key_len_; }
+		uint32_t KeyLength() const { return (uint32_t)key_len_ + sizeof(page_id); }
 
 		bool Free();
 
@@ -54,7 +53,7 @@ class BLinkTree
 		bool Get(KeySlice *key) const;
 
 		#ifdef LSM
-		inline bool NeedCompact() const { return page_manager_->ReachMaxPool(); }
+		inline bool NeedCompact() const { return pool_manager_->ReachMaxPool(); }
 		inline void Clear() const {
 			#ifndef NOLATCH
 			while (ref_) sched_yield();
@@ -95,7 +94,7 @@ class BLinkTree
 		#endif
 		#endif
 
-		PoolManager  *page_manager_;
+		PoolManager  *pool_manager_;
 		page_id       root_;
 
 		uint8_t       key_len_;

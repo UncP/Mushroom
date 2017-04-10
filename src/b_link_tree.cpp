@@ -27,11 +27,21 @@ BLinkTree::BLinkTree(int key_len)
 	#endif
 	#endif
 
-	page_manager_ = new PoolManager();
+	pool_manager_ = new PoolManager();
 
 	degree_ = Page::CalculateDegree(key_len_);
 
-	Initialize();
+	Set set;
+	set.page_no_ = root_;
+	#ifndef NOLATCH
+	set.latch_ = latch_manager_->GetLatch(set.page_no_);
+	assert(set.latch_->TryWriteLock());
+	#endif
+	set.page_ = pool_manager_->NewPage(Page::ROOT, key_len_, 0, degree_);
+	set.page_->InsertInfiniteKey();
+	#ifndef NOLATCH
+	set.latch_->Unlock();
+	#endif
 }
 
 BLinkTree::~BLinkTree()
@@ -39,33 +49,13 @@ BLinkTree::~BLinkTree()
 	#ifndef NOLATCH
 	delete latch_manager_;
 	#endif
-	delete page_manager_;
-}
-
-void BLinkTree::Initialize()
-{
-	Set set;
-	set.page_no_ = root_;
-	#ifndef NOLATCH
-	set.latch_ = latch_manager_->GetLatch(set.page_no_);
-	assert(set.latch_->TryWriteLock());
-	#endif
-	set.page_ = page_manager_->NewPage(Page::ROOT, key_len_, 0, degree_);
-	char buf[Page::PageByte + key_len_];
-	memset(buf, 0, Page::PageByte + key_len_);
-	KeySlice *key = (KeySlice *)buf;
-	memset(key->Data(), 0xFF, key_len_);
-	page_id next = 0;
-	assert(set.page_->Insert(key, next) == InsertOk);
-	#ifndef NOLATCH
-	set.latch_->Unlock();
-	#endif
+	delete pool_manager_;
 }
 
 bool BLinkTree::Free()
 {
-	printf("total page: %u\n", page_manager_->TotalPage());
-	page_manager_->Free();
+	printf("total page: %u\n", pool_manager_->TotalPage());
+	pool_manager_->Free();
 	return true;
 }
 
@@ -75,7 +65,7 @@ void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set) const
 	#ifndef NOLATCH
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	#endif
-	set.page_ = page_manager_->GetPage(set.page_no_);
+	set.page_ = pool_manager_->GetPage(set.page_no_);
 	#ifndef NOLATCH
 	set.latch_->LockShared();
 	#endif
@@ -87,7 +77,7 @@ void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set) const
 		set.latch_->UnlockShared();
 		set.latch_ = latch_manager_->GetLatch(set.page_no_);
 		#endif
-		set.page_ = page_manager_->GetPage(set.page_no_);
+		set.page_ = pool_manager_->GetPage(set.page_no_);
 		#ifndef NOLATCH
 		set.latch_->LockShared();
 		#endif
@@ -106,7 +96,7 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 				Latch *pre = set.latch_;
 				set.latch_ = latch_manager_->GetLatch(set.page_no_);
 				#endif
-				set.page_ = page_manager_->GetPage(set.page_no_);
+				set.page_ = pool_manager_->GetPage(set.page_no_);
 				#ifndef NOLATCH
 				set.latch_->Lock();
 				pre->Unlock();
@@ -141,7 +131,7 @@ bool BLinkTree::Put(KeySlice *key)
 
 	for (; set.page_->NeedSplit(); ) {
 		if (set.page_->type_ != Page::ROOT) {
-			Page *right = page_manager_->NewPage(set.page_->type_, set.page_->key_len_,
+			Page *right = pool_manager_->NewPage(set.page_->type_, set.page_->key_len_,
 				set.page_->level_, set.page_->degree_);
 			set.page_->Split(right, key);
 			#ifndef NOLATCH
@@ -152,7 +142,7 @@ bool BLinkTree::Put(KeySlice *key)
 			#ifndef NOLATCH
 			set.latch_ = latch_manager_->GetLatch(set.page_no_);
 			#endif
-			set.page_ = page_manager_->GetPage(set.page_no_);
+			set.page_ = pool_manager_->GetPage(set.page_no_);
 			#ifndef NOLATCH
 			set.latch_->Lock();
 			#endif
@@ -177,9 +167,12 @@ bool BLinkTree::Put(KeySlice *key)
 void BLinkTree::SplitRoot(Set &set)
 {
 	uint8_t level = set.page_->level_;
-	Page *new_root = page_manager_->NewPage(Page::ROOT, key_len_, level+1, degree_);
-	Page *right = page_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
+	Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level+1, degree_);
+	Page *right = pool_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
 	 	set.page_->key_len_, level, degree_);
+
+	new_root->InsertInfiniteKey();
+	new_root->AssignFirst(set.page_->page_no_);
 
 	char buf[Page::PageByte + key_len_];
 	memset(buf, 0, Page::PageByte + key_len_);
@@ -188,14 +181,7 @@ void BLinkTree::SplitRoot(Set &set)
 	set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
 	set.page_->Split(right, slice);
 
-	char tmp[Page::PageByte + key_len_];
-	memset(tmp, 0, Page::PageByte + key_len_);
-	KeySlice *limit = (KeySlice *)tmp;
-	memset(limit->Data(), 0xFF, key_len_);
-
-	new_root->AssignFirst(set.page_->page_no_);
 	page_id page_no = 0;
-	assert(new_root->Insert(limit, page_no) == InsertOk);
 	assert(new_root->Insert(slice, page_no) == InsertOk);
 	__sync_val_compare_and_swap(&root_, root_, new_root->page_no_);
 }
@@ -219,7 +205,7 @@ bool BLinkTree::Get(KeySlice *key) const
 		Latch *pre = set.latch_;
 		set.latch_ = latch_manager_->GetLatch(set.page_no_);
 		#endif
-		set.page_ = page_manager_->GetPage(set.page_no_);
+		set.page_ = pool_manager_->GetPage(set.page_no_);
 		#ifndef NOLATCH
 		set.latch_->LockShared();
 		pre->UnlockShared();
@@ -234,14 +220,14 @@ bool BLinkTree::Get(KeySlice *key) const
 
 bool BLinkTree::First(Page **page, int32_t level) const
 {
-	*page = page_manager_->GetPage(root_);
+	*page = pool_manager_->GetPage(root_);
 	if (level > (*page)->level_)
 		return false;
 	if (level == -1)
 		level = (*page)->level_;
 
 	for (; (*page)->level_ != level;)
-		*page = page_manager_->GetPage((*page)->first_);
+		*page = pool_manager_->GetPage((*page)->first_);
 
 	return true;
 }
@@ -252,7 +238,7 @@ bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index) const
 	if ((*page)->Ascend(key, &page_no, index))
 		return true;
 	if (page_no) {
-		*page = page_manager_->GetPage(page_no);
+		*page = pool_manager_->GetPage(page_no);
 		return (*page)->Ascend(key, &page_no, index);
 	}
 	return false;
