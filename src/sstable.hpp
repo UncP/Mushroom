@@ -5,23 +5,42 @@
  *    > Created Time:  2017-04-08 14:45:42
 **/
 
-#ifndef _SKTABLE_HPP_
-#define _SKTABLE_HPP_
+#ifdef LSM
+
+#ifndef _SSTABLE_HPP_
+#define _SSTABLE_HPP_
+
+#include <vector>
+#include <string>
 
 #include "utility.hpp"
 
 namespace Mushroom {
 
-class SKTable
+class SSTable
 {
 	public:
-		SKTable();
+		SSTable(const BLinkTree *b_link_tree);
 
-		void Compact(const BLinkTree *b_link_tree);
+		~SSTable();
 
 	private:
+		struct Info {
+			Info();
+
+			void AppendKeyRange(const Block *block);
+
+			uint32_t                  key_len_;
+			uint32_t                  block_size_;
+			std::vector<std::string>  smallest_;
+			std::vector<std::string>  largest_;
+		};
+		Info                 info_;
+		std::vector<Block *> blocks_;
 };
 
 } // namespace Mushroom
 
-#endif /* _SKTABLE_HPP_ */
+#endif /* _SSTABLE_HPP_ */
+
+#endif

@@ -44,6 +44,11 @@ void Page::InsertInfiniteKey()
 	assert(Insert(key, page_no) == InsertOk);
 }
 
+void Page::AssignFirst(page_t first)
+{
+	first_ = first;
+}
+
 bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type) const
 {
 	uint16_t low = 0, high = total_key_, mid = 0;

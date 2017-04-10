@@ -9,6 +9,7 @@
 
 #include "lsm_tree.hpp"
 #include "b_link_tree.hpp"
+#include "sstable.hpp"
 
 namespace Mushroom {
 
@@ -43,8 +44,10 @@ bool LSMTree::Put(KeySlice *key)
 			#endif
 			old_tree->Clear();
 			// TODO
+			SSTable *table = new SSTable(old_tree);
 			old_tree->Free();
 			delete old_tree;
+			delete table;
 		} else {
 			#ifndef NOLATCH
 			mutex_.Unlock();

@@ -24,8 +24,8 @@ class BLinkTree
 		{
 			public:
 				Iterator(const BLinkTree *b_link_tree, int32_t level = 0);
+
 				~Iterator();
-				inline bool Begin() { return b_link_tree_->First(&curr_, level_); }
 
 				inline bool Next() { return b_link_tree_->Next(key_, &curr_, &index_); }
 
@@ -44,7 +44,7 @@ class BLinkTree
 
 		~BLinkTree();
 
-		inline uint32_t KeyLength() const { return sizeof(valptr) + key_len_; }
+		inline uint32_t KeyLength() const { return key_len_; }
 
 		bool Free();
 
@@ -57,6 +57,7 @@ class BLinkTree
 		inline void Clear() const {
 			#ifndef NOLATCH
 			while (ref_) sched_yield();
+			assert(!ref_);
 			#endif
 		}
 		#endif

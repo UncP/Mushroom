@@ -5,30 +5,50 @@
  *    > Created Time:  2017-04-08 16:56:06
 **/
 
-#include "sktable.hpp"
+#ifdef LSM
+
+#include "slice.hpp"
+#include "sstable.hpp"
 #include "b_link_tree.hpp"
 #include "block.hpp"
 
 namespace Mushroom {
 
-SKTable::SKTable(const BLinkTree *b_link_tree)
-:b_link_tree_(b_link_tree), total_(0), head_(0), smallest_(0), largest_(0) { }
+SSTable::Info::Info():block_size_(0) { }
 
-void SKTable::Compact()
+void SSTable::Info::AppendKeyRange(const Block *block)
 {
-	BLinkTree::Iterator iter(b_link_tree_);
-	assert(iter.Begin() && !head_);
-	head_ = new Block();
-	Block *curr = head_;
-	uint32_t len = btree_->KeyLength();
+	Block::Iterator iter(block);
+	iter.First();
+	smallest_.push_back(std::string(iter.key_, key_len_));
+	iter.Last();
+	largest_.push_back(std::string(iter.key_, key_len_));
+}
+
+SSTable::SSTable(const BLinkTree *b_link_tree)
+{
+	BLinkTree::Iterator iter(b_link_tree);
+	info_.key_len_ = b_link_tree->KeyLength();
+	blocks_.push_back(new Block(info_.key_len_));
+	Block *curr = blocks_[info_.block_size_++];
 	for (;;) {
-		if (!curr->Append((char *)iter.key_, len)) {
-			curr->next_ = new Block();
-			curr = curr->next_;
+		if (!curr->Append((char *)iter.key_->key_)) {
+			info_.AppendKeyRange(curr);
+			blocks_.push_back(new Block(info_.key_len_));
+			curr = blocks_[info_.block_size_++];
 		} else if (!iter.Next()) {
 			break;
 		}
 	}
+	info_.AppendKeyRange(curr);
+}
+
+SSTable::~SSTable()
+{
+	for (size_t i = 0; i != blocks_.size(); ++i)
+		delete blocks_[i];
 }
 
 } // namespace Mushroom
+
+#endif

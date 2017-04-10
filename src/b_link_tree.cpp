@@ -168,12 +168,12 @@ void BLinkTree::SplitRoot(Set &set)
 	uint8_t level = set.page_->level_;
 	Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level + 1, degree_);
 	Page *right = pool_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
-	 	set.page_->key_len_, level, degree_);
+		set.page_->key_len_, level, degree_);
 
 	new_root->InsertInfiniteKey();
 	new_root->AssignFirst(set.page_->page_no_);
 
-	TempSlice(slice, KeyLength());
+	TempSlice(slice, key_len_ + sizeof(valptr));
 
 	set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
 	set.page_->Split(right, slice);
@@ -243,9 +243,10 @@ bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index) const
 
 BLinkTree::Iterator::Iterator(const BLinkTree *b_link_tree, int32_t level)
 :b_link_tree_(b_link_tree), level_(level), index_(0) {
-	char *buf = new char[b_link_tree->KeyLength()];
+	char *buf = new char[b_link_tree->KeyLength() + sizeof(valptr)];
 	key_ = (KeySlice *)buf;
-	memset(key_->key_, 0, MAX_KEY_LENGTH);
+	assert(b_link_tree_->First(&curr_, level_));
+	assert(Next());
 }
 
 BLinkTree::Iterator::~Iterator() { delete [] key_; }

@@ -43,10 +43,7 @@ class Page
 			return key->page_no_;
 		}
 
-		void AssignFirst(page_t first) {
-			assert(type_ != LEAF);
-			first_ = first;
-		}
+		void AssignFirst(page_t first);
 
 		page_t Descend(const KeySlice *key) const;
 
