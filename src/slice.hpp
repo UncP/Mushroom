@@ -17,41 +17,43 @@ namespace Mushroom {
 
 class KeySlice
 {
-	friend inline int ComparePrefix(const KeySlice *key, const char *prefix, size_t len) {
-		return memcmp(key->data_, prefix, len);
-	};
-	friend inline int CompareSuffix(const KeySlice *a, const KeySlice *b, size_t pre, size_t len)
-	{
-		return memcmp(a->data_ + pre, b->data_, len);
-	};
-	friend inline void CopyPrefix(KeySlice *a, const char *prefix, size_t len) {
-		memcpy(a->data_, prefix, len);
-	};
-	friend inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
-		if (!pre) {
-			memcpy(a, b, len + sizeof(page_id));
-		} else {
-			a->page_no_ = b->page_no_;
-			memcpy(a->data_ + pre, b->data_, len);
-		}
-	};
-
 	public:
-		char* Data() { return data_; }
-		const char* Data() const { return data_; }
-
-		page_id PageNo() const { return page_no_; }
-
-		void AssignPageNo(page_id page_no) { page_no_ = page_no; }
-
 		std::string ToString(uint8_t len) const {
-			return std::string(data_, len) + "\n";
+			return std::string(key_, len) + "\n";
 		}
-
-	private:
-		page_id  page_no_;
-		char     data_[0];
+		union {
+			page_t page_no_;
+			valptr ptr_;
+		};
+		char   key_[0];
 };
+
+inline int ComparePrefix(const KeySlice *key, const char *prefix, size_t len) {
+	return memcmp(key->key_, prefix, len);
+};
+
+inline int CompareSuffix(const KeySlice *a, const KeySlice *b, size_t pre, size_t len)
+{
+	return memcmp(a->key_ + pre, b->key_, len);
+};
+
+inline void CopyPrefix(KeySlice *a, const char *prefix, size_t len) {
+	memcpy(a->key_, prefix, len);
+};
+
+inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
+	if (!pre) {
+		memcpy(a, b, len + sizeof(valptr));
+	} else {
+		a->page_no_ = b->page_no_;
+		memcpy(a->key_ + pre, b->key_, len);
+	}
+};
+
+#define TempSlice(name, length) \
+	char buf_##name[length];       \
+	memset(buf_##name, 0, length); \
+	KeySlice *name = (KeySlice *)buf_##name;
 
 } // namespace Mushroom
 

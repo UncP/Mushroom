@@ -17,8 +17,7 @@
 
 namespace Mushroom {
 
-BLinkTree::BLinkTree(int key_len)
-:root_(0), key_len_((uint8_t)key_len)
+BLinkTree::BLinkTree(int key_len):root_(0), key_len_((uint8_t)key_len)
 {
 	#ifndef NOLATCH
 	latch_manager_ = new LatchManager();
@@ -70,7 +69,7 @@ void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set) const
 	set.latch_->LockShared();
 	#endif
 	for (; set.page_->level_;) {
-		page_id pre_no = set.page_->page_no_;
+		page_t  pre_no = set.page_->page_no_;
 		uint8_t pre_le = set.page_->level_;
 		set.page_no_ = set.page_->Descend(key);
 		#ifndef NOLATCH
@@ -167,21 +166,19 @@ bool BLinkTree::Put(KeySlice *key)
 void BLinkTree::SplitRoot(Set &set)
 {
 	uint8_t level = set.page_->level_;
-	Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level+1, degree_);
+	Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level + 1, degree_);
 	Page *right = pool_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
 	 	set.page_->key_len_, level, degree_);
 
 	new_root->InsertInfiniteKey();
 	new_root->AssignFirst(set.page_->page_no_);
 
-	char buf[Page::PageByte + key_len_];
-	memset(buf, 0, Page::PageByte + key_len_);
-	KeySlice *slice = (KeySlice *)buf;
+	TempSlice(slice, KeyLength());
 
 	set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
 	set.page_->Split(right, slice);
 
-	page_id page_no = 0;
+	page_t page_no = 0;
 	assert(new_root->Insert(slice, page_no) == InsertOk);
 	__sync_val_compare_and_swap(&root_, root_, new_root->page_no_);
 }
@@ -234,7 +231,7 @@ bool BLinkTree::First(Page **page, int32_t level) const
 
 bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index) const
 {
-	page_id page_no;
+	page_t page_no;
 	if ((*page)->Ascend(key, &page_no, index))
 		return true;
 	if (page_no) {
@@ -246,9 +243,9 @@ bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index) const
 
 BLinkTree::Iterator::Iterator(const BLinkTree *b_link_tree, int32_t level)
 :b_link_tree_(b_link_tree), level_(level), index_(0) {
-	char *buf = new char[MAX_KEY_LENGTH + Page::PageByte];
+	char *buf = new char[b_link_tree->KeyLength()];
 	key_ = (KeySlice *)buf;
-	memset(key_->Data(), 0, BLinkTree::MAX_KEY_LENGTH);
+	memset(key_->key_, 0, MAX_KEY_LENGTH);
 }
 
 BLinkTree::Iterator::~Iterator() { delete [] key_; }

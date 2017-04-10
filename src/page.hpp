@@ -27,7 +27,7 @@ class Page
 
 		static enum { ROOT = 1, BRANCH = 2, LEAF = 4 } Type;
 
-		static const uint32_t PageByte  = sizeof(page_id);
+		static const uint32_t PageByte  = sizeof(page_t);
 		static const uint32_t IndexByte = 2;
 
 		static void SetPageInfo(uint32_t page_size);
@@ -36,27 +36,27 @@ class Page
 
 		void InsertInfiniteKey();
 
-		void Initialize(page_id id, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
+		void Initialize(page_t id, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
-		page_id Next() const {
+		page_t Next() const {
 			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);
-			return key->PageNo();
+			return key->page_no_;
 		}
 
-		void AssignFirst(page_id first) {
+		void AssignFirst(page_t first) {
 			assert(type_ != LEAF);
 			first_ = first;
 		}
 
-		page_id Descend(const KeySlice *key) const;
+		page_t Descend(const KeySlice *key) const;
 
 		bool Search(KeySlice *key, uint16_t *index) const;
 
-		InsertStatus Insert(const KeySlice *key, page_id &page_no);
+		InsertStatus Insert(const KeySlice *key, page_t &page_no);
 
 		void Insert(Page *that, KeySlice *key);
 
-		bool Ascend(KeySlice *key, page_id *page_no, uint16_t *index);
+		bool Ascend(KeySlice *key, page_t *page_no, uint16_t *index);
 
 		void Split(Page *that, KeySlice *slice);
 
@@ -75,8 +75,8 @@ class Page
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
-		page_id  page_no_;
-		page_id  first_;
+		page_t   page_no_;
+		page_t   first_;
 		uint16_t total_key_;
 		uint16_t degree_;
 		uint8_t  type_;

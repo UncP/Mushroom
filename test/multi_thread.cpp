@@ -42,8 +42,7 @@ void* Do(void *arg)
 	bool (MushroomDB::*(fun))(KeySlice *);
 	fun = ((ThreadArg *)arg)->fun;
 
-	char tmp[sizeof(page_id) + key_len] = {0};
-	KeySlice *key = (KeySlice *)tmp;
+	TempSlice(key, sizeof(valptr)+key_len);
 	int fd = open(files[((ThreadArg *)arg)->i], O_RDONLY);
 	assert(fd > 0);
 	char buf[8192];
@@ -58,7 +57,7 @@ void* Do(void *arg)
 			char *tmp = buf + i;
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
-			memcpy(key->Data(), tmp, key_len);
+			memcpy(key->key_, tmp, key_len);
 			(db->*fun)(key);
 			if (++count == all) {
 				flag = false;

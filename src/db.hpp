@@ -30,8 +30,6 @@ class MushroomDB
 		~MushroomDB();
 
 	private:
-		int        fd_;
-		char      *mapped_;
 		#ifdef LSM
 		LSMTree   *tree_;
 		#else

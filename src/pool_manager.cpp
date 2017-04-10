@@ -53,10 +53,10 @@ void PoolManager::Link(uint16_t hash, uint16_t victim)
 	pool->hash_ = hash;
 }
 
-Page* PoolManager::GetPage(page_id page_no)
+Page* PoolManager::GetPage(page_t page_no)
 {
-	page_id base = page_no & ~PagePool::SegMask;
-	page_id hash = (page_no >> PagePool::SegBits) & HashMask;
+	page_t base = page_no & ~PagePool::SegMask;
+	page_t hash = (page_no >> PagePool::SegBits) & HashMask;
 	Page *page = 0;
 
 	#ifndef NOLATCH
@@ -94,7 +94,7 @@ Page* PoolManager::GetPage(page_id page_no)
 
 Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
-	page_id page_no = __sync_fetch_and_add(&cur_, 1);
+	page_t page_no = __sync_fetch_and_add(&cur_, 1);
 	Page *page = GetPage(page_no);
 	page->Initialize(page_no, type, key_len, level, degree);
 	return page;

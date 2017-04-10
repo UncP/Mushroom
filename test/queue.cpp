@@ -30,8 +30,7 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 	printf("NOLATCH defined, using single thread ;)\n");
 	#endif
 
-	char tmp[sizeof(page_id) + key_len] = {0};
-	KeySlice *key = (KeySlice *)tmp;
+	TempSlice(key, sizeof(valptr) + key_len);
 	int fd = open(file, O_RDONLY);
 	assert(fd > 0);
 	char buf[8192];
@@ -48,7 +47,7 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 			char *tmp = buf + i;
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
-			memcpy(key->Data(), tmp, key_len);
+			memcpy(key->key_, tmp, key_len);
 			#ifndef NOLATCH
 			pool->AddTask(fun, db, key);
 			#else

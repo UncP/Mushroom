@@ -12,7 +12,8 @@
 
 namespace Mushroom {
 
-typedef uint32_t page_id;
+typedef uint32_t valptr;
+typedef uint32_t page_t;
 
 class KeySlice;
 class SpinLatch;

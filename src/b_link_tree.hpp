@@ -44,7 +44,7 @@ class BLinkTree
 
 		~BLinkTree();
 
-		uint32_t KeyLength() const { return (uint32_t)key_len_ + sizeof(page_id); }
+		inline uint32_t KeyLength() const { return sizeof(valptr) + key_len_; }
 
 		bool Free();
 
@@ -72,13 +72,13 @@ class BLinkTree
 
 		struct Set {
 			Set():depth_(0) { }
-			page_id   page_no_;
+			page_t   page_no_;
 			#ifndef NOLATCH
-			Latch    *latch_;
+			Latch   *latch_;
 			#endif
-			Page     *page_;
-			page_id   stack_[8];
-			uint8_t   depth_;
+			Page    *page_;
+			page_t   stack_[8];
+			uint8_t  depth_;
 		};
 
 		void DescendToLeaf(const KeySlice *key, Set &set) const;
@@ -88,17 +88,17 @@ class BLinkTree
 		void Insert(Set &set, KeySlice *key);
 
 		#ifndef NOLATCH
-		LatchManager  *latch_manager_;
+		LatchManager *latch_manager_;
 		#ifdef LSM
-		uint32_t       ref_;
+		uint32_t      ref_;
 		#endif
 		#endif
 
-		PoolManager  *pool_manager_;
-		page_id       root_;
+		PoolManager *pool_manager_;
+		page_t       root_;
 
-		uint8_t       key_len_;
-		uint16_t      degree_;
+		uint8_t      key_len_;
+		uint16_t     degree_;
 };
 
 } // namespace Mushroom

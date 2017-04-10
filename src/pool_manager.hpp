@@ -22,13 +22,13 @@ class PoolManager
 
 		~PoolManager();
 
-		page_id TotalPage() const { return cur_; }
+		page_t TotalPage() const { return cur_; }
 
 		#ifdef LSM
 		inline bool ReachMaxPool() { return tot_ >= PoolSize; }
 		#endif
 
-		Page* GetPage(page_id page_no);
+		Page* GetPage(page_t page_no);
 		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		bool Free();
@@ -43,7 +43,7 @@ class PoolManager
 
 		void Link(uint16_t hash, uint16_t victim);
 
-		page_id    cur_;
+		page_t     cur_;
 		uint16_t   tot_;
 		HashEntry *entries_;
 		PagePool  *pool_;

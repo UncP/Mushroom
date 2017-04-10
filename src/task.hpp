@@ -17,10 +17,9 @@ class Task
 {
 	public:
 		Task(uint8_t key_len):fun_(0), db_(0), key_len_(key_len) {
-			char *buf = new char[key_len_ + sizeof(page_id)];
+			char *buf = new char[sizeof(valptr) + key_len_];
 			key_ = (KeySlice *)buf;
 		}
-
 
 		void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
 			fun_ = fun;

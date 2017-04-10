@@ -101,7 +101,7 @@ class Latch
 {
 	friend class LatchManager;
 	public:
-		Latch():pin_(0), hash_(0), prev_(0), next_(0), page_no_(~page_id(0)) {
+		Latch():pin_(0), hash_(0), prev_(0), next_(0), page_no_(~page_t(0)) {
 			assert(!pthread_rwlock_init(lock_, 0));
 		}
 
@@ -142,7 +142,7 @@ class Latch
 		uint16_t          hash_;
 		uint16_t          prev_;
 		uint16_t          next_;
-		page_id           page_no_;
+		page_t            page_no_;
 		SpinLatch         busy_;
 		pthread_rwlock_t  lock_[1];
 };

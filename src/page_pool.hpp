@@ -26,12 +26,12 @@ class PagePool
 
 		PagePool():base_(0), mem_(0), prev_(0), next_(0) { }
 
-		void Initialize(page_id page_no) {
+		void Initialize(page_t page_no) {
 			base_ = page_no & ~SegMask;
 			mem_ = new char[Page::PageSize * SegSize];
 		}
 
-		Page* GetPage(page_id page_no) {
+		Page* GetPage(page_t page_no) {
 			return (Page *)(mem_ + Page::PageSize * (page_no & SegMask));
 		}
 
@@ -44,7 +44,7 @@ class PagePool
 		static uint32_t SegBits;
 		static uint32_t SegMask;
 
-		page_id   base_;
+		page_t    base_;
 		uint16_t  hash_;
 		char     *mem_;
 		PagePool *prev_;

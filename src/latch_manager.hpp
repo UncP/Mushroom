@@ -22,10 +22,10 @@ class LatchManager
 		LatchManager();
 		~LatchManager();
 
-		Latch* GetLatch(page_id page_no);
+		Latch* GetLatch(page_t page_no);
 
 	private:
-		void Link(uint16_t hashidx, uint16_t victim, page_id page_no);
+		void Link(uint16_t hashidx, uint16_t victim, page_t page_no);
 
 		static const uint16_t total = 256;
 		static const uint16_t mask  = total-1;

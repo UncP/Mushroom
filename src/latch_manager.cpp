@@ -23,7 +23,7 @@ LatchManager::~LatchManager()
 	delete [] entries_;
 }
 
-void LatchManager::Link(uint16_t hashidx, uint16_t victim, page_id page_no)
+void LatchManager::Link(uint16_t hashidx, uint16_t victim, page_t page_no)
 {
 	Latch *latch = latches_ + victim;
 
@@ -37,7 +37,7 @@ void LatchManager::Link(uint16_t hashidx, uint16_t victim, page_id page_no)
 	latch->prev_    = 0;
 }
 
-Latch* LatchManager::GetLatch(page_id page_no)
+Latch* LatchManager::GetLatch(page_t page_no)
 {
 	uint16_t hashidx = page_no & mask;
 	Latch *latch;
