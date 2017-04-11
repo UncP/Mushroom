@@ -13,66 +13,70 @@
 
 namespace Mushroom {
 
-LSMTree::LSMTree(int component, int key_len)
-:component_(component), key_len_(key_len), curr_(1), trees_(new BLinkTree*[component_])\
-{
-	trees_[0] = new BLinkTree(key_len_);
-}
+LSMTree::LSMTree(uint32_t component, uint32_t key_len)
+:component_(component - 1), key_len_(key_len), curr_(0), mem_tree_(new BLinkTree(key_len_)),
+ imm_tree_(0), disk_trees_(new BLinkTree*[component_]) { }
 
 LSMTree::~LSMTree()
 {
+	delete mem_tree_;
+	if (imm_tree_) delete imm_tree_;
 	for (uint32_t i = 0; i != curr_; ++i)
-		delete trees_[i];
-	delete [] trees_;
+		delete disk_trees_[i];
+	delete [] disk_trees_;
 }
 
 bool LSMTree::Free()
 {
+	mem_tree_->Free();
+	if (imm_tree_) imm_tree_->Free();
 	for (uint32_t i = 0; i != curr_; ++i)
-		trees_[i]->Free();
+		disk_trees_[i]->Free();
 	return true;
 }
 
 bool LSMTree::Put(KeySlice *key)
 {
-	if (trees_[0]->ReachThreshold()) {
+	if (mem_tree_->ReachThreshold()) {
 		#ifndef NOLATCH
 		mutex_.Lock();
 		#endif
-		if (trees_[0]->ReachThreshold()) {
-			BLinkTree *old_tree = trees_[0];
-			BLinkTree *new_tree = new BLinkTree(key_len_);
-			trees_[0] = new_tree;
+		if (mem_tree_->ReachThreshold()) {
+			BLinkTree *new_tree = imm_tree_;
+			imm_tree_ = mem_tree_;
+			if (!new_tree)
+				mem_tree_ = new BLinkTree(key_len_);
+			else
+				mem_tree_ = new_tree;
 			#ifndef NOLATCH
 			mutex_.Unlock();
 			#endif
-			old_tree->Clear();
-			SSTable *table = new SSTable(old_tree);
-			old_tree->Free();
-			delete old_tree;
-			Merge(table);
+			imm_tree_->Clear();
+			SSTable *table = new SSTable(imm_tree_);
+			imm_tree_->Reset();
+			delete table;
+			// Merge(table);
 		} else {
 			#ifndef NOLATCH
 			mutex_.Unlock();
 			#endif
 		}
 	}
-	return trees_[0]->Put(key);
+	return mem_tree_->Put(key);
 }
 
 bool LSMTree::Get(KeySlice *key) const
 {
-	// return trees_[0]->Get(key);
 	return false;
 }
 
-void Merge(const SSTable *table)
-{
-	uint32_t idx = curr_;
-	BLinkTree *cur = trees_[idx];
-	TempSlice(slice, (cur->KeyLength() << 1));
-	table->GetKeyRange(slice);
-}
+// void Merge(const SSTable *table)
+// {
+	// uint32_t idx = curr_;
+	// BLinkTree *cur = disk_trees_[idx];
+	// TempSlice(slice, (cur->KeyLength() << 1));
+	// table->GetKeyRange(slice);
+// }
 
 } // namespace Mushroom
 

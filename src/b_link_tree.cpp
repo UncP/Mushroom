@@ -17,21 +17,36 @@
 
 namespace Mushroom {
 
-BLinkTree::BLinkTree(uint32_t key_len):root_(0), key_len_((uint8_t)key_len)
+BLinkTree::BLinkTree(uint32_t key_len):key_len_((uint8_t)key_len)
 {
 	#ifndef NOLATCH
 	latch_manager_ = new LatchManager();
-	#ifndef NOLSM
-	ref_ = 0;
-	#endif
 	#endif
 
 	pool_manager_ = new PoolManager();
 
 	degree_ = Page::CalculateDegree(key_len_);
 
+	Reset();
+}
+
+void BLinkTree::Reset()
+{
+	root_ = 0;
+	#ifndef NOLATCH
+	#ifndef NOLSM
+	ref_ = 0;
+	#endif
+	#endif
+
+	#ifndef NOLATCH
+	latch_manager_->Reset();
+	#endif
+
+	pool_manager_->Reset();
+
 	Set set;
-	set.page_no_ = root_;
+	set.page_no_ = 0;
 	#ifndef NOLATCH
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	assert(set.latch_->TryWriteLock());

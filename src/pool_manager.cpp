@@ -37,6 +37,16 @@ PoolManager::~PoolManager()
 	delete [] entries_;
 }
 
+void PoolManager::Reset()
+{
+	cur_ = 0;
+	tot_ = 0;
+	for (size_t i = 0; i != (HashMask+1); ++i)
+		entries_[i].slot_ = 0;
+	for (size_t i = 0; i != PoolSize; ++i)
+		pool_[i].Reset();
+}
+
 void PoolManager::Link(uint16_t hash, uint16_t victim)
 {
 	PagePool *pool = pool_ + victim;
@@ -50,7 +60,6 @@ void PoolManager::Link(uint16_t hash, uint16_t victim)
 	}
 	entries_[hash].slot_ = victim;
 	pool->prev_ = 0;
-	pool->hash_ = hash;
 }
 
 Page* PoolManager::GetPage(page_t page_no)

@@ -52,6 +52,8 @@ class BLinkTree
 
 		bool Get(KeySlice *key) const;
 
+		void Reset();
+
 		#ifndef NOLSM
 		inline bool ReachThreshold() const { return pool_manager_->ReachMaxPool(); }
 		inline void Clear() const {

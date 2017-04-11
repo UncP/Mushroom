@@ -101,8 +101,17 @@ class Latch
 {
 	friend class LatchManager;
 	public:
-		Latch():pin_(0), hash_(0), prev_(0), next_(0), page_no_(~page_t(0)) {
+		Latch() {
+			Reset();
 			assert(!pthread_rwlock_init(lock_, 0));
+		}
+
+		void Reset() {
+			pin_  = 0;
+			hash_ = 0;
+			prev_ = 0;
+			next_ = 0;
+			page_no_ = ~page_t(0);
 		}
 
 		void Pin() { __sync_fetch_and_add(&pin_, 1); }

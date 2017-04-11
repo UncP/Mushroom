@@ -20,7 +20,7 @@ namespace Mushroom {
 class LSMTree
 {
 	public:
-		LSMTree(int component, int key_len);
+		LSMTree(uint32_t component, uint32_t key_len);
 
 		~LSMTree();
 
@@ -39,7 +39,9 @@ class LSMTree
 		uint32_t    component_;
 		uint32_t    key_len_;
 		uint32_t    curr_;
-		BLinkTree **trees_;
+		BLinkTree  *mem_tree_;
+		BLinkTree  *imm_tree_;
+		BLinkTree **disk_trees_;
 
 		#ifndef NOLATCH
 		Mutex      mutex_;

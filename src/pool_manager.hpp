@@ -22,6 +22,8 @@ class PoolManager
 
 		~PoolManager();
 
+		void Reset();
+
 		page_t TotalPage() const { return cur_; }
 
 		#ifndef NOLSM

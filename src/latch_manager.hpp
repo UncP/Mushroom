@@ -20,7 +20,10 @@ class LatchManager
 {
 	public:
 		LatchManager();
+
 		~LatchManager();
+
+		void Reset();
 
 		Latch* GetLatch(page_t page_no);
 
