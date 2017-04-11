@@ -5,7 +5,7 @@
  *    > Created Time:  2017-04-01 13:08:40
 **/
 
-#ifdef LSM
+#ifndef NOLSM
 
 #ifndef _LSM_TREE_HPP_
 #define _LSM_TREE_HPP_

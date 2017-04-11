@@ -9,30 +9,37 @@ OBJ = slice.o latch.o latch_manager.o page.o page_pool.o pool_manager.o b_link_t
 
 blinktree_single_thread:
 	for f in $(File); do \
-		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH && \
-		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH || exit ; \
+		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DNOLSM && \
+		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DNOLSM || exit ; \
 	done
-	$(CPP) $(CPPFLAGS) -o blinktree_single_thread $(OBJ) ../test/queue.cpp -DNOLATCH
+	$(CPP) $(CPPFLAGS) -o blinktree_single_thread $(OBJ) ../test/queue.cpp -DNOLATCH -DNOLSM
 
-blinktree_with_queue: $(OBJ) ../test/queue.cpp
-	$(CPP) $(CPPFLAGS) -o blinktree_with_queue $(OBJ) ../test/queue.cpp
+blinktree_with_queue:
+	for f in $(File); do \
+		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLSM && \
+		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLSM || exit ; \
+	done
+	$(CPP) $(CPPFLAGS) -o blinktree_with_queue $(OBJ) ../test/queue.cpp -DNOLSM
 
-blinktree_multi_thread: $(OBJ) ../test/multi_thread.cpp
-	$(CPP) $(CPPFLAGS) -o blinktree_multi_thread $(OBJ) ../test/multi_thread.cpp
+blinktree_multi_thread:
+	for f in $(File); do \
+		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLSM && \
+		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLSM || exit ; \
+	done
+	$(CPP) $(CPPFLAGS) -o blinktree_multi_thread $(OBJ) ../test/multi_thread.cpp -DNOLSM
 
 lsmtree_single_thread:
 	for f in $(File); do \
-		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DLSM && \
-		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DLSM || exit ; \
+		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH && \
+		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH || exit ; \
 	done
-	$(CPP) $(CPPFLAGS) -o lsmtree_single_thread $(OBJ) ../test/queue.cpp -DNOLATCH -DLSM
+	$(CPP) $(CPPFLAGS) -o lsmtree_single_thread $(OBJ) ../test/queue.cpp -DNOLATCH
 
-lsmtree_with_queue:
-	for f in $(File); do \
-		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DLSM && \
-		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DLSM || exit ; \
-	done
-	$(CPP) $(CPPFLAGS) -o lsmtree_with_queue $(OBJ) ../test/queue.cpp -DLSM
+lsmtree_with_queue: $(OBJ) ../test/queue.cpp
+	$(CPP) $(CPPFLAGS) -o lsmtree_with_queue $(OBJ) ../test/queue.cpp
+
+lsmtree_multi_thread: $(OBJ) ../test/multi_thread.cpp
+	$(CPP) $(CPPFLAGS) -o lsmtree_multi_thread $(OBJ) ../test/multi_thread.cpp
 
 tag:
 	cd .. && ctags -R -f .tags -h .cpp -h .hpp

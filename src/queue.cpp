@@ -76,8 +76,7 @@ void Queue::Pull()
 	if (avail_back_ == capacity_)
 		avail_back_ = 0;
 	pthread_mutex_unlock(mutex_);
-	if (avail_back_ == work_back_)
-		pthread_cond_signal(empty_);
+	pthread_cond_signal(empty_);
 }
 
 void Queue::Clear()

@@ -5,7 +5,7 @@
  *    > Created Time:  2017-04-08 14:45:42
 **/
 
-#ifdef LSM
+#ifndef NOLSM
 
 #ifndef _SSTABLE_HPP_
 #define _SSTABLE_HPP_

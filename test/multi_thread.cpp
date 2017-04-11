@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 		assert(pthread_join(ids[i], 0) == 0);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto t1 = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	printf("\ntotal: %d\nput time: %f  s\n", all * thread_num, t1);
+	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", all * thread_num, t1);
 
 	// beg = std::chrono::high_resolution_clock::now();
 	// for (int i = 0; i != thread_num; ++i) {

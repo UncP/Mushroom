@@ -5,7 +5,7 @@
  *    > Created Time:  2017-04-01 13:22:35
 **/
 
-#ifdef LSM
+#ifndef NOLSM
 
 #include "lsm_tree.hpp"
 #include "b_link_tree.hpp"

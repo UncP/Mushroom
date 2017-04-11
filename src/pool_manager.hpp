@@ -24,7 +24,7 @@ class PoolManager
 
 		page_t TotalPage() const { return cur_; }
 
-		#ifdef LSM
+		#ifndef NOLSM
 		inline bool ReachMaxPool() { return tot_ >= (PoolSize-1); }
 		#endif
 

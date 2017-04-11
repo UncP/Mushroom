@@ -52,7 +52,7 @@ class BLinkTree
 
 		bool Get(KeySlice *key) const;
 
-		#ifdef LSM
+		#ifndef NOLSM
 		inline bool NeedCompact() const { return pool_manager_->ReachMaxPool(); }
 		inline void Clear() const {
 			#ifndef NOLATCH
@@ -90,7 +90,7 @@ class BLinkTree
 
 		#ifndef NOLATCH
 		LatchManager *latch_manager_;
-		#ifdef LSM
+		#ifndef NOLSM
 		uint32_t      ref_;
 		#endif
 		#endif

@@ -30,7 +30,7 @@ class MushroomDB
 		~MushroomDB();
 
 	private:
-		#ifdef LSM
+		#ifndef NOLSM
 		LSMTree   *tree_;
 		#else
 		BLinkTree *tree_;

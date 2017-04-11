@@ -21,7 +21,7 @@ class Task
 			key_ = (KeySlice *)buf;
 		}
 
-		void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
+		inline void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
 			fun_ = fun;
 			db_  = db;
 			CopyKey(key_, key, 0, key_len_);

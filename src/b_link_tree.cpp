@@ -21,7 +21,7 @@ BLinkTree::BLinkTree(int key_len):root_(0), key_len_((uint8_t)key_len)
 {
 	#ifndef NOLATCH
 	latch_manager_ = new LatchManager();
-	#ifdef LSM
+	#ifndef NOLSM
 	ref_ = 0;
 	#endif
 	#endif
@@ -115,7 +115,7 @@ bool BLinkTree::Put(KeySlice *key)
 	Set set;
 
 	#ifndef NOLATCH
-	#ifdef LSM
+	#ifndef NOLSM
 	__sync_fetch_and_add(&ref_, 1);
 	#endif
 	#endif
@@ -156,7 +156,7 @@ bool BLinkTree::Put(KeySlice *key)
 	}
 	#ifndef NOLATCH
 	set.latch_->Unlock();
-	#ifdef LSM
+	#ifndef NOLSM
 	__sync_fetch_and_add(&ref_, -1);
 	#endif
 	#endif
