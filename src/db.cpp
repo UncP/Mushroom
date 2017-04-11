@@ -19,12 +19,12 @@
 
 namespace Mushroom {
 
-MushroomDB::MushroomDB(int key_len, uint32_t page_size,
+MushroomDB::MushroomDB(uint32_t key_len, uint32_t page_size,
 	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits)
 {
 	PoolManager::SetManagerInfo(page_size, pool_size, hash_bits, seg_bits);
 	#ifndef NOLSM
-	tree_ = new LSMTree(key_len);
+	tree_ = new LSMTree(2, key_len);
 	#else
 	tree_ = new BLinkTree(key_len);
 	#endif

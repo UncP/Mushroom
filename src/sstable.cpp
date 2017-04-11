@@ -49,6 +49,16 @@ SSTable::~SSTable()
 		delete blocks_[i];
 }
 
+void SSTable::FormKeySlice(KeySlice *slice) const
+{
+	assert(info_.block_size_);
+	const std::string &smallest = info_.smallest_[0];
+	const std::string &largest  = info_.largest_[info_.block_size_-1];
+	CopyPrefix(slice, smallest.c_str(), info_.key_len_);
+	CopySuffix(slice, smallest.c_str(), info_.key_len_, info_.key_len_);
+	slice->ptr_ = id_;
+}
+
 } // namespace Mushroom
 
 #endif

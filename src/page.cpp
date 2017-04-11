@@ -38,7 +38,7 @@ void Page::Initialize(page_t page_no, uint8_t type, uint8_t key_len, uint8_t lev
 
 void Page::InsertInfiniteKey()
 {
-	TempSlice(key, PageByte + key_len_);
+	TempSlice(key, key_len_);
 	memset(key->key_, 0xFF, key_len_);
 	page_t page_no = 0;
 	assert(Insert(key, page_no) == InsertOk);

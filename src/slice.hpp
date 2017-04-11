@@ -41,6 +41,10 @@ inline void CopyPrefix(KeySlice *a, const char *prefix, size_t len) {
 	memcpy(a->key_, prefix, len);
 };
 
+inline void CopySuffix(KeySlice *a, const char *suffix, size_t pre, size_t len) {
+	memcpy(a->key_ + pre, suffix, len);
+};
+
 inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
 	if (!pre) {
 		memcpy(a, b, len + sizeof(valptr));
@@ -51,8 +55,8 @@ inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
 };
 
 #define TempSlice(name, length) \
-	char buf_##name[length];       \
-	memset(buf_##name, 0, length); \
+	char buf_##name[sizeof(valptr) + length]; \
+	memset(buf_##name, 0, length);            \
 	KeySlice *name = (KeySlice *)buf_##name;
 
 } // namespace Mushroom

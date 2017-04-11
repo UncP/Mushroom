@@ -20,7 +20,7 @@ namespace Mushroom {
 class LSMTree
 {
 	public:
-		LSMTree(int key_len);
+		LSMTree(int component, int key_len);
 
 		~LSMTree();
 
@@ -34,11 +34,16 @@ class LSMTree
 		LSMTree& operator=(const LSMTree &) = delete;
 
 	private:
-		BLinkTree *curr_;
+		void Merge(const SSTable *table);
+
+		uint32_t    component_;
+		uint32_t    key_len_;
+		uint32_t    curr_;
+		BLinkTree **trees_;
+
 		#ifndef NOLATCH
 		Mutex      mutex_;
 		#endif
-		uint8_t    key_len_;
 };
 
 } // namespace Mushroom

@@ -40,7 +40,7 @@ class BLinkTree
 
 		static const uint32_t MAX_KEY_LENGTH = 255;
 
-		BLinkTree(int key_len);
+		BLinkTree(uint32_t key_len);
 
 		~BLinkTree();
 
@@ -53,7 +53,7 @@ class BLinkTree
 		bool Get(KeySlice *key) const;
 
 		#ifndef NOLSM
-		inline bool NeedCompact() const { return pool_manager_->ReachMaxPool(); }
+		inline bool ReachThreshold() const { return pool_manager_->ReachMaxPool(); }
 		inline void Clear() const {
 			#ifndef NOLATCH
 			while (ref_) sched_yield();

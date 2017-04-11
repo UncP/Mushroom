@@ -17,7 +17,7 @@
 
 namespace Mushroom {
 
-BLinkTree::BLinkTree(int key_len):root_(0), key_len_((uint8_t)key_len)
+BLinkTree::BLinkTree(uint32_t key_len):root_(0), key_len_((uint8_t)key_len)
 {
 	#ifndef NOLATCH
 	latch_manager_ = new LatchManager();
@@ -173,7 +173,7 @@ void BLinkTree::SplitRoot(Set &set)
 	new_root->InsertInfiniteKey();
 	new_root->AssignFirst(set.page_->page_no_);
 
-	TempSlice(slice, key_len_ + sizeof(valptr));
+	TempSlice(slice, key_len_);
 
 	set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
 	set.page_->Split(right, slice);

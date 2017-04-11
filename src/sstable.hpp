@@ -24,6 +24,8 @@ class SSTable
 
 		~SSTable();
 
+		void FormKeySlice(KeySlice *slice) const;
+
 	private:
 		struct Info {
 			Info();
@@ -35,6 +37,7 @@ class SSTable
 			std::vector<std::string>  smallest_;
 			std::vector<std::string>  largest_;
 		};
+
 		Info                 info_;
 		std::vector<Block *> blocks_;
 };
