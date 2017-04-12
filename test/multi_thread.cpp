@@ -112,7 +112,7 @@ int main(int argc, char **argv)
 	// 	assert(pthread_join(ids[i], 0) == 0);
 	// end = std::chrono::high_resolution_clock::now();
 	// auto t2 = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	// printf("get time: %f  s\n", t2);
+	// printf("\033[34mget time: %f  s\033[0m\n", t2);
 
 	db.Close();
 

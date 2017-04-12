@@ -46,15 +46,16 @@ bool LSMTree::Put(KeySlice *key)
 			imm_tree_ = mem_tree_;
 			if (!new_tree)
 				mem_tree_ = new BLinkTree(key_len_);
-			else
+			else {
 				mem_tree_ = new_tree;
+			}
 			#ifndef NOLATCH
 			mutex_.Unlock();
 			#endif
 			imm_tree_->Clear();
-			SSTable *table = new SSTable(imm_tree_);
+			// SSTable *table = new SSTable(imm_tree_);
 			imm_tree_->Reset();
-			delete table;
+			// delete table;
 			// Merge(table);
 		} else {
 			#ifndef NOLATCH
@@ -67,7 +68,10 @@ bool LSMTree::Put(KeySlice *key)
 
 bool LSMTree::Get(KeySlice *key) const
 {
-	return false;
+	if (!mem_tree_->Get(key))
+		if (imm_tree_ && !imm_tree_->Get(key))
+			return false;
+	return true;
 }
 
 // void Merge(const SSTable *table)

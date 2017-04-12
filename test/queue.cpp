@@ -51,7 +51,7 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 			#ifndef NOLATCH
 			pool->AddTask(fun, db, key);
 			#else
-			(db->*fun)(key);
+			assert((db->*fun)(key));
 			#endif
 			if (++count == total) {
 				flag = false;
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", total, t1);
 
 	// double t2 = Do(file, &db, &MushroomDB::Get);
-	// printf("get time: %f  s\n", t2);
+	// printf("\033[34mget time: %f  s\033[0m\n", t2);
 
 	db.Close();
 

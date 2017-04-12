@@ -26,7 +26,7 @@ class PagePool
 
 		PagePool():mem_(0) { Reset(); }
 
-		void Reset() {
+		inline void Reset() {
 			base_ = 0;
 			prev_ = 0;
 			next_ = 0;

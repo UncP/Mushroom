@@ -52,6 +52,8 @@ class BLinkTree
 
 		bool Get(KeySlice *key) const;
 
+		void Initialize();
+
 		void Reset();
 
 		#ifndef NOLSM

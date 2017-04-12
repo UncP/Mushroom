@@ -27,23 +27,18 @@ BLinkTree::BLinkTree(uint32_t key_len):key_len_((uint8_t)key_len)
 
 	degree_ = Page::CalculateDegree(key_len_);
 
-	Reset();
+	Initialize();
 }
 
-void BLinkTree::Reset()
+void BLinkTree::Initialize()
 {
 	root_ = 0;
+
 	#ifndef NOLATCH
 	#ifndef NOLSM
 	ref_ = 0;
 	#endif
 	#endif
-
-	#ifndef NOLATCH
-	latch_manager_->Reset();
-	#endif
-
-	pool_manager_->Reset();
 
 	Set set;
 	set.page_no_ = 0;
@@ -56,6 +51,18 @@ void BLinkTree::Reset()
 	#ifndef NOLATCH
 	set.latch_->Unlock();
 	#endif
+}
+
+void BLinkTree::Reset()
+{
+	#ifndef NOLATCH
+	latch_manager_->Reset();
+	#endif
+
+	pool_manager_->Reset();
+
+	Initialize();
+	printf("Reset\n");
 }
 
 BLinkTree::~BLinkTree()
@@ -209,7 +216,7 @@ bool BLinkTree::Get(KeySlice *key) const
 			#ifndef NOLATCH
 			set.latch_->UnlockShared();
 			#endif
-			assert(0);
+			// assert(0);
 			return false;
 		}
 		set.page_no_ = set.page_->Next();
