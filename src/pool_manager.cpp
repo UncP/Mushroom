@@ -41,9 +41,9 @@ void PoolManager::Reset()
 {
 	cur_ = 0;
 	tot_ = 0;
-	for (size_t i = 0; i != (HashMask+1); ++i)
+	for (uint32_t i = 0; i != (HashMask+1); ++i)
 		entries_[i].slot_ = 0;
-	for (size_t i = 0; i != PoolSize; ++i)
+	for (uint32_t i = 0; i != PoolSize; ++i)
 		pool_[i].Reset();
 }
 
@@ -105,8 +105,7 @@ Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_
 {
 	page_t page_no = __sync_fetch_and_add(&cur_, 1);
 	Page *page = GetPage(page_no);
-	page->Initialize(page_no, type, key_len, level, degree);
-	return page;
+	return new (page) Page(page_no, type, key_len, level, degree);
 }
 
 bool PoolManager::Free()

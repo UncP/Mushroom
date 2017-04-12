@@ -5,6 +5,7 @@
  *    > Created Time:  2016-10-22 09:10:01
 **/
 
+#include <cassert>
 #include <sstream>
 
 #include "page.hpp"
@@ -25,8 +26,7 @@ uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 	return (PageSize - offset) / (PageByte + IndexByte + key_len);
 }
 
-void Page::Initialize(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level,
-	uint16_t degree)
+Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
 	memset(this, 0, PageSize);
 	page_no_ = page_no;
@@ -252,7 +252,6 @@ std::string Page::ToString() const
 		os << "prefix: " << std::string(data_, pre_len_) << "\n";
 	}
 
-	assert(total_key_ < 255);
 	uint16_t *index = Index();
 	for (uint16_t i = 0; i != total_key_; ++i)
 		os << index[i] << " ";

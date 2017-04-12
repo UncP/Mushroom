@@ -20,10 +20,13 @@ namespace Mushroom {
 class Block
 {
 	public:
+		friend class BlockManager;
+
 		static const uint32_t BlockSize = 65536;
 		class Iterator {
 			public:
-				Iterator(const Block *block, uint32_t key_len);
+				Iterator(const Block *block, uint32_t key_len)
+				:key_(block->mem_+4), block_(block), key_len_(key_len) { }
 
 				inline bool Next() {
 					if (++idx_ < block_->TotalKey()) {
@@ -52,11 +55,11 @@ class Block
 				uint32_t     key_len_;
 		};
 
-		Block();
+		Block():mem_(new char[BlockSize]), num_((uint32_t *)mem_), off_(4), next_(0), pin_(true) { }
 
 		inline uint32_t TotalKey() const { return *num_; }
 
-		~Block();
+		~Block() { delete [] mem_; }
 
 		inline bool Append(const char *data, uint32_t len) {
 			if (off_ + len < BlockSize) {
@@ -72,6 +75,8 @@ class Block
 		char     *mem_;
 		uint32_t *num_;
 		uint32_t  off_;
+		Block    *next_;
+		bool      pin_;
 };
 
 } // namespace Mushroom

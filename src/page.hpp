@@ -8,7 +8,6 @@
 #ifndef _BTREE_PAGE_HPP_
 #define _BTREE_PAGE_HPP_
 
-#include <cassert>
 #include <string>
 
 #include "utility.hpp"
@@ -36,9 +35,9 @@ class Page
 
 		void InsertInfiniteKey();
 
-		void Initialize(page_t id, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
+		Page(page_t id, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
-		page_t Next() const {
+		inline page_t Next() const {
 			KeySlice *key = (KeySlice *)(data_ + Index()[total_key_-1]);
 			return key->page_no_;
 		}
@@ -59,6 +58,10 @@ class Page
 
 		bool NeedSplit();
 
+		std::string ToString() const;
+
+	private:
+
 		inline uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 		}
@@ -67,9 +70,6 @@ class Page
 			return (KeySlice *)(data_ + index[pos]);
 		}
 
-		std::string ToString() const;
-
-	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
 		page_t   page_no_;

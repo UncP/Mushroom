@@ -22,8 +22,9 @@ class KeySlice
 			return std::string(key_, len) + "\n";
 		}
 		union {
-			page_t page_no_;
-			valptr ptr_;
+			page_t  page_no_;
+			valptr  vptr_;
+			table_t tptr_;
 		};
 		char   key_[0];
 };

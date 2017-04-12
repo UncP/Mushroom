@@ -10,26 +10,36 @@
 #include "lsm_tree.hpp"
 #include "b_link_tree.hpp"
 #include "sstable.hpp"
+#include "block_manager.hpp"
+#include "sstable_manager.hpp"
 
 namespace Mushroom {
 
 LSMTree::LSMTree(uint32_t component, uint32_t key_len)
 :component_(component - 1), key_len_(key_len), curr_(0), mem_tree_(new BLinkTree(key_len_)),
- imm_tree_(0), disk_trees_(new BLinkTree*[component_]) { }
+ imm_tree_(0), disk_trees_(new BLinkTree*[component_]), block_manager_(new BlockManager()),
+ sstable_manager_(new SSTableManager()) { }
 
 LSMTree::~LSMTree()
 {
 	delete mem_tree_;
-	if (imm_tree_) delete imm_tree_;
+	if (imm_tree_)
+		delete imm_tree_;
+
 	for (uint32_t i = 0; i != curr_; ++i)
 		delete disk_trees_[i];
 	delete [] disk_trees_;
+
+	delete block_manager_;
+	delete sstable_manager_;
 }
 
 bool LSMTree::Free()
 {
 	mem_tree_->Free();
-	if (imm_tree_) imm_tree_->Free();
+	if (imm_tree_)
+		imm_tree_->Free();
+
 	for (uint32_t i = 0; i != curr_; ++i)
 		disk_trees_[i]->Free();
 	return true;
@@ -46,16 +56,14 @@ bool LSMTree::Put(KeySlice *key)
 			imm_tree_ = mem_tree_;
 			if (!new_tree)
 				mem_tree_ = new BLinkTree(key_len_);
-			else {
+			else
 				mem_tree_ = new_tree;
-			}
 			#ifndef NOLATCH
 			mutex_.Unlock();
 			#endif
 			imm_tree_->Clear();
-			// SSTable *table = new SSTable(imm_tree_);
+			SSTable *sstable = sstable_manager_->NewSSTable(imm_tree_, block_manager_);
 			imm_tree_->Reset();
-			// delete table;
 			// Merge(table);
 		} else {
 			#ifndef NOLATCH

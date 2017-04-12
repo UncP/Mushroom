@@ -14,6 +14,7 @@ namespace Mushroom {
 
 typedef uint32_t valptr;
 typedef uint32_t page_t;
+typedef uint32_t table_t;
 
 class KeySlice;
 class SpinLatch;
@@ -29,7 +30,9 @@ class MushroomDB;
 class Task;
 class ThreadPool;
 class Block;
+class BlockManager;
 class SSTable;
+class SSTableManager;
 
 } // namespace Mushroom
 

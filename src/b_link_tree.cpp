@@ -62,7 +62,6 @@ void BLinkTree::Reset()
 	pool_manager_->Reset();
 
 	Initialize();
-	printf("Reset\n");
 }
 
 BLinkTree::~BLinkTree()

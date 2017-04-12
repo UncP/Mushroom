@@ -36,12 +36,15 @@ class LSMTree
 	private:
 		void Merge(const SSTable *table);
 
-		uint32_t    component_;
-		uint32_t    key_len_;
-		uint32_t    curr_;
-		BLinkTree  *mem_tree_;
-		BLinkTree  *imm_tree_;
-		BLinkTree **disk_trees_;
+		uint32_t      component_;
+		uint32_t      key_len_;
+		uint32_t      curr_;
+		BLinkTree    *mem_tree_;
+		BLinkTree    *imm_tree_;
+		BLinkTree   **disk_trees_;
+
+		BlockManager   *block_manager_;
+		SSTableManager *sstable_manager_;
 
 		#ifndef NOLATCH
 		Mutex      mutex_;
