@@ -47,7 +47,10 @@ class LSMTree
 		SSTableManager *sstable_manager_;
 
 		#ifndef NOLATCH
-		Mutex      mutex_;
+		bool              imm_pinned_;
+		Mutex             mutex_;
+		ConditionVariable cond_;
+		SpinLatch         spin_;
 		#endif
 };
 

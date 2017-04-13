@@ -18,7 +18,12 @@ namespace Mushroom {
 LSMTree::LSMTree(uint32_t component, uint32_t key_len)
 :component_(component - 1), key_len_(key_len), curr_(0), mem_tree_(new BLinkTree(key_len_)),
  imm_tree_(0), disk_trees_(new BLinkTree*[component_]), block_manager_(new BlockManager()),
- sstable_manager_(new SSTableManager()) { }
+ sstable_manager_(new SSTableManager())
+{
+	#ifndef NOLATCH
+	imm_pinned_ = false;
+	#endif
+}
 
 LSMTree::~LSMTree()
 {
@@ -49,25 +54,35 @@ bool LSMTree::Put(KeySlice *key)
 {
 	if (mem_tree_->ReachThreshold()) {
 		#ifndef NOLATCH
-		mutex_.Lock();
+		spin_.Lock();
 		#endif
 		if (mem_tree_->ReachThreshold()) {
 			BLinkTree *new_tree = imm_tree_;
+			#ifndef NOLATCH
+			mutex_.Lock();
+			while (imm_pinned_) cond_.Wait(&mutex_);
+			#endif
 			imm_tree_ = mem_tree_;
 			if (!new_tree)
 				mem_tree_ = new BLinkTree(key_len_);
 			else
 				mem_tree_ = new_tree;
 			#ifndef NOLATCH
-			mutex_.Unlock();
+			spin_.Unlock();
+			imm_pinned_ = true;
 			#endif
 			imm_tree_->Clear();
 			SSTable *sstable = sstable_manager_->NewSSTable(imm_tree_, block_manager_);
 			imm_tree_->Reset();
-			// Merge(table);
+			#ifndef NOLATCH
+			imm_pinned_ = false;
+			mutex_.Unlock();
+			cond_.Signal();
+			#endif
+			Merge(sstable);
 		} else {
 			#ifndef NOLATCH
-			mutex_.Unlock();
+			spin_.Unlock();
 			#endif
 		}
 	}
@@ -82,13 +97,12 @@ bool LSMTree::Get(KeySlice *key) const
 	return true;
 }
 
-// void Merge(const SSTable *table)
-// {
-	// uint32_t idx = curr_;
-	// BLinkTree *cur = disk_trees_[idx];
-	// TempSlice(slice, (cur->KeyLength() << 1));
-	// table->GetKeyRange(slice);
-// }
+void Merge(const SSTable *table)
+{
+	TempSlice(slice, (key_len_ << 1));
+	table->FormKeySlice(slice);
+	disk_trees_[0]->RangeGet()
+}
 
 } // namespace Mushroom
 

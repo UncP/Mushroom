@@ -45,15 +45,15 @@ SSTable::SSTable(const BLinkTree *b_link_tree, BlockManager *block_manager,
 
 SSTable::~SSTable() { }
 
-// void SSTable::FormKeySlice(KeySlice *slice) const
-// {
-// 	assert(info_.block_num_);
-// 	const std::string &smallest = info_.smallest_[0];
-// 	const std::string &largest  = info_.largest_[info_.block_num_-1];
-// 	CopyPrefix(slice, smallest.c_str(), info_.key_len_);
-// 	CopySuffix(slice, smallest.c_str(), info_.key_len_, info_.key_len_);
-// 	slice->ptr_ = id_;
-// }
+void SSTable::FormKeySlice(KeySlice *slice) const
+{
+	assert(info_.block_num_);
+	const std::string &smallest = info_.smallest_[0];
+	const std::string &largest  = info_.largest_[info_.block_num_-1];
+	CopyPrefix(slice, smallest.c_str(), info_.key_len_);
+	CopySuffix(slice, smallest.c_str(), info_.key_len_, info_.key_len_);
+	slice->tptr_ = table_no_;
+}
 
 } // namespace Mushroom
 
