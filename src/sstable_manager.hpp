@@ -25,6 +25,8 @@ class SSTableManager
 
 		SSTable* NewSSTable(const BLinkTree *b_link_tree, BlockManager *block_manager);
 
+		SSTable* NewSSTable();
+
 		SSTable* GetSSTable(table_t table_no) const;
 
 	private:

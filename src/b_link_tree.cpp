@@ -21,6 +21,9 @@ BLinkTree::BLinkTree(uint32_t key_len):key_len_((uint8_t)key_len)
 {
 	#ifndef NOLATCH
 	latch_manager_ = new LatchManager();
+	#ifndef NOLSM
+	ref_ = 0;
+	#endif
 	#endif
 
 	pool_manager_ = new PoolManager();
@@ -34,23 +37,9 @@ void BLinkTree::Initialize()
 {
 	root_ = 0;
 
-	#ifndef NOLATCH
-	#ifndef NOLSM
-	ref_ = 0;
-	#endif
-	#endif
-
 	Set set;
-	set.page_no_ = 0;
-	#ifndef NOLATCH
-	set.latch_ = latch_manager_->GetLatch(set.page_no_);
-	assert(set.latch_->TryWriteLock());
-	#endif
 	set.page_ = pool_manager_->NewPage(Page::ROOT, key_len_, 0, degree_);
 	set.page_->InsertInfiniteKey();
-	#ifndef NOLATCH
-	set.latch_->Unlock();
-	#endif
 }
 
 void BLinkTree::Reset()
@@ -61,7 +50,14 @@ void BLinkTree::Reset()
 
 	pool_manager_->Reset();
 
+	assert(root_);
+	Latch *root = latch_manager_->GetLatch(root_);
+	Latch *leaf = latch_manager_->GetLatch(0);
+	root->Lock();
+	leaf->Lock();
 	Initialize();
+	leaf->Unlock();
+	root->Unlock();
 }
 
 BLinkTree::~BLinkTree()

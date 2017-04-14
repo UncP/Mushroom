@@ -20,6 +20,9 @@ namespace Mushroom {
 class LSMTree
 {
 	public:
+		static const uint32_t MaxDirectSSTable = 4;
+		static const uint32_t FileSizePower = 8;
+
 		LSMTree(uint32_t component, uint32_t key_len);
 
 		~LSMTree();
@@ -34,17 +37,21 @@ class LSMTree
 		LSMTree& operator=(const LSMTree &) = delete;
 
 	private:
-		void Merge(const SSTable *table);
+		void Switch();
+
+		void Merge(const table_t *tables);
 
 		uint32_t      component_;
 		uint32_t      key_len_;
-		uint32_t      curr_;
 		BLinkTree    *mem_tree_;
 		BLinkTree    *imm_tree_;
 		BLinkTree   **disk_trees_;
 
 		BlockManager   *block_manager_;
 		SSTableManager *sstable_manager_;
+
+		uint32_t        current_direct_table_;
+		table_t         direct_tables_[MaxDirectSSTable];
 
 		#ifndef NOLATCH
 		bool              imm_pinned_;

@@ -15,6 +15,39 @@
 
 namespace Mushroom {
 
+class Key
+{
+	public:
+		Key():size_(0), data_(0) { }
+
+		Key(uint32_t size):size_(size), data_(new char[size_]) { }
+
+		Key(const Key &key):size_(key.size_) {
+			data_ = new char[size_];
+			memcpy(data_, key.data_, size_);
+		}
+		Key& operator=(const Key &key) {
+			if (size_ != key.size_) {
+				delete data_;
+				size_ = key.size_;
+				data_ = new char[size_];
+			}
+			memcpy(data_, key.data_, size_);
+			return *this;
+		}
+
+		bool operator>(const Key &key) const {
+			return memcmp(data_, key.data_, size_) > 0;
+		}
+
+		std::string ToString() const { return std::string(data_, size_) + "\n"; }
+
+		~Key() { delete data_; }
+
+		uint32_t size_;
+		char    *data_;
+};
+
 class KeySlice
 {
 	public:

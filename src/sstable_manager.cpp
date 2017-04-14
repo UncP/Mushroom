@@ -29,6 +29,13 @@ SSTable* SSTableManager::NewSSTable(const BLinkTree *b_link_tree, BlockManager *
 	return sstable;
 }
 
+SSTable* SSTableManager::NewSSTable()
+{
+	SSTable *sstable = new SSTable(sstables_.size());
+	sstables_.push_back(sstable);
+	return sstable;
+}
+
 SSTable* SSTableManager::GetSSTable(table_t table_no) const
 {
 	assert(table_no < sstables_.size());

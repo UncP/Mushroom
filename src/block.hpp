@@ -13,6 +13,7 @@
 #include <cassert>
 #include <cstring>
 
+#include "slice.hpp"
 #include "utility.hpp"
 
 namespace Mushroom {
@@ -23,41 +24,12 @@ class Block
 		friend class BlockManager;
 
 		static const uint32_t BlockSize = 65536;
-		class Iterator {
-			public:
-				Iterator(const Block *block, uint32_t key_len)
-				:key_(block->mem_+4), block_(block), key_len_(key_len) { }
-
-				inline bool Next() {
-					if (++idx_ < block_->TotalKey()) {
-						key_ += key_len_;
-						return true;
-					}
-					return false;
-				}
-				inline void First() {
-					assert(block_->TotalKey());
-					idx_ = 0;
-					key_ = block_->mem_ + 4;
-				}
-				inline void Last() {
-					idx_ = block_->TotalKey();
-					assert(idx_);
-					--idx_;
-					key_ = block_->mem_ + 4 + idx_ * key_len_;
-				}
-
-				char    *key_;
-
-			private:
-				const Block *block_;
-				uint32_t     idx_;
-				uint32_t     key_len_;
-		};
 
 		Block():mem_(new char[BlockSize]), num_((uint32_t *)mem_), off_(4), next_(0), pin_(true) { }
 
-		inline uint32_t TotalKey() const { return *num_; }
+		const char* Memory() const { return mem_ + 4; }
+
+		uint32_t TotalKey() const { return *num_; }
 
 		~Block() { delete [] mem_; }
 
@@ -70,6 +42,38 @@ class Block
 			}
 			return false;
 		}
+
+		class Iterator {
+			public:
+				Iterator(const Block *block, uint32_t key_len)
+				:key_(key_len), mem_(block->Memory()), tot_(block->TotalKey()), idx_(0) {
+					memcpy(key_.data_, mem_, key_.size_);
+				}
+
+				inline bool Next() {
+					if (++idx_ < tot_) {
+						memcpy(key_.data_, mem_ + idx_ * key_.size_, key_.size_);
+						return true;
+					}
+					return false;
+				}
+				inline void First() {
+					assert(tot_);
+					idx_ = 0;
+					memcpy(key_.data_, mem_, key_.size_);
+				}
+				inline void Last() {
+					idx_ = tot_;
+					assert(idx_--);
+					memcpy(key_.data_, mem_ + idx_ * key_.size_, key_.size_);
+				}
+
+				Key          key_;
+			private:
+				const char  *mem_;
+				uint32_t     tot_;
+				uint32_t     idx_;
+		};
 
 	private:
 		char     *mem_;
