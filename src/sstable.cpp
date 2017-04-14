@@ -15,7 +15,25 @@
 
 namespace Mushroom {
 
-SSTable::SSTable(table_t table_no):table_no_(table_no), pin_(true) { }
+SSTable::SSTable(uint32_t key_len, table_t table_no):table_no_(table_no), pin_(true)
+{
+	info_.key_len_ = key_len;
+}
+
+void SSTable::Append(const Key &key, BlockManager *block_manager)
+{
+	if (!info_.block_num_) {
+		blocks_.push_back(block_manager->NewBlock());
+		++info_.block_num_;
+	}
+	Block *curr = blocks_[info_.block_num_-1];
+	if (!curr->Append(key.data_, key.size_)) {
+		info_.AppendKeyRange(curr);
+		blocks_.push_back(block_manager->NewBlock());
+		curr = blocks_[info_.block_num_++];
+		curr->Append(key.data_, key.size_);
+	}
+}
 
 SSTable::SSTable(const BLinkTree *b_link_tree, BlockManager *block_manager,
 	table_t table_no):table_no_(table_no), pin_(true)
@@ -57,4 +75,4 @@ void SSTable::FormKeySlice(KeySlice *slice) const
 
 } // namespace Mushroom
 
-#endif
+#endif /* NOLSM */

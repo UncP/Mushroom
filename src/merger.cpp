@@ -29,7 +29,7 @@ static auto compare = [](const Tuple &lhs, const Tuple &rhs) {
 	return lhs.iter->key() > rhs.iter->key();
 };
 
-SSTable* Merge(const table_t *tables, uint32_t size, SSTableManager *sstable_manager,
+SSTable* DoMerge(const table_t *tables, uint32_t size, SSTableManager *sstable_manager,
 	BlockManager *block_manager)
 {
 	SSTable::Iterator *iters[size];
@@ -41,17 +41,17 @@ SSTable* Merge(const table_t *tables, uint32_t size, SSTableManager *sstable_man
 
 	std::priority_queue<Tuple, std::vector<Tuple>, decltype(compare)> queue(compare, tuples);
 
-	SSTable *sstable = sstable_manager->NewSSTable();
+	SSTable *sstable = sstable_manager->NewSSTable(tuples[0].iter->key().size_);
 
-	// for (; !queue.empty();) {
-	// 	Tuple tuple = queue.top();
-	// 	sstable->
-	// 	queue.pop();
-	// 	if (iters[tuple.idx_]->Next())
-	// 		queue.push(tuple);
-	// }
+	for (; !queue.empty();) {
+		Tuple tuple = queue.top();
+		sstable->Append(tuple.iter->key(), block_manager);
+		queue.pop();
+		if (iters[tuple.idx]->Next())
+			queue.push(tuple);
+	}
 
-	for (size_t i = 0; i != size_; ++i)
+	for (size_t i = 0; i != size; ++i)
 		delete iters[i];
 }
 

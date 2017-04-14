@@ -25,7 +25,8 @@ class SSTable
 	friend class Merger;
 
 	public:
-		SSTable(table_t table_no);
+		SSTable(uint32_t key_len, table_t table_no);
+
 		SSTable(const BLinkTree *b_link_tree, BlockManager *block_manager, table_t table_no);
 
 		static uint32_t FileSize(uint32_t idx) {
@@ -34,7 +35,7 @@ class SSTable
 			return uint32_t(1) << idx;
 		}
 
-		void Append(const char *)
+		void Append(const Key &key, BlockManager *block_manager);
 
 		void FormKeySlice(KeySlice *slice) const;
 
@@ -94,4 +95,4 @@ class SSTable
 
 #endif /* _SSTABLE_HPP_ */
 
-#endif
+#endif /* NOLSM */

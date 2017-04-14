@@ -115,8 +115,7 @@ void LSMTree::Switch()
 
 void LSMTree::Merge(const table_t *tables)
 {
-	Merger m(tables, MaxDirectSSTable, sstable_manager_);
-	m.Merge();
+	DoMerge(tables, MaxDirectSSTable, sstable_manager_, block_manager_);
 
 	// TempSlice(slice, (key_len_ << 1));
 	// table->FormKeySlice(slice);

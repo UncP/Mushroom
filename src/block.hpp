@@ -51,8 +51,8 @@ class Block
 				}
 
 				inline bool Next() {
-					if (++idx_ < tot_) {
-						memcpy(key_.data_, mem_ + idx_ * key_.size_, key_.size_);
+					if ((idx_ + 1) < tot_) {
+						memcpy(key_.data_, mem_ + (++idx_) * key_.size_, key_.size_);
 						return true;
 					}
 					return false;

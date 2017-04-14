@@ -25,7 +25,7 @@ class SSTableManager
 
 		SSTable* NewSSTable(const BLinkTree *b_link_tree, BlockManager *block_manager);
 
-		SSTable* NewSSTable();
+		SSTable* NewSSTable(uint32_t key_len);
 
 		SSTable* GetSSTable(table_t table_no) const;
 

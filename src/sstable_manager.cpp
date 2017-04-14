@@ -29,9 +29,9 @@ SSTable* SSTableManager::NewSSTable(const BLinkTree *b_link_tree, BlockManager *
 	return sstable;
 }
 
-SSTable* SSTableManager::NewSSTable()
+SSTable* SSTableManager::NewSSTable(uint32_t key_len)
 {
-	SSTable *sstable = new SSTable(sstables_.size());
+	SSTable *sstable = new SSTable(key_len, sstables_.size());
 	sstables_.push_back(sstable);
 	return sstable;
 }
