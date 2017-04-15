@@ -11,6 +11,7 @@
 #define _SSTABLE_MANAGER_HPP_
 
 #include <vector>
+#include <stack>
 
 #include "utility.hpp"
 
@@ -19,18 +20,27 @@ namespace Mushroom {
 class SSTableManager
 {
 	public:
+		static const uint32_t MaxDirectSSTable = 4;
+
 		SSTableManager();
 
 		~SSTableManager();
 
-		SSTable* NewSSTable(const BLinkTree *b_link_tree, BlockManager *block_manager);
+		bool ReachThreshold() { return cur_ == MaxDirectSSTable; }
 
-		SSTable* NewSSTable(uint32_t key_len);
+		void MergeDirectSSTable(BlockManager *block_manager);
+
+		void AddDirectSSTable(const BLinkTree *b_link_tree, BlockManager *block_manager);
+
+		SSTable* NewSSTable(uint32_t level, uint32_t key_len);
 
 		SSTable* GetSSTable(table_t table_no) const;
 
 	private:
+		uint32_t               cur_;
+		SSTable               *dir_[MaxDirectSSTable];
 		std::vector<SSTable *> sstables_;
+		std::stack<SSTable *>  free_;
 };
 
 } // namespace Mushroom

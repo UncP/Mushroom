@@ -25,25 +25,23 @@ class SSTable
 	friend class Merger;
 
 	public:
-		SSTable(uint32_t key_len, table_t table_no);
+		SSTable(uint32_t level, uint32_t key_len, table_t table_no);
 
-		SSTable(const BLinkTree *b_link_tree, BlockManager *block_manager, table_t table_no);
+		SSTable(const BLinkTree *b_link_tree, BlockManager *block_manager);
 
-		static uint32_t FileSize(uint32_t idx) {
-			idx = (idx + 1) * 3;
-			assert(idx < 32);
-			return uint32_t(1) << idx;
-		}
+		static uint32_t FileSize(uint32_t level);
 
-		void Append(const Key &key, BlockManager *block_manager);
+		bool ReachThreshold();
+
+		bool Append(const Key &key, BlockManager *block_manager);
 
 		void FormKeySlice(KeySlice *slice) const;
-
-		table_t TableNo() const { return table_no_; }
 
 		uint32_t KeyLength() const { return info_.key_len_; }
 
 		const std::vector<Block *>& Blocks() const { return blocks_; }
+
+		void Reset(uint32_t level, uint32_t key_len, table_t table_no);
 
 		class Iterator {
 			public:
@@ -86,6 +84,7 @@ class SSTable
 		};
 
 		table_t              table_no_;
+		uint32_t             level_;
 		bool                 pin_;
 		BlockInfo            info_;
 		std::vector<Block *> blocks_;

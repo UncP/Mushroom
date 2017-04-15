@@ -25,27 +25,32 @@ struct Tuple
 	uint32_t  idx;
 };
 
-static auto compare = [](const Tuple &lhs, const Tuple &rhs) {
+static auto greater = [](const Tuple &lhs, const Tuple &rhs) {
 	return lhs.iter->key() > rhs.iter->key();
 };
 
-SSTable* DoMerge(const table_t *tables, uint32_t size, SSTableManager *sstable_manager,
+SSTable* Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
 	BlockManager *block_manager)
 {
 	SSTable::Iterator *iters[size];
 	std::vector<Tuple> tuples(size);
 	for (uint32_t i = 0; i != size; ++i) {
-		iters[i] = new SSTable::Iterator(sstable_manager->GetSSTable(tables[i]));
+		iters[i] = new SSTable::Iterator(sstables[i]);
 		tuples[i] = Tuple(iters[i], i);
 	}
 
-	std::priority_queue<Tuple, std::vector<Tuple>, decltype(compare)> queue(compare, tuples);
+	std::priority_queue<Tuple, std::vector<Tuple>, decltype(greater)> queue(greater, tuples);
 
-	SSTable *sstable = sstable_manager->NewSSTable(tuples[0].iter->key().size_);
+	uint32_t level = 0;
+	uint32_t key_len = tuples[0].iter->key().size_;
+	SSTable *sstable = sstable_manager->NewSSTable(level, key_len);
 
 	for (; !queue.empty();) {
 		Tuple tuple = queue.top();
-		sstable->Append(tuple.iter->key(), block_manager);
+		if (!sstable->Append(tuple.iter->key(), block_manager)) {
+			sstable = sstable_manager->NewSSTable(level, key_len);
+			assert(sstable->Append(tuple.iter->key(), block_manager));
+		}
 		queue.pop();
 		if (iters[tuple.idx]->Next())
 			queue.push(tuple);

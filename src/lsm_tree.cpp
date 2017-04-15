@@ -14,7 +14,6 @@
 #include "sstable.hpp"
 #include "block_manager.hpp"
 #include "sstable_manager.hpp"
-#include "merger.hpp"
 
 namespace Mushroom {
 
@@ -24,7 +23,7 @@ LSMTree::LSMTree(uint32_t component, uint32_t key_len)
  sstable_manager_(new SSTableManager())
 {
 	#ifndef NOLATCH
-	imm_pinned_ = false;
+	// imm_pinned_ = false;
 	#endif
 }
 
@@ -51,7 +50,7 @@ bool LSMTree::Free()
 
 bool LSMTree::Put(KeySlice *key)
 {
-	if (mem_tree_->ReachThreshold()) Switch();
+	if (mem_tree_->ReachThreshold()) SwitchMemoryTree();
 	return mem_tree_->Put(key);
 }
 
@@ -63,7 +62,7 @@ bool LSMTree::Get(KeySlice *key) const
 	return true;
 }
 
-void LSMTree::Switch()
+void LSMTree::SwitchMemoryTree()
 {
 	#ifndef NOLATCH
 	spin_.Lock();
@@ -72,7 +71,7 @@ void LSMTree::Switch()
 		BLinkTree *new_tree = imm_tree_;
 		#ifndef NOLATCH
 		mutex_.Lock();
-		while (imm_pinned_) cond_.Wait(&mutex_);
+		// while (imm_pinned_) cond_.Wait(&mutex_);
 		#endif
 		imm_tree_ = mem_tree_;
 		if (!new_tree) {
@@ -83,29 +82,19 @@ void LSMTree::Switch()
 		}
 		#ifndef NOLATCH
 		spin_.Unlock();
-		imm_pinned_ = true;
+		// imm_pinned_ = true;
 		#endif
 		imm_tree_->Clear();
-		SSTable *sstable = sstable_manager_->NewSSTable(imm_tree_, block_manager_);
-		// imm_tree_->Reset();
-		direct_tables_[current_direct_table_++] = sstable->TableNo();
-		if (current_direct_table_ == MaxDirectSSTable) {
-			table_t copy[MaxDirectSSTable];
-			memcpy(copy, direct_tables_, sizeof(table_t) * MaxDirectSSTable);
-			current_direct_table_ = 0;
-			#ifndef NOLATCH
-			imm_pinned_ = false;
-			mutex_.Unlock();
-			cond_.Signal();
-			#endif
-			Merge(copy);
-		} else {
-			#ifndef NOLATCH
-			imm_pinned_ = false;
-			mutex_.Unlock();
-			cond_.Signal();
-			#endif
+		if (sstable_manager_->ReachThreshold()) {
+			sstable_manager_->MergeDirectSSTable(block_manager_);
+
 		}
+		sstable_manager_->AddDirectSSTable(imm_tree_, block_manager_);
+		#ifndef NOLATCH
+		// imm_pinned_ = false;
+		mutex_.Unlock();
+		// cond_.Signal();
+		#endif
 	} else {
 		#ifndef NOLATCH
 		spin_.Unlock();
@@ -113,15 +102,6 @@ void LSMTree::Switch()
 	}
 }
 
-void LSMTree::Merge(const table_t *tables)
-{
-	DoMerge(tables, MaxDirectSSTable, sstable_manager_, block_manager_);
-
-	// TempSlice(slice, (key_len_ << 1));
-	// table->FormKeySlice(slice);
-	// disk_trees_[0]->RangeGet()
-}
-
 } // namespace Mushroom
 
-#endif
+#endif /* NOLSM */

@@ -51,13 +51,17 @@ void BLinkTree::Reset()
 	pool_manager_->Reset();
 
 	assert(root_);
+	#ifndef NOLATCH
 	Latch *root = latch_manager_->GetLatch(root_);
 	Latch *leaf = latch_manager_->GetLatch(0);
 	root->Lock();
 	leaf->Lock();
+	#endif
 	Initialize();
+	#ifndef NOLATCH
 	leaf->Unlock();
 	root->Unlock();
+	#endif
 }
 
 BLinkTree::~BLinkTree()
