@@ -36,7 +36,7 @@ class LSMTree
 	private:
 		void SwitchMemoryTree();
 
-		void Merge(const table_t *tables);
+		void Merge();
 
 		uint32_t      component_;
 		uint32_t      key_len_;
@@ -44,13 +44,10 @@ class LSMTree
 		BLinkTree    *imm_tree_;
 		BLinkTree   **disk_trees_;
 
-		BlockManager   *block_manager_;
 		SSTableManager *sstable_manager_;
 
 		#ifndef NOLATCH
-		// bool              imm_pinned_;
 		Mutex             mutex_;
-		// ConditionVariable cond_;
 		SpinLatch         spin_;
 		#endif
 };

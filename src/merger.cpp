@@ -29,7 +29,7 @@ static auto greater = [](const Tuple &lhs, const Tuple &rhs) {
 	return lhs.iter->key() > rhs.iter->key();
 };
 
-SSTable* Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
+void Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
 	BlockManager *block_manager)
 {
 	SSTable::Iterator *iters[size];

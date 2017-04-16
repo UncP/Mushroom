@@ -11,36 +11,37 @@
 
 #include "sstable_manager.hpp"
 #include "sstable.hpp"
+#include "block_manager.hpp"
 #include "merger.hpp"
 
 namespace Mushroom {
 
-SSTableManager::SSTableManager():cur_(0) { }
+SSTableManager::SSTableManager():cur_(0), block_manager_(new BlockManager()) { }
 
 SSTableManager::~SSTableManager()
 {
+	printf("sstable size: %lu\n", sstables_.size());
 	for (size_t i = 0; i != sstables_.size(); ++i)
 		delete sstables_[i];
+	delete block_manager_;
 }
 
-void SSTableManager::AddDirectSSTable(const BLinkTree *b_link_tree, BlockManager *block_manager)
+void SSTableManager::AddDirectSSTable(const BLinkTree *b_link_tree)
 {
-	SSTable *sstable;
-	if (!free_.empty()) {
-		sstable = free_.top();
-		free_.pop();
-	} else {
-		sstable = new
+	SSTable *sstable = dir_[cur_++];
+	if (!sstable) {
+		sstable = new SSTable();
+		dir_[cur_-1] = sstable;
 	}
-	dir_[cur_] = new SSTable(b_link_tree, block_manager);
-	++cur_;
+	sstable->Generate(b_link_tree, block_manager_);
 }
 
-void SSTableManager::MergeDirectSSTable(BlockManager *block_manager)
+void SSTableManager::MergeDirectSSTable()
 {
-	Merge(dir_, MaxDirectSSTable, this, block_manager);
+	printf("merge\n");
+	Merge(dir_, MaxDirectSSTable, this, block_manager_);
 	for (uint32_t i = 0; i != cur_; ++i)
-		free_.push(dir_[i]);
+		dir_[i]->Reset();
 	cur_ = 0;
 }
 
@@ -48,13 +49,14 @@ SSTable* SSTableManager::NewSSTable(uint32_t level, uint32_t key_len)
 {
 	SSTable *sstable;
 	if (!free_.empty()) {
-		sstable = free_.top();
+		table_t table_no = free_.top();
 		free_.pop();
-		sstable->Reset(level, key_len, sstables_.size());
+		sstable = GetSSTable(table_no);
+		sstable->Reset(table_no, level, key_len);
 	} else {
-		sstable = new SSTable(level, key_len, sstables_.size());
+		sstable = new SSTable(sstables_.size(), level, key_len);
+		sstables_.push_back(sstable);
 	}
-	sstables_.push_back(sstable);
 	return sstable;
 }
 

@@ -33,7 +33,6 @@ class Block;
 class BlockManager;
 class SSTable;
 class SSTableManager;
-class Merger;
 
 } // namespace Mushroom
 

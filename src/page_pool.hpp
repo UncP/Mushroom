@@ -28,7 +28,6 @@ class PagePool
 
 		inline void Reset() {
 			base_ = 0;
-			prev_ = 0;
 			next_ = 0;
 			if (mem_) memset(mem_, 0, (Page::PageSize << SegBits));
 		}
@@ -53,7 +52,6 @@ class PagePool
 
 		page_t    base_;
 		char     *mem_;
-		PagePool *prev_;
 		PagePool *next_;
 };
 

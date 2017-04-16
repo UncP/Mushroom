@@ -52,14 +52,10 @@ void PoolManager::Link(uint16_t hash, uint16_t victim)
 	PagePool *pool = pool_ + victim;
 
 	uint16_t slot = entries_[hash].slot_;
+	if (slot)
+		pool->next_ = pool_ + slot;
 
-	if (slot) {
-		PagePool *next = pool_ + slot;
-		next->prev_ = pool_ + victim;
-		pool->next_ = next;
-	}
 	entries_[hash].slot_ = victim;
-	pool->prev_ = 0;
 }
 
 Page* PoolManager::GetPage(page_t page_no)

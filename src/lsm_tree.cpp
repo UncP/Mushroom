@@ -12,20 +12,14 @@
 #include "lsm_tree.hpp"
 #include "b_link_tree.hpp"
 #include "sstable.hpp"
-#include "block_manager.hpp"
 #include "sstable_manager.hpp"
 
 namespace Mushroom {
 
 LSMTree::LSMTree(uint32_t component, uint32_t key_len)
 :component_(component - 1), key_len_(key_len), mem_tree_(new BLinkTree(key_len_)),
- imm_tree_(0), disk_trees_(new BLinkTree*[component_]), block_manager_(new BlockManager()),
- sstable_manager_(new SSTableManager())
-{
-	#ifndef NOLATCH
-	// imm_pinned_ = false;
-	#endif
-}
+ imm_tree_(0), disk_trees_(new BLinkTree*[component_]),
+ sstable_manager_(new SSTableManager()) { }
 
 LSMTree::~LSMTree()
 {
@@ -35,7 +29,6 @@ LSMTree::~LSMTree()
 
 	delete [] disk_trees_;
 
-	delete block_manager_;
 	delete sstable_manager_;
 }
 
@@ -71,7 +64,6 @@ void LSMTree::SwitchMemoryTree()
 		BLinkTree *new_tree = imm_tree_;
 		#ifndef NOLATCH
 		mutex_.Lock();
-		// while (imm_pinned_) cond_.Wait(&mutex_);
 		#endif
 		imm_tree_ = mem_tree_;
 		if (!new_tree) {
@@ -82,24 +74,26 @@ void LSMTree::SwitchMemoryTree()
 		}
 		#ifndef NOLATCH
 		spin_.Unlock();
-		// imm_pinned_ = true;
 		#endif
 		imm_tree_->Clear();
 		if (sstable_manager_->ReachThreshold()) {
-			sstable_manager_->MergeDirectSSTable(block_manager_);
-
+			sstable_manager_->MergeDirectSSTable();
+			Merge();
 		}
-		sstable_manager_->AddDirectSSTable(imm_tree_, block_manager_);
+		sstable_manager_->AddDirectSSTable(imm_tree_);
 		#ifndef NOLATCH
-		// imm_pinned_ = false;
 		mutex_.Unlock();
-		// cond_.Signal();
 		#endif
 	} else {
 		#ifndef NOLATCH
 		spin_.Unlock();
 		#endif
 	}
+}
+
+void LSMTree::Merge()
+{
+
 }
 
 } // namespace Mushroom

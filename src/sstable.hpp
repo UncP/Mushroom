@@ -22,12 +22,11 @@ namespace Mushroom {
 class SSTable
 {
 	friend class SSTableManager;
-	friend class Merger;
 
 	public:
-		SSTable(uint32_t level, uint32_t key_len, table_t table_no);
+		SSTable(table_t table_no, uint32_t level, uint32_t key_len);
 
-		SSTable(const BLinkTree *b_link_tree, BlockManager *block_manager);
+		SSTable();
 
 		static uint32_t FileSize(uint32_t level);
 
@@ -37,11 +36,15 @@ class SSTable
 
 		void FormKeySlice(KeySlice *slice) const;
 
-		uint32_t KeyLength() const { return info_.key_len_; }
+		uint32_t KeyLength() const { return key_len_; }
 
 		const std::vector<Block *>& Blocks() const { return blocks_; }
 
-		void Reset(uint32_t level, uint32_t key_len, table_t table_no);
+		void Generate(const BLinkTree *b_link_tree, BlockManager *block_manager);
+
+		void Reset();
+
+		void Reset(table_t table_no, uint32_t level, uint32_t key_len);
 
 		class Iterator {
 			public:
@@ -75,9 +78,8 @@ class SSTable
 		struct BlockInfo {
 			BlockInfo():block_num_(0) { }
 
-			void AppendKeyRange(const Block *block);
+			void AppendKeyRange(const Block *block, uint32_t key_len);
 
-			uint32_t                  key_len_;
 			uint32_t                  block_num_;
 			std::vector<std::string>  smallest_;
 			std::vector<std::string>  largest_;
@@ -85,9 +87,11 @@ class SSTable
 
 		table_t              table_no_;
 		uint32_t             level_;
+		uint32_t             key_len_;
 		bool                 pin_;
 		BlockInfo            info_;
 		std::vector<Block *> blocks_;
+		SSTable             *next_;
 };
 
 } // namespace Mushroom

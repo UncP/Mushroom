@@ -28,9 +28,9 @@ class SSTableManager
 
 		bool ReachThreshold() { return cur_ == MaxDirectSSTable; }
 
-		void MergeDirectSSTable(BlockManager *block_manager);
+		void MergeDirectSSTable();
 
-		void AddDirectSSTable(const BLinkTree *b_link_tree, BlockManager *block_manager);
+		void AddDirectSSTable(const BLinkTree *b_link_tree);
 
 		SSTable* NewSSTable(uint32_t level, uint32_t key_len);
 
@@ -39,8 +39,9 @@ class SSTableManager
 	private:
 		uint32_t               cur_;
 		SSTable               *dir_[MaxDirectSSTable];
-		std::vector<SSTable *> sstables_;
+		BlockManager          *block_manager_;
 		std::stack<SSTable *>  free_;
+		std::vector<SSTable *> sstables_;
 };
 
 } // namespace Mushroom

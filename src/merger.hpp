@@ -14,7 +14,7 @@
 
 namespace Mushroom {
 
-SSTable* Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
+void Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
 	BlockManager *block_manager);
 
 } // namespace Mushroom
