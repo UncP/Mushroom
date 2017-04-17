@@ -23,8 +23,10 @@ class Merger
 
 		void AppendMergePointer(uint32_t key_len);
 
-		void Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
+		void Merge(const std::vector<SSTable *> &tables, SSTableManager *sstable_manager,
 			BlockManager *block_manager, uint32_t level);
+
+		const Key& GetOffsetInLevel(uint32_t level);
 
 	private:
 		std::vector<Key *> merge_ptrs_;

@@ -30,7 +30,11 @@ class SSTable
 
 		bool Append(const Key &key, BlockManager *block_manager);
 
-		void GetKeyRange(Key *smallest, Key *largest);
+		void GetKeyRange(Key *smallest, Key *largest) const;
+
+		bool Overlap(const Key &smallest, const Key &largest) const;
+
+		bool LargerThan(const Key &offset) const;
 
 		void Generate(const BLinkTree *b_link_tree, BlockManager *block_manager);
 
@@ -67,7 +71,7 @@ class SSTable
 		};
 
 	private:
-		void AppendKeyRange(const Block *block, uint32_t key_len);
+		void AppendBlockRange(const Block *block, uint32_t key_len);
 
 		table_t                   table_no_;
 		uint32_t                  level_;

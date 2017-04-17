@@ -31,14 +31,14 @@ void SSTable::Generate(const BLinkTree *b_link_tree, BlockManager *block_manager
 	Block *curr = blocks_[block_num_++];
 	for (;;) {
 		if (!curr->Append((char *)iter.key_->key_, key_len)) {
-			AppendKeyRange(curr, key_len);
+			AppendBlockRange(curr, key_len);
 			blocks_.push_back(block_manager->NewBlock());
 			curr = blocks_[block_num_++];
 		} else if (!iter.Next()) {
 			break;
 		}
 	}
-	AppendKeyRange(curr, key_len);
+	AppendBlockRange(curr, key_len);
 }
 
 bool SSTable::Append(const Key &key, BlockManager *block_manager)
@@ -49,7 +49,7 @@ bool SSTable::Append(const Key &key, BlockManager *block_manager)
 	}
 	Block *curr = blocks_[block_num_-1];
 	if (!curr->Append(key.data_, key.size_)) {
-		AppendKeyRange(curr, key.size_);
+		AppendBlockRange(curr, key.size_);
 		if ((block_num_ * Block::BlockSize) >= SSTable::MaxSizeInBytes(level_))
 			return false;
 		blocks_.push_back(block_manager->NewBlock());
@@ -59,15 +59,31 @@ bool SSTable::Append(const Key &key, BlockManager *block_manager)
 	return true;
 }
 
-void SSTable::GetKeyRange(Key *smallest, Key *largest)
+void SSTable::GetKeyRange(Key *smallest, Key *largest) const
 {
 	assert(block_num_);
-	smallest = smallest_[0]
 	memcpy(smallest->data_, smallest_[0].c_str(), smallest->size_);
 	memcpy(largest->data_, largest_[block_num_-1].c_str(), largest->size_);
 }
 
-void SSTable::AppendKeyRange(const Block *block, uint32_t key_len)
+bool SSTable::Overlap(const Key &smallest, const Key &largest) const
+{
+	assert(block_num_);
+	if ((memcmp(largest.data_, smallest_[0].c_str(), largest.size_) < 0) ||
+		memcmp(smallest, largest_[block_num_-1], smallest_.size_) > 0)
+		return false;
+	return true;
+}
+
+bool SSTable::LargerThan(const Key &offset) const
+{
+	assert(block_num_);
+	if (memcmp(smallest_[0].c_str(), offset.data_, offset.size_) > 0)
+		return true;
+	return false;
+}
+
+void SSTable::AppendBlockRange(const Block *block, uint32_t key_len)
 {
 	Block::Iterator iter(block, key_len);
 	iter.First();

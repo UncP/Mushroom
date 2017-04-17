@@ -33,21 +33,31 @@ void LevelTree::AppendLevel0SSTable(const BLinkTree *b_link_tree)
 void LevelTree::MergeLevel(uint32_t level)
 {
 	Key smallest(key_len_), largest(key_len_);
-	std::vector<SSTable *> sstables;
+	std::vector<SSTable *> tables;
+	uint32_t index, total = 0;
 	if (!level) {
-		sstables = levels_[0].sstables;
-		sstables[0]->GetKeyRange(&smallest, &largest);
-		FindOverlapInLevel(1, sstables, smallest, largest);
+		tables = levels_[0].sstables;
+		tables[0]->GetKeyRange(&smallest, &largest);
+		FindOverlapInLevel(1, &tables, &index, &total, smallest, largest);
 	} else {
-
+		const Key &offset = merger_->GetOffsetInLevel(level);
+		tables.push_back(NextSSTableInLevel(level + 1, offset, &index));
 	}
-
+	std::vector<SSTable *> result;
+	merger_->Merge(tables, sstable_manager_, sstable_manager_->block_manager_, level + 1, &result);
+	DeleteSSTableInLevel(level);
+	AppendSSTableInLevel(level+1, result);
 }
 
-void LevelTree::FindOverlapInLevel(uint32_t level, std::vector<SSTable *> &sstabels,
-	const Key &smallest, const Key &largest)
+void LevelTree::FindOverlapInLevel(uint32_t level, std::vector<SSTable *> *tabels,
+	uint32_t *index, uint32_t *total, const Key &smallest, const Key &largest)
 {
-	levels_[level].FindOverlapSSTables(sstables, smallest, largest);
+	levels_[level].FindOverlapSSTable(tables, index, total, smallest, largest);
+}
+
+SSTable* LevelTree::NextSSTableInLevel(uint32_t level, const Key &offset, uint32_t *index)
+{
+	levels_[level].NextSSTable(offset, index);
 }
 
 void LevelTree::AppendNewLevel()

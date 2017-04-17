@@ -23,6 +23,12 @@ void Merger::AppendMergePointer(uint32_t key_len)
 	merge_ptrs_.push_back(new Key(key_len));
 }
 
+const Key& Merger::GetOffsetInLevel(uint32_t level)
+{
+	assert(level);
+	return *merge_ptrs_[level-1];
+}
+
 struct Tuple
 {
 	Tuple():iter(0), idx(0) { }
@@ -36,7 +42,7 @@ static auto greater = [](const Tuple &lhs, const Tuple &rhs) {
 	return lhs.iter->key() > rhs.iter->key();
 };
 
-void Merger::Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
+void Merger::Merge(const std::vector<SSTable *> &tables, SSTableManager *sstable_manager,
 	BlockManager *block_manager, uint32_t level)
 {
 	SSTable::Iterator *iters[size];

@@ -25,6 +25,11 @@ class Level
 
 		uint32_t SSTableNumber() const;
 
+		void FindOverlapSSTable(std::vector<SSTable *> *tables, const Key &smallest,
+			const Key &largest) const;
+
+		SSTable* NextSSTable(const Key &offset, uint32_t *index) const;
+
 	private:
 		uint32_t               level_;
 		std::vector<SSTable *> sstables_;
