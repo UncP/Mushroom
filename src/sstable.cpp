@@ -59,6 +59,14 @@ bool SSTable::Append(const Key &key, BlockManager *block_manager)
 	return true;
 }
 
+void SSTable::GetKeyRange(Key *smallest, Key *largest)
+{
+	assert(block_num_);
+	smallest = smallest_[0]
+	memcpy(smallest->data_, smallest_[0].c_str(), smallest->size_);
+	memcpy(largest->data_, largest_[block_num_-1].c_str(), largest->size_);
+}
+
 void SSTable::AppendKeyRange(const Block *block, uint32_t key_len)
 {
 	Block::Iterator iter(block, key_len);

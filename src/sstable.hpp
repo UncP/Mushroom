@@ -30,11 +30,13 @@ class SSTable
 
 		bool Append(const Key &key, BlockManager *block_manager);
 
-		const std::vector<Block *>& Blocks() const { return blocks_; }
+		void GetKeyRange(Key *smallest, Key *largest);
 
 		void Generate(const BLinkTree *b_link_tree, BlockManager *block_manager);
 
 		void Reset(table_t table_no, uint32_t level);
+
+		const std::vector<Block *>& Blocks() const { return blocks_; }
 
 		class Iterator {
 			public:

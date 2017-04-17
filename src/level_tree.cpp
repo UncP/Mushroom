@@ -32,8 +32,22 @@ void LevelTree::AppendLevel0SSTable(const BLinkTree *b_link_tree)
 
 void LevelTree::MergeLevel(uint32_t level)
 {
+	Key smallest(key_len_), largest(key_len_);
+	std::vector<SSTable *> sstables;
+	if (!level) {
+		sstables = levels_[0].sstables;
+		sstables[0]->GetKeyRange(&smallest, &largest);
+		FindOverlapInLevel(1, sstables, smallest, largest);
+	} else {
 
+	}
 
+}
+
+void LevelTree::FindOverlapInLevel(uint32_t level, std::vector<SSTable *> &sstabels,
+	const Key &smallest, const Key &largest)
+{
+	levels_[level].FindOverlapSSTables(sstables, smallest, largest);
 }
 
 void LevelTree::AppendNewLevel()

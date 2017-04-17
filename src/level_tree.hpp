@@ -28,6 +28,9 @@ class LevelTree
 	private:
 		void AppendNewLevel(uint32_t level);
 
+		void FindOverlapInLevel(uint32_t level, std::vector<SSTable *> &sstabels,
+			const Key &smallest, const Key &largest);
+
 		static const uint32_t MaxLevel0SSTable = 4;
 
 		uint32_t            key_len_;
