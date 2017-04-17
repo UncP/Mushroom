@@ -25,10 +25,20 @@ class Level
 
 		uint32_t SSTableNumber() const;
 
-		void FindOverlapSSTable(std::vector<SSTable *> *tables, const Key &smallest,
-			const Key &largest) const;
+		void GetKeyRange(Key *smallest, Key *largest) const;
+
+		void FindOverlapSSTable(std::vector<SSTable *> *tables, uint32_t *index, uint32_t *total,
+			const Key &smallest, const Key &largest) const;
 
 		SSTable* NextSSTable(const Key &offset, uint32_t *index) const;
+
+		void AppendSSTable(SSTable *sstable);
+
+		void UpdateSSTable(uint32_t index, uint32_t total, const std::vector<SSTable *> &result);
+
+		void DeleteSSTable(uint32_t index, uint32_t total);
+
+		std::vector<SSTable *> SSTables() const;
 
 	private:
 		uint32_t               level_;

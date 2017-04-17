@@ -36,6 +36,9 @@ class Key
 			return *this;
 		}
 
+		bool operator<(const Key &key) const {
+			return memcmp(data_, key.data_, size_) < 0;
+		}
 		bool operator>(const Key &key) const {
 			return memcmp(data_, key.data_, size_) > 0;
 		}

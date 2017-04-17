@@ -19,12 +19,13 @@ namespace Mushroom {
 class Merger
 {
 	public:
-		Merger(uint32_t key_len);
+		Merger();
 
 		void AppendMergePointer(uint32_t key_len);
 
 		void Merge(const std::vector<SSTable *> &tables, SSTableManager *sstable_manager,
-			BlockManager *block_manager, uint32_t level);
+			BlockManager *block_manager, uint32_t level, uint32_t key_len,
+			std::vector<SSTable *> *result);
 
 		const Key& GetOffsetInLevel(uint32_t level);
 

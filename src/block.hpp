@@ -69,6 +69,7 @@ class Block
 				}
 
 				Key          key_;
+
 			private:
 				const char  *mem_;
 				uint32_t     tot_;

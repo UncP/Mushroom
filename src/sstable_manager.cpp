@@ -31,7 +31,7 @@ SSTable* SSTableManager::NewSSTable(uint32_t level)
 		table_t table_no = free_.top();
 		free_.pop();
 		sstable = GetSSTable(table_no);
-		sstable->Reset(table_no);
+		sstable->Reset(table_no, level);
 	} else {
 		sstable = new SSTable(sstables_.size(), level);
 		sstables_.push_back(sstable);

@@ -26,12 +26,19 @@ class LevelTree
 		void MergeLevel(uint32_t level);
 
 	private:
-		void AppendNewLevel(uint32_t level);
+		void AppendNewLevel();
+
+		void GetKeyRangeInLevel(uint32_t level, Key *smallest, Key *largest) const;
 
 		void FindOverlapInLevel(uint32_t level, std::vector<SSTable *> *tabels, uint32_t *index,
-			uint32_t *total, const Key &smallest, const Key &largest);
+			uint32_t *total, const Key &smallest, const Key &largest) const;
 
-		void NextSSTableInLevel(uint32_t level, const Key &offset, uint32_t *index);
+		SSTable* NextSSTableInLevel(uint32_t level, const Key &offset, uint32_t *index) const;
+
+		void UpdateSSTableInLevel(uint32_t level, uint32_t index, uint32_t total,
+			const std::vector<SSTable *> &result);
+
+		void DeleteSSTableInLevel(uint32_t level, uint32_t index, uint32_t total);
 
 		static const uint32_t MaxLevel0SSTable = 4;
 

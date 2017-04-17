@@ -70,7 +70,7 @@ bool SSTable::Overlap(const Key &smallest, const Key &largest) const
 {
 	assert(block_num_);
 	if ((memcmp(largest.data_, smallest_[0].c_str(), largest.size_) < 0) ||
-		memcmp(smallest, largest_[block_num_-1], smallest_.size_) > 0)
+		memcmp(smallest.data_, largest_[block_num_-1].c_str(), smallest.size_) > 0)
 		return false;
 	return true;
 }

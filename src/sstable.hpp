@@ -50,7 +50,25 @@ class SSTable
 					iter_ = new Block::Iterator(blocks_[curr_++], key_len_);
 				}
 
-				bool Next() {
+				inline void First() {
+					if (curr_ != 1) {
+						curr_ = 0;
+						delete iter_;
+						iter_ = new Block::Iterator(blocks_[curr_++], key_len_);
+					}
+					iter_->First();
+				}
+
+				inline void Last() {
+					if (curr_ != blocks_.size()) {
+						curr_ = blocks_.size() - 1;
+						delete iter_;
+						iter_ = new Block::Iterator(blocks_[curr_++], key_len_);
+					}
+					iter_->Last();
+				}
+
+				inline bool Next() {
 					if (iter_->Next()) return true;
 					else if (curr_ < blocks_.size()) {
 						delete iter_;
