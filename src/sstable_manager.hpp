@@ -20,27 +20,19 @@ namespace Mushroom {
 class SSTableManager
 {
 	public:
-		static const uint32_t MaxDirectSSTable = 4;
+		friend class LevelTree;
 
 		SSTableManager();
 
 		~SSTableManager();
 
-		bool ReachThreshold() { return cur_ == MaxDirectSSTable; }
-
-		void MergeDirectSSTable();
-
-		void AddDirectSSTable(const BLinkTree *b_link_tree);
-
-		SSTable* NewSSTable(uint32_t level, uint32_t key_len);
+		SSTable* NewSSTable(uint32_t level);
 
 		SSTable* GetSSTable(table_t table_no) const;
 
 	private:
-		uint32_t               cur_;
-		SSTable               *dir_[MaxDirectSSTable];
 		BlockManager          *block_manager_;
-		std::stack<SSTable *>  free_;
+		std::stack<table_t>    free_;
 		std::vector<SSTable *> sstables_;
 };
 

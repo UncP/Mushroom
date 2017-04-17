@@ -24,7 +24,7 @@ MushroomDB::MushroomDB(uint32_t key_len, uint32_t page_size,
 {
 	PoolManager::SetManagerInfo(page_size, pool_size, hash_bits, seg_bits);
 	#ifndef NOLSM
-	tree_ = new LSMTree(2, key_len);
+	tree_ = new LSMTree(key_len);
 	#else
 	tree_ = new BLinkTree(key_len);
 	#endif

@@ -16,6 +16,13 @@
 
 namespace Mushroom {
 
+Merger::Merger() { }
+
+void Merger::AppendMergePointer(uint32_t key_len)
+{
+	merge_ptrs_.push_back(new Key(key_len));
+}
+
 struct Tuple
 {
 	Tuple():iter(0), idx(0) { }
@@ -29,8 +36,8 @@ static auto greater = [](const Tuple &lhs, const Tuple &rhs) {
 	return lhs.iter->key() > rhs.iter->key();
 };
 
-void Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
-	BlockManager *block_manager)
+void Merger::Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
+	BlockManager *block_manager, uint32_t level)
 {
 	SSTable::Iterator *iters[size];
 	std::vector<Tuple> tuples(size);
@@ -41,20 +48,22 @@ void Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
 
 	std::priority_queue<Tuple, std::vector<Tuple>, decltype(greater)> queue(greater, tuples);
 
-	uint32_t level = 0;
-	uint32_t key_len = tuples[0].iter->key().size_;
-	SSTable *sstable = sstable_manager->NewSSTable(level, key_len);
+	SSTable *sstable = sstable_manager->NewSSTable(level);
 
 	for (; !queue.empty();) {
 		Tuple tuple = queue.top();
 		if (!sstable->Append(tuple.iter->key(), block_manager)) {
-			sstable = sstable_manager->NewSSTable(level, key_len);
+			sstable = sstable_manager->NewSSTable(level);
 			assert(sstable->Append(tuple.iter->key(), block_manager));
 		}
 		queue.pop();
 		if (iters[tuple.idx]->Next())
 			queue.push(tuple);
 	}
+
+	SSTable::Iterator it(sstable);
+	it.Last();
+	merge_ptrs_[level] = it.key();
 
 	for (size_t i = 0; i != size; ++i)
 		delete iters[i];

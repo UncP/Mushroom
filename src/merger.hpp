@@ -12,10 +12,23 @@
 
 #include "utility.hpp"
 
+#include <vector>
+
 namespace Mushroom {
 
-void Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
-	BlockManager *block_manager);
+class Merger
+{
+	public:
+		Merger(uint32_t key_len);
+
+		void AppendMergePointer(uint32_t key_len);
+
+		void Merge(SSTable **sstables, uint32_t size, SSTableManager *sstable_manager,
+			BlockManager *block_manager, uint32_t level);
+
+	private:
+		std::vector<Key *> merge_ptrs_;
+};
 
 } // namespace Mushroom
 

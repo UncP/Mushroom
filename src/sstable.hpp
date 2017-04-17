@@ -24,32 +24,22 @@ class SSTable
 	friend class SSTableManager;
 
 	public:
-		SSTable(table_t table_no, uint32_t level, uint32_t key_len);
+		SSTable(table_t table_no, uint32_t level);
 
-		SSTable();
-
-		static uint32_t FileSize(uint32_t level);
-
-		bool ReachThreshold();
+		static uint32_t MaxSizeInBytes(uint32_t level);
 
 		bool Append(const Key &key, BlockManager *block_manager);
-
-		void FormKeySlice(KeySlice *slice) const;
-
-		uint32_t KeyLength() const { return key_len_; }
 
 		const std::vector<Block *>& Blocks() const { return blocks_; }
 
 		void Generate(const BLinkTree *b_link_tree, BlockManager *block_manager);
 
-		void Reset();
-
-		void Reset(table_t table_no, uint32_t level, uint32_t key_len);
+		void Reset(table_t table_no, uint32_t level);
 
 		class Iterator {
 			public:
-				Iterator(const SSTable *sstable)
-				:key_len_(sstable->KeyLength()), curr_(0), blocks_(sstable->Blocks()) {
+				Iterator(const SSTable *sstable, uint32_t key_len)
+				:key_len_(key_len), curr_(0), blocks_(sstable->Blocks()) {
 					assert(blocks_.size());
 					iter_ = new Block::Iterator(blocks_[curr_++], key_len_);
 				}
@@ -75,23 +65,14 @@ class SSTable
 		};
 
 	private:
-		struct BlockInfo {
-			BlockInfo():block_num_(0) { }
+		void AppendKeyRange(const Block *block, uint32_t key_len);
 
-			void AppendKeyRange(const Block *block, uint32_t key_len);
-
-			uint32_t                  block_num_;
-			std::vector<std::string>  smallest_;
-			std::vector<std::string>  largest_;
-		};
-
-		table_t              table_no_;
-		uint32_t             level_;
-		uint32_t             key_len_;
-		bool                 pin_;
-		BlockInfo            info_;
-		std::vector<Block *> blocks_;
-		SSTable             *next_;
+		table_t                   table_no_;
+		uint32_t                  level_;
+		uint32_t                  block_num_;
+		std::vector<Block *>      blocks_;
+		std::vector<std::string>  smallest_;
+		std::vector<std::string>  largest_;
 };
 
 } // namespace Mushroom

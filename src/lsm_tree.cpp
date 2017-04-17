@@ -11,25 +11,18 @@
 
 #include "lsm_tree.hpp"
 #include "b_link_tree.hpp"
-#include "sstable.hpp"
-#include "sstable_manager.hpp"
+#include "level_tree.hpp"
 
 namespace Mushroom {
 
-LSMTree::LSMTree(uint32_t component, uint32_t key_len)
-:component_(component - 1), key_len_(key_len), mem_tree_(new BLinkTree(key_len_)),
- imm_tree_(0), disk_trees_(new BLinkTree*[component_]),
- sstable_manager_(new SSTableManager()) { }
+LSMTree::LSMTree(uint32_t key_len):key_len_(key_len), mem_tree_(new BLinkTree(key_len_)),
+ imm_tree_(0), lvl_tree_(new LevelTree(key_len_)) { }
 
 LSMTree::~LSMTree()
 {
 	delete mem_tree_;
 	if (imm_tree_)
 		delete imm_tree_;
-
-	delete [] disk_trees_;
-
-	delete sstable_manager_;
 }
 
 bool LSMTree::Free()
@@ -76,11 +69,7 @@ void LSMTree::SwitchMemoryTree()
 		spin_.Unlock();
 		#endif
 		imm_tree_->Clear();
-		if (sstable_manager_->ReachThreshold()) {
-			sstable_manager_->MergeDirectSSTable();
-			Merge();
-		}
-		sstable_manager_->AddDirectSSTable(imm_tree_);
+		lvl_tree_->AppendLevel0SSTable(imm_tree_);
 		#ifndef NOLATCH
 		mutex_.Unlock();
 		#endif
@@ -89,11 +78,6 @@ void LSMTree::SwitchMemoryTree()
 		spin_.Unlock();
 		#endif
 	}
-}
-
-void LSMTree::Merge()
-{
-
 }
 
 } // namespace Mushroom

@@ -20,7 +20,7 @@ class Key
 	public:
 		Key():size_(0), data_(0) { }
 
-		Key(uint32_t size):size_(size), data_(new char[size_]) { }
+		Key(uint32_t size):size_(size), data_(new char[size_]) { memset(data_, 0, size_); }
 
 		Key(const Key &key):size_(key.size_) {
 			data_ = new char[size_];
