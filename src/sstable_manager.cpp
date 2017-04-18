@@ -19,8 +19,10 @@ SSTableManager::SSTableManager():block_manager_(new BlockManager()) { }
 
 SSTableManager::~SSTableManager()
 {
+	printf("SSTableManager Destructor\ntotal: %lu  free: %lu\n", sstables_.size(), free_.size());
 	for (uint32_t i = 0; i != sstables_.size(); ++i)
 		delete sstables_[i];
+
 	delete block_manager_;
 }
 
@@ -43,6 +45,13 @@ SSTable* SSTableManager::GetSSTable(table_t table_no) const
 {
 	assert(table_no < sstables_.size());
 	return sstables_[table_no];
+}
+
+void SSTableManager::FreeSSTable(table_t table_no)
+{
+	assert(table_no < sstables_.size());
+	GetSSTable(table_no)->Free(block_manager_);
+	free_.push(table_no);
 }
 
 } // namespace Mushroom

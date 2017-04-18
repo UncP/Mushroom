@@ -12,42 +12,37 @@
 
 namespace Mushroom {
 
-BlockManager::BlockManager():pinned_(0), tail_(0), unpin_(0) { }
+BlockManager::BlockManager() { }
 
 BlockManager::~BlockManager()
 {
-	for (; pinned_;) {
-		Block *next = pinned_->next_;
-		delete pinned_;
-		pinned_ = next;
-	}
-	for (; unpin_;) {
-		Block *next = unpin_->next_;
-		delete unpin_;
-		unpin_ = next;
-	}
+	printf("BlockManager Destructor\ntotal: %lu  free: %lu\n", blocks_.size(), free_.size());
+	for (uint32_t i = 0; i != blocks_.size(); ++i)
+		delete blocks_[i];
 }
 
 Block* BlockManager::NewBlock()
 {
 	Block *block;
-	if (unpin_) {
-		block  = unpin_;
-		block->pin_ = true;
-		unpin_ = unpin_->next_;
-		return block;
-	}
-	block = new Block();
-	if (!tail_) {
-		pinned_ = block;
-		tail_ = block;
+	if (!free_.empty()) {
+		block_t block_no = free_.top();
+		free_.pop();
+		assert(block_no < blocks_.size());
+		block = blocks_[block_no];
+		block->Reset(block_no);
 	} else {
-		tail_->next_ = block;
-		tail_ = tail_->next_;
+		block = new Block(blocks_.size());
+		blocks_.push_back(block);
 	}
 	return block;
 }
 
+void BlockManager::FreeBlock(block_t block_no)
+{
+	assert(block_no < blocks_.size());
+	free_.push(block_no);
+}
+
 } // namespace Mushroom
 
-#endif
+#endif /* NOLSM */

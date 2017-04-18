@@ -12,6 +12,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <string>
 
 #include "slice.hpp"
 #include "utility.hpp"
@@ -25,23 +26,21 @@ class Block
 
 		static const uint32_t BlockSize = 65536;
 
-		Block():mem_(new char[BlockSize]), num_((uint32_t *)mem_), off_(4), next_(0), pin_(true) { }
+		Block(block_t block_no);
 
-		const char* Memory() const { return mem_ + 4; }
+		~Block();
 
-		uint32_t TotalKey() const { return *num_; }
+		const char* Memory() const;
 
-		~Block() { delete [] mem_; }
+		uint32_t TotalKey() const;
 
-		inline bool Append(const char *data, uint32_t len) {
-			if (off_ + len < BlockSize) {
-				memcpy(mem_ + off_, data, len);
-				off_ += len;
-				++*num_;
-				return true;
-			}
-			return false;
-		}
+		block_t BlockNo() const;
+
+		bool Append(const char *data, uint32_t len);
+
+		void Reset(block_t block_no);
+
+		std::string ToString() const;
 
 		class Iterator {
 			public:
@@ -77,11 +76,10 @@ class Block
 		};
 
 	private:
+		block_t   block_no_;
 		char     *mem_;
 		uint32_t *num_;
 		uint32_t  off_;
-		Block    *next_;
-		bool      pin_;
 };
 
 } // namespace Mushroom

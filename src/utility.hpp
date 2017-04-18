@@ -15,6 +15,7 @@ namespace Mushroom {
 typedef uint32_t valptr;
 typedef uint32_t page_t;
 typedef uint32_t table_t;
+typedef uint32_t block_t;
 
 class Key;
 class KeySlice;

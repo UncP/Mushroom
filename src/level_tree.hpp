@@ -21,6 +21,8 @@ class LevelTree
 	public:
 		LevelTree(uint32_t key_len);
 
+		~LevelTree();
+
 		void AppendLevel0SSTable(const BLinkTree *b_link_tree);
 
 		void MergeLevel(uint32_t level);
@@ -40,12 +42,12 @@ class LevelTree
 
 		void DeleteSSTableInLevel(uint32_t level, uint32_t index, uint32_t total);
 
-		static const uint32_t MaxLevel0SSTable = 4;
+		static uint32_t MaxLevel0SSTable;
 
-		uint32_t            key_len_;
-		std::vector<Level>  levels_;
-		SSTableManager     *sstable_manager_;
-		Merger             *merger_;
+		uint32_t             key_len_;
+		std::vector<Level *> levels_;
+		SSTableManager      *sstable_manager_;
+		Merger              *merger_;
 };
 
 } // namespace Mushroom

@@ -7,6 +7,8 @@
 
 #ifndef NOLSM
 
+#include <sstream>
+
 #include "slice.hpp"
 #include "sstable.hpp"
 #include "b_link_tree.hpp"
@@ -17,11 +19,13 @@ namespace Mushroom {
 
 uint32_t SSTable::MaxSizeInBytes(uint32_t level)
 {
-	assert(++level < 32);
+	assert(level < 32);
+	// assert(++level < 32);
 	return (uint32_t(1) << level) * 1048576;
 }
 
-SSTable::SSTable(table_t table_no, uint32_t level):table_no_(table_no), level_(level) { }
+SSTable::SSTable(table_t table_no, uint32_t level)
+:table_no_(table_no), level_(level), block_num_(0) { }
 
 void SSTable::Generate(const BLinkTree *b_link_tree, BlockManager *block_manager)
 {
@@ -83,6 +87,12 @@ bool SSTable::LargerThan(const Key &offset) const
 	return false;
 }
 
+void SSTable::AppendFinalBlockRange(uint32_t key_len)
+{
+	assert(block_num_);
+	AppendBlockRange(blocks_[block_num_-1], key_len);
+}
+
 void SSTable::AppendBlockRange(const Block *block, uint32_t key_len)
 {
 	Block::Iterator iter(block, key_len);
@@ -92,14 +102,49 @@ void SSTable::AppendBlockRange(const Block *block, uint32_t key_len)
 	largest_.push_back(std::string(iter.key_.data_, key_len));
 }
 
-void SSTable::Reset(table_t table_no, uint32_t level)
+void SSTable::Free(BlockManager *block_manager)
 {
-	table_no_ = table_no;
-	level_ = level;
+	for (uint32_t i = 0; i != block_num_; ++i)
+		block_manager->FreeBlock(blocks_[i]->BlockNo());
 	block_num_ = 0;
 	blocks_.clear();
 	smallest_.clear();
 	largest_.clear();
+}
+
+void SSTable::Reset(table_t table_no, uint32_t level)
+{
+	assert(!block_num_);
+	table_no_ = table_no;
+	level_ = level;
+}
+
+table_t SSTable::TableNo() const
+{
+	return table_no_;
+}
+
+const std::vector<Block *>& SSTable::Blocks() const
+{
+	return blocks_;
+}
+
+std::string SSTable::ToString() const
+{
+	std::ostringstream os;
+	if (!block_num_) return std::string();
+	os << "level: ";
+	os << level_;
+	os << "  table_no: ";
+	os << table_no_;
+	os << "  block number: " << block_num_;
+	os << "  size: " << (double(block_num_ * Block::BlockSize) / 1048576) << "\n";
+	// for (uint32_t i = 0; i != block_num_; ++i) {
+	// 	os << blocks_[i]->ToString() << " ";
+	// 	os << smallest_[i] << " " << largest_[i] << "\n";
+	// }
+	os << smallest_[0] << " " << largest_[block_num_-1] << "\n";
+	return os.str();
 }
 
 } // namespace Mushroom

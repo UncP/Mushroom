@@ -85,15 +85,17 @@ int main(int argc, char **argv)
 
 	total = (argc == 6) ? atoi(argv[5]) : 1;
 
-	MushroomDB db(key_len, page_size, pool_size, hash_bits, seg_bits);
+	MushroomDB *db = new MushroomDB(key_len, page_size, pool_size, hash_bits, seg_bits);
 
-	double t1 = Do(file, &db, &MushroomDB::Put);
+	double t1 = Do(file, db, &MushroomDB::Put);
+
+	// double t2 = Do(file, db, &MushroomDB::Get);
+
+	db->Close();
+	delete db;
+
 	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", total, t1);
-
-	// double t2 = Do(file, &db, &MushroomDB::Get);
 	// printf("\033[34mget time: %f  s\033[0m\n", t2);
-
-	db.Close();
 
 	return 0;
 }

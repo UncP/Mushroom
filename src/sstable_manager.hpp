@@ -30,10 +30,12 @@ class SSTableManager
 
 		SSTable* GetSSTable(table_t table_no) const;
 
+		void FreeSSTable(table_t table_no);
+
 	private:
-		BlockManager          *block_manager_;
-		std::stack<table_t>    free_;
 		std::vector<SSTable *> sstables_;
+		std::stack<table_t>    free_;
+		BlockManager          *block_manager_;
 };
 
 } // namespace Mushroom

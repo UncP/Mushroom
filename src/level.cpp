@@ -12,10 +12,18 @@
 #include "level.hpp"
 #include "slice.hpp"
 #include "sstable.hpp"
+#include "sstable_manager.hpp"
 
 namespace Mushroom {
 
 Level::Level(uint32_t level):level_(level) { }
+
+Level::~Level()
+{
+	printf("\033[34mlevel: %u  size: %lu\033[0m\n", level_, sstables_.size());
+	for (uint32_t i = 0; i != sstables_.size(); ++i)
+		printf("%s\n", sstables_[i]->ToString().c_str());
+}
 
 uint32_t Level::SSTableNumber() const
 {
@@ -37,10 +45,10 @@ void Level::GetKeyRange(Key *smallest, Key *largest) const
 	assert(sstables_.size());
 	Key tmp1(smallest->size_), tmp2(largest->size_);
 	sstables_[0]->GetKeyRange(smallest, largest);
-	for (uint32_t i = 0; i < sstables_.size(); ++i) {
+	for (uint32_t i = 1; i != sstables_.size(); ++i) {
 		sstables_[i]->GetKeyRange(&tmp1, &tmp2);
 		if (tmp1 < *smallest) *smallest = tmp1;
-		if (tmp2 > *largest)  *largest  = tmp2;
+		if (*largest < tmp2)  *largest  = tmp2;
 	}
 }
 
@@ -71,15 +79,18 @@ SSTable* Level::NextSSTable(const Key &offset, uint32_t *index) const
 	assert(0);
 }
 
-void Level::UpdateSSTable(uint32_t index, uint32_t total, const std::vector<SSTable *> &result)
+void Level::UpdateSSTable(uint32_t index, uint32_t total, const std::vector<SSTable *> &result,
+	SSTableManager *sstable_manager)
 {
-	DeleteSSTable(index, total);
+	DeleteSSTable(index, total, sstable_manager);
 	sstables_.insert(sstables_.begin() + index, result.begin(), result.end());
 }
 
-void Level::DeleteSSTable(uint32_t index, uint32_t total)
+void Level::DeleteSSTable(uint32_t index, uint32_t total, SSTableManager *sstable_manager)
 {
-	assert(index + total < sstables_.size());
+	assert(index + total <= sstables_.size());
+	for (uint32_t i = index; i < index + total; ++i)
+		sstable_manager->FreeSSTable(sstables_[i]->TableNo());
 	auto begin = sstables_.begin() + index;
 	sstables_.erase(begin, begin + total);
 }

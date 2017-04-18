@@ -12,6 +12,9 @@
 
 #include "utility.hpp"
 
+#include <vector>
+#include <stack>
+
 namespace Mushroom {
 
 class BlockManager
@@ -23,14 +26,15 @@ class BlockManager
 
 		Block* NewBlock();
 
+		void FreeBlock(block_t block_no);
+
 	private:
-		Block *pinned_;
-		Block *tail_;
-		Block *unpin_;
+		std::stack<block_t>  free_;
+		std::vector<Block *> blocks_;
 };
 
 } // namespace Mushroom
 
 #endif /* _BLOCK_MANAGER_HPP_ */
 
-#endif
+#endif /* NOLSM */

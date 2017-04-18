@@ -85,16 +85,14 @@ Page* PoolManager::GetPage(page_t page_no)
 
 	uint16_t victim = __sync_fetch_and_add(&tot_, 1) + 1;
 
-	if (victim < PoolSize) {
-		pool_[victim].Initialize(page_no);
-		Link(hash, victim);
-		page = pool_[victim].GetPage(page_no);
-		#ifndef NOLATCH
-		entries_[hash].latch_.Unlock();
-		#endif
-		return page;
-	}
-	assert(0);
+	assert(victim < PoolSize);
+	pool_[victim].Initialize(page_no);
+	Link(hash, victim);
+	page = pool_[victim].GetPage(page_no);
+	#ifndef NOLATCH
+	entries_[hash].latch_.Unlock();
+	#endif
+	return page;
 }
 
 Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)

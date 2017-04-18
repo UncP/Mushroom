@@ -32,15 +32,23 @@ class SSTable
 
 		void GetKeyRange(Key *smallest, Key *largest) const;
 
+		void AppendFinalBlockRange(uint32_t key_len);
+
 		bool Overlap(const Key &smallest, const Key &largest) const;
 
 		bool LargerThan(const Key &offset) const;
 
 		void Generate(const BLinkTree *b_link_tree, BlockManager *block_manager);
 
+		void Free(BlockManager *block_manager);
+
 		void Reset(table_t table_no, uint32_t level);
 
-		const std::vector<Block *>& Blocks() const { return blocks_; }
+		table_t TableNo() const;
+
+		const std::vector<Block *>& Blocks() const;
+
+		std::string ToString() const;
 
 		class Iterator {
 			public:

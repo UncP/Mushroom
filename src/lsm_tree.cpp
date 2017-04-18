@@ -23,6 +23,8 @@ LSMTree::~LSMTree()
 	delete mem_tree_;
 	if (imm_tree_)
 		delete imm_tree_;
+
+	delete lvl_tree_;
 }
 
 bool LSMTree::Free()
@@ -30,7 +32,6 @@ bool LSMTree::Free()
 	mem_tree_->Free();
 	if (imm_tree_)
 		imm_tree_->Free();
-
 	return true;
 }
 
@@ -60,10 +61,10 @@ void LSMTree::SwitchMemoryTree()
 		#endif
 		imm_tree_ = mem_tree_;
 		if (!new_tree) {
-			mem_tree_ = new BLinkTree(key_len_);
+			__sync_bool_compare_and_swap(&mem_tree_, mem_tree_, new BLinkTree(key_len_));
 		} else {
 			new_tree->Reset();
-			mem_tree_ = new_tree;
+			__sync_bool_compare_and_swap(&mem_tree_, mem_tree_, new_tree);
 		}
 		#ifndef NOLATCH
 		spin_.Unlock();

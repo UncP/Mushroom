@@ -23,6 +23,8 @@ class Level
 
 		Level(uint32_t level);
 
+		~Level();
+
 		uint32_t SSTableNumber() const;
 
 		void GetKeyRange(Key *smallest, Key *largest) const;
@@ -34,9 +36,10 @@ class Level
 
 		void AppendSSTable(SSTable *sstable);
 
-		void UpdateSSTable(uint32_t index, uint32_t total, const std::vector<SSTable *> &result);
+		void UpdateSSTable(uint32_t index, uint32_t total, const std::vector<SSTable *> &result,
+			SSTableManager *sstable_manager);
 
-		void DeleteSSTable(uint32_t index, uint32_t total);
+		void DeleteSSTable(uint32_t index, uint32_t total, SSTableManager *sstable_manager);
 
 		std::vector<SSTable *> SSTables() const;
 

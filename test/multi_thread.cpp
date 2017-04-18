@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
 	const int total = (argc == 6) ? atoi(argv[5]) : 1;
 
-	MushroomDB db(key_len, page_size, pool_size, hash_bits, seg_bits);
+	MushroomDB *db = new MushroomDB(key_len, page_size, pool_size, hash_bits, seg_bits);
 
 	int thread_num = 4;
 	auto beg = std::chrono::high_resolution_clock::now();
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 	for (int i = 0; i != thread_num; ++i) {
 		args[i].i = i;
 		args[i].all = all;
-		args[i].db = &db;
+		args[i].db = db;
 		args[i].fun = &MushroomDB::Put;
 		assert(pthread_create(&ids[i], 0, Do, &args[i]) == 0);
 	}
@@ -98,13 +98,12 @@ int main(int argc, char **argv)
 		assert(pthread_join(ids[i], 0) == 0);
 	auto end = std::chrono::high_resolution_clock::now();
 	auto t1 = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
-	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", all * thread_num, t1);
 
 	// beg = std::chrono::high_resolution_clock::now();
 	// for (int i = 0; i != thread_num; ++i) {
 	// 	args[i].i = i;
 	// 	args[i].all = all;
-	// 	args[i].db = &db;
+	// 	args[i].db = db;
 	// 	args[i].fun = &MushroomDB::Get;
 	// 	assert(pthread_create(&ids[i], 0, Do, &args[i]) == 0);
 	// }
@@ -114,7 +113,9 @@ int main(int argc, char **argv)
 	// auto t2 = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	// printf("\033[34mget time: %f  s\033[0m\n", t2);
 
-	db.Close();
+	db->Close();
+	delete db;
 
+	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", all * thread_num, t1);
 	return 0;
 }

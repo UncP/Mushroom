@@ -10,6 +10,7 @@
 
 ### Feature
 + Concurrent B<sup>link</sup> Tree Index
++ Log-Structured Merge Tree
 + Prefix Compression (Lazy)
 + Two-Phase Hashing Page Manager
 + Mulit-Thread (Latch Manager, Thread Pool, Bounded Thread-Safe Queue)

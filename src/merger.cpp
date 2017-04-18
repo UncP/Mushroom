@@ -16,7 +16,12 @@
 
 namespace Mushroom {
 
-Merger::Merger() { }
+Merger::Merger():time_(0) { }
+
+Merger::~Merger()
+{
+	printf("\033[36mmerge time: %u\033[0m\n", time_);
+}
 
 void Merger::AppendMergePointer(uint32_t key_len)
 {
@@ -60,6 +65,7 @@ void Merger::Merge(const std::vector<SSTable *> &tables, SSTableManager *sstable
 	for (; !queue.empty();) {
 		Tuple tuple = queue.top();
 		if (!sstable->Append(tuple.iter->key(), block_manager)) {
+			sstable->AppendFinalBlockRange(key_len);
 			result->push_back(sstable);
 			sstable = sstable_manager->NewSSTable(level);
 			assert(sstable->Append(tuple.iter->key(), block_manager));
@@ -68,6 +74,7 @@ void Merger::Merge(const std::vector<SSTable *> &tables, SSTableManager *sstable
 		if (iters[tuple.idx]->Next())
 			queue.push(tuple);
 	}
+	sstable->AppendFinalBlockRange(key_len);
 	result->push_back(sstable);
 
 	SSTable::Iterator *it = new SSTable::Iterator(sstable, key_len);
@@ -76,6 +83,9 @@ void Merger::Merge(const std::vector<SSTable *> &tables, SSTableManager *sstable
 
 	for (size_t i = 0; i != size; ++i)
 		delete iters[i];
+
+	delete it;
+	++time_;
 }
 
 } // namespace Mushroom
