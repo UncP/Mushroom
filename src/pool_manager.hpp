@@ -26,9 +26,7 @@ class PoolManager
 
 		page_t TotalPage() const { return cur_; }
 
-		#ifndef NOLSM
 		inline bool ReachMaxPool() { return tot_ >= (PoolSize - 1); }
-		#endif
 
 		Page* GetPage(page_t page_no);
 		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);

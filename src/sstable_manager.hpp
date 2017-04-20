@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-12 22:22:46
 **/
 
-#ifndef NOLSM
-
 #ifndef _SSTABLE_MANAGER_HPP_
 #define _SSTABLE_MANAGER_HPP_
 
@@ -41,5 +39,3 @@ class SSTableManager
 } // namespace Mushroom
 
 #endif /* _SSTABLE_MANAGER_HPP_ */
-
-#endif /* NOLSM */

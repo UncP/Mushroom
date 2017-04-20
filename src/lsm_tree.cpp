@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-01 13:22:35
 **/
 
-#ifndef NOLSM
-
 #include <cstring>
 
 #include "lsm_tree.hpp"
@@ -82,5 +80,3 @@ void LSMTree::SwitchMemoryTree()
 }
 
 } // namespace Mushroom
-
-#endif /* NOLSM */

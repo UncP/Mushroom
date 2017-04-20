@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-11 19:31:48
 **/
 
-#ifndef NOLSM
-
 #ifndef _BLOCK_MANAGER_HPP_
 #define _BLOCK_MANAGER_HPP_
 
@@ -36,5 +34,3 @@ class BlockManager
 } // namespace Mushroom
 
 #endif /* _BLOCK_MANAGER_HPP_ */
-
-#endif /* NOLSM */

@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-08 16:56:06
 **/
 
-#ifndef NOLSM
-
 #include <sstream>
 
 #include "slice.hpp"
@@ -79,11 +77,13 @@ bool SSTable::Overlap(const Key &smallest, const Key &largest) const
 	return true;
 }
 
-bool SSTable::LargerThan(const Key &offset) const
+bool SSTable::LargerThan(Key &offset) const
 {
 	assert(block_num_);
-	if (memcmp(smallest_[0].c_str(), offset.data_, offset.size_) > 0)
+	if (memcmp(smallest_[0].c_str(), offset.data_, offset.size_) > 0) {
+		memcpy(offset.data_, smallest_[0].c_str(), offset.size_);
 		return true;
+	}
 	return false;
 }
 
@@ -138,7 +138,7 @@ std::string SSTable::ToString() const
 	os << "  table_no: ";
 	os << table_no_;
 	os << "  block number: " << block_num_;
-	os << "  size: " << (double(block_num_ * Block::BlockSize) / 1048576) << "\n";
+	os << "  size: " << (double(block_num_ * Block::BlockSize) / 1048576) << " M\n";
 	// for (uint32_t i = 0; i != block_num_; ++i) {
 	// 	os << blocks_[i]->ToString() << " ";
 	// 	os << smallest_[i] << " " << largest_[i] << "\n";
@@ -148,5 +148,3 @@ std::string SSTable::ToString() const
 }
 
 } // namespace Mushroom
-
-#endif /* NOLSM */

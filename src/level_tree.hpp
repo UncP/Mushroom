@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-17 14:48:06
 **/
 
-#ifndef NOLSM
-
 #ifndef _LEVEL_TREE_HPP_
 #define _LEVEL_TREE_HPP_
 
@@ -35,9 +33,9 @@ class LevelTree
 		void FindOverlapInLevel(uint32_t level, std::vector<SSTable *> *tabels, uint32_t *index,
 			uint32_t *total, const Key &smallest, const Key &largest) const;
 
-		SSTable* NextSSTableInLevel(uint32_t level, const Key &offset, uint32_t *index) const;
+		SSTable* NextSSTableInLevel(uint32_t level, Key &offset, uint32_t *index) const;
 
-		void UpdateSSTableInLevel(uint32_t level, uint32_t index, uint32_t total,
+		bool UpdateSSTableInLevel(uint32_t level, uint32_t index, uint32_t total,
 			const std::vector<SSTable *> &result);
 
 		void DeleteSSTableInLevel(uint32_t level, uint32_t index, uint32_t total);
@@ -53,5 +51,3 @@ class LevelTree
 } // namespace Mushroom
 
 #endif /* _LEVEL_TREE_HPP_ */
-
-#endif /* NOLSM */

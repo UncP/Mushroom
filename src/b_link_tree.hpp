@@ -56,15 +56,15 @@ class BLinkTree
 
 		void Reset();
 
-		#ifndef NOLSM
 		inline bool ReachThreshold() const { return pool_manager_->ReachMaxPool(); }
 		inline void Clear() const {
 			#ifndef NOLATCH
+			#ifndef NOLSM
 			while (ref_) sched_yield();
 			assert(!ref_);
 			#endif
+			#endif
 		}
-		#endif
 
 		BLinkTree(const BLinkTree &) = delete;
 		BLinkTree& operator=(const BLinkTree &) = delete;
@@ -83,7 +83,7 @@ class BLinkTree
 			#endif
 			Page    *page_;
 			page_t   stack_[8];
-			uint8_t  depth_;
+			uint32_t depth_;
 		};
 
 		void DescendToLeaf(const KeySlice *key, Set &set) const;

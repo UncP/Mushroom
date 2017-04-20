@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-17 14:48:17
 **/
 
-#ifndef NOLSM
-
 #include "level_tree.hpp"
 #include "level.hpp"
 #include "sstable.hpp"
@@ -25,7 +23,7 @@ LevelTree::LevelTree(uint32_t key_len)
 
 LevelTree::~LevelTree()
 {
-	for (int32_t i = int32_t(levels_.size()) - 1; i >= 0; --i)
+	for (uint32_t i = 0; i < levels_.size(); ++i)
 		delete levels_[i];
 
 	delete merger_;
@@ -43,32 +41,32 @@ void LevelTree::AppendLevel0SSTable(const BLinkTree *b_link_tree)
 
 void LevelTree::MergeLevel(uint32_t level)
 {
-	// printf("merge level: %u\n", level);
-	Key smallest(key_len_), largest(key_len_);
-	std::vector<SSTable *> tables;
-	uint32_t index1, total1, index2 = 0, total2 = 0;
-	if (!level) {
-		tables = levels_[0]->SSTables();
-		index1 = 0;
-		total1 = tables.size();
-		GetKeyRangeInLevel(level, &smallest, &largest);
-	} else {
-		const Key &offset = merger_->GetOffsetInLevel(level);
-		tables.push_back(NextSSTableInLevel(level + 1, offset, &index1));
-		total1 = 1;
-		tables[0]->GetKeyRange(&smallest, &largest);
+	for (;;) {
+		// printf("merge level: %u\n", level);
+		Key smallest(key_len_), largest(key_len_);
+		std::vector<SSTable *> tables;
+		uint32_t index1, total1, index2 = 0, total2 = 0;
+		if (!level) {
+			tables = levels_[0]->SSTables();
+			index1 = 0;
+			total1 = tables.size();
+			GetKeyRangeInLevel(level, &smallest, &largest);
+		} else {
+			Key &offset = merger_->GetOffsetInLevel(level);
+			// TODO
+			tables.push_back(NextSSTableInLevel(level + 1, offset, &index1));
+			total1 = 1;
+			tables[0]->GetKeyRange(&smallest, &largest);
+		}
+		if (++level >= levels_.size()) AppendNewLevel();
+		FindOverlapInLevel(level, &tables, &index2, &total2, smallest, largest);
+		std::vector<SSTable *> result;
+		merger_->Merge(tables, sstable_manager_, sstable_manager_->block_manager_, level, key_len_,
+			&result);
+		DeleteSSTableInLevel(level - 1, index1, total1);
+		if (!UpdateSSTableInLevel(level, index2, total2, result))
+			break;
 	}
-	if (++level >= levels_.size()) AppendNewLevel();
-	// printf("find overlap\n");
-	FindOverlapInLevel(level, &tables, &index2, &total2, smallest, largest);
-	std::vector<SSTable *> result;
-	// printf("do merge\n");
-	merger_->Merge(tables, sstable_manager_, sstable_manager_->block_manager_, level, key_len_,
-		&result);
-	// printf("update sstable\n");
-	UpdateSSTableInLevel(level, index2, total2, result);
-	// printf("delete sstable\n");
-	DeleteSSTableInLevel(level - 1, index1, total1);
 }
 
 void LevelTree::GetKeyRangeInLevel(uint32_t level, Key *smallest, Key *largest) const
@@ -84,17 +82,17 @@ void LevelTree::FindOverlapInLevel(uint32_t level, std::vector<SSTable *> *table
 	levels_[level]->FindOverlapSSTable(tables, index, total, smallest, largest);
 }
 
-SSTable* LevelTree::NextSSTableInLevel(uint32_t level, const Key &offset, uint32_t *index) const
+SSTable* LevelTree::NextSSTableInLevel(uint32_t level, Key &offset, uint32_t *index) const
 {
 	assert(level < levels_.size());
 	return levels_[level]->NextSSTable(offset, index);
 }
 
-void LevelTree::UpdateSSTableInLevel(uint32_t level, uint32_t index, uint32_t total,
+bool LevelTree::UpdateSSTableInLevel(uint32_t level, uint32_t index, uint32_t total,
 	const std::vector<SSTable *> &result)
 {
 	assert(level < levels_.size());
-	levels_[level]->UpdateSSTable(index, total, result, sstable_manager_);
+	return levels_[level]->UpdateSSTable(index, total, result, sstable_manager_);
 }
 
 void LevelTree::DeleteSSTableInLevel(uint32_t level, uint32_t index, uint32_t total)
@@ -111,5 +109,3 @@ void LevelTree::AppendNewLevel()
 }
 
 } // namespace Mushroom
-
-#endif /* NOLSM */

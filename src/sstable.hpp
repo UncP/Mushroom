@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-08 14:45:42
 **/
 
-#ifndef NOLSM
-
 #ifndef _SSTABLE_HPP_
 #define _SSTABLE_HPP_
 
@@ -36,7 +34,7 @@ class SSTable
 
 		bool Overlap(const Key &smallest, const Key &largest) const;
 
-		bool LargerThan(const Key &offset) const;
+		bool LargerThan(Key &offset) const;
 
 		void Generate(const BLinkTree *b_link_tree, BlockManager *block_manager);
 
@@ -110,5 +108,3 @@ class SSTable
 } // namespace Mushroom
 
 #endif /* _SSTABLE_HPP_ */
-
-#endif /* NOLSM */

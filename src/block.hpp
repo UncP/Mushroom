@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-08 21:03:32
 **/
 
-#ifndef NOLSM
-
 #ifndef _BLOCK_HPP_
 #define _BLOCK_HPP_
 
@@ -85,5 +83,3 @@ class Block
 } // namespace Mushroom
 
 #endif /* _BLOCK_HPP_ */
-
-#endif

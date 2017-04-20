@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-01 13:08:40
 **/
 
-#ifndef NOLSM
-
 #ifndef _LSM_TREE_HPP_
 #define _LSM_TREE_HPP_
 
@@ -51,5 +49,3 @@ class LSMTree
 } // namespace Mushroom
 
 #endif /* _LSM_TREE_HPP_ */
-
-#endif /* NOLSM */

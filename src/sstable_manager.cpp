@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-12 22:25:05
 **/
 
-#ifndef NOLSM
-
 #include <cassert>
 
 #include "sstable_manager.hpp"
@@ -19,7 +17,8 @@ SSTableManager::SSTableManager():block_manager_(new BlockManager()) { }
 
 SSTableManager::~SSTableManager()
 {
-	printf("SSTableManager Destructor\ntotal: %lu  free: %lu\n", sstables_.size(), free_.size());
+	printf("\033[35mSSTableManager Destructor\033[0m\ntotal: %lu  free: %lu\n",
+		sstables_.size(), free_.size());
 	for (uint32_t i = 0; i != sstables_.size(); ++i)
 		delete sstables_[i];
 
@@ -55,5 +54,3 @@ void SSTableManager::FreeSSTable(table_t table_no)
 }
 
 } // namespace Mushroom
-
-#endif /* NOLSM */

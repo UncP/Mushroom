@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-11 19:32:50
 **/
 
-#ifndef NOLSM
-
 #include "block_manager.hpp"
 #include "block.hpp"
 
@@ -16,7 +14,8 @@ BlockManager::BlockManager() { }
 
 BlockManager::~BlockManager()
 {
-	printf("BlockManager Destructor\ntotal: %lu  free: %lu\n", blocks_.size(), free_.size());
+	printf("\033[36mBlockManager Destructor\033[0m\ntotal: %lu  free: %lu\n",
+		blocks_.size(), free_.size());
 	for (uint32_t i = 0; i != blocks_.size(); ++i)
 		delete blocks_[i];
 }
@@ -44,5 +43,3 @@ void BlockManager::FreeBlock(block_t block_no)
 }
 
 } // namespace Mushroom
-
-#endif /* NOLSM */

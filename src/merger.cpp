@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-14 11:37:39
 **/
 
-#ifndef NOLSM
-
 #include <queue>
 #include <vector>
 
@@ -20,7 +18,7 @@ Merger::Merger():time_(0) { }
 
 Merger::~Merger()
 {
-	printf("\033[36mmerge time: %u\033[0m\n", time_);
+	printf("\033[33mmerge time: %u\033[0m\n", time_);
 }
 
 void Merger::AppendMergePointer(uint32_t key_len)
@@ -28,7 +26,7 @@ void Merger::AppendMergePointer(uint32_t key_len)
 	merge_ptrs_.push_back(new Key(key_len));
 }
 
-const Key& Merger::GetOffsetInLevel(uint32_t level)
+Key& Merger::GetOffsetInLevel(uint32_t level)
 {
 	assert(level);
 	return *merge_ptrs_[level-1];
@@ -89,5 +87,3 @@ void Merger::Merge(const std::vector<SSTable *> &tables, SSTableManager *sstable
 }
 
 } // namespace Mushroom
-
-#endif /* NOLSM */

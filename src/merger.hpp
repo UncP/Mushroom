@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-14 11:37:32
 **/
 
-#ifndef NOLSM
-
 #ifndef _MERGER_HPP_
 #define _MERGER_HPP_
 
@@ -29,7 +27,7 @@ class Merger
 			BlockManager *block_manager, uint32_t level, uint32_t key_len,
 			std::vector<SSTable *> *result);
 
-		const Key& GetOffsetInLevel(uint32_t level);
+		Key& GetOffsetInLevel(uint32_t level);
 
 	private:
 		uint32_t           time_;
@@ -39,5 +37,3 @@ class Merger
 } // namespace Mushroom
 
 #endif /* _MERGER_HPP_ */
-
-#endif /* NOLSM */

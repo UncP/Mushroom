@@ -5,8 +5,6 @@
  *    > Created Time:  2017-04-08 21:03:40
 **/
 
-#ifndef NOLSM
-
 #include "block.hpp"
 
 namespace Mushroom {
@@ -48,5 +46,3 @@ std::string Block::ToString() const
 }
 
 } // namespace Mushroom
-
-#endif
