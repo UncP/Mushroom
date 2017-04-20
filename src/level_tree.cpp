@@ -13,7 +13,7 @@
 
 namespace Mushroom {
 
-uint32_t LevelTree::MaxLevel0SSTable = 4;
+uint32_t LevelTree::MaxLevel0SSTable = 2;
 
 LevelTree::LevelTree(uint32_t key_len)
 :key_len_(key_len), sstable_manager_(new SSTableManager()), merger_(new Merger())
@@ -42,7 +42,6 @@ void LevelTree::AppendLevel0SSTable(const BLinkTree *b_link_tree)
 void LevelTree::MergeLevel(uint32_t level)
 {
 	for (;;) {
-		// printf("merge level: %u\n", level);
 		Key smallest(key_len_), largest(key_len_);
 		std::vector<SSTable *> tables;
 		uint32_t index1, total1, index2 = 0, total2 = 0;
@@ -53,8 +52,12 @@ void LevelTree::MergeLevel(uint32_t level)
 			GetKeyRangeInLevel(level, &smallest, &largest);
 		} else {
 			Key &offset = merger_->GetOffsetInLevel(level);
-			// TODO
-			tables.push_back(NextSSTableInLevel(level + 1, offset, &index1));
+			SSTable *sstable = NextSSTableInLevel(level, offset, &index1);
+			if (!sstable) {
+				offset = Key(key_len_);
+				assert((sstable = NextSSTableInLevel(level, offset, &index1)));
+			}
+			tables.push_back(sstable);
 			total1 = 1;
 			tables[0]->GetKeyRange(&smallest, &largest);
 		}

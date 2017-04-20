@@ -64,6 +64,6 @@ int main()
 	using namespace Mushroom;
 
 	MushroomDBTestData data(time(0));
-	data.Generate(100000000, 4, 16);
+	data.Generate(10000000, 4, 16);
 	return 0;
 }
