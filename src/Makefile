@@ -1,4 +1,4 @@
-CPP  = g++
+CPP = $(CXX)
 CPPFLAGS = -std=c++11 -Wall -Wextra -O3 -pthread
 
 File = slice latch latch_manager page page_pool pool_manager b_link_tree block block_manager \
