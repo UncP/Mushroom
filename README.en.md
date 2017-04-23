@@ -1,6 +1,9 @@
-<div align="center">
-  <img src="./mushroom.png" style="width: 100%; height: 100%"><br>
-</div>
+  __  __             _<br>
+ |  \/  |           | |<br>
+ | \  / |_   _  ___ | |___ _   __ ___   ___  _    _<br>
+ | |\/| | | | |/ _ \|  __ \ \_/_// _ \ / _ \| \  / |<br>
+ | |  | | |_| |\_\_ | |  | |  / | (_) | (_) | |\/| |<br>
+ |_|  |_|\__,_| _\_||_|  |_|_|   \___/ \___/|_|  |_|<br>
 
 ## Mushroom: Concurrent B<sup>link</sup> Tree Index
 [中文版 README](./README.md)
