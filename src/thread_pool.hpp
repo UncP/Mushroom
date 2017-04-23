@@ -51,6 +51,9 @@ class ThreadPool
 
 		~ThreadPool();
 
+		ThreadPool(const ThreadPool &) = delete;
+		ThreadPool& operator=(const ThreadPool &) = delete;
+
 	private:
 		static const int thread_num = 4;
 

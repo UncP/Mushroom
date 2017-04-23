@@ -1,49 +1,39 @@
 CPP = $(CXX)
-CPPFLAGS = -std=c++11 -Wall -Wextra -O3 -pthread
+CPPFLAGS = -std=c++11 -Wall -Wextra -O3
+LDFLAGS = -pthread
+DFLAGS =
 
-File = slice latch latch_manager page page_pool pool_manager b_link_tree block block_manager \
-	sstable sstable_manager level merger level_tree lsm_tree task queue thread_pool db
+File = $(shell find -maxdepth 1 -name '*.cpp')
 
-OBJ = slice.o latch.o latch_manager.o page.o page_pool.o pool_manager.o b_link_tree.o \
-	block.o block_manager.o sstable.o sstable_manager.o level.o merger.o level_tree.o lsm_tree.o \
-	task.o queue.o thread_pool.o db.o
+OBJ = $(File:.cpp=.o)
 
-blinktree_single_thread:
-	for f in $(File); do \
-		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DNOLSM && \
-		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH -DNOLSM || exit ; \
-	done
-	$(CPP) $(CPPFLAGS) -o blinktree_single_thread $(OBJ) ../test/queue.cpp -DNOLATCH -DNOLSM
+QUEUE = ../test/queue.cpp
 
-blinktree_with_queue:
-	for f in $(File); do \
-		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLSM && \
-		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLSM || exit ; \
-	done
-	$(CPP) $(CPPFLAGS) -o blinktree_with_queue $(OBJ) ../test/queue.cpp -DNOLSM
+THREAD = ../test/thread.cpp
 
-blinktree_multi_thread:
-	for f in $(File); do \
-		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLSM && \
-		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLSM || exit ; \
-	done
-	$(CPP) $(CPPFLAGS) -o blinktree_multi_thread $(OBJ) ../test/multi_thread.cpp -DNOLSM
+.cpp.o:
+		$(CPP) $(CPPFLAGS) -c $< -o $@ $(DFLAGS) $(LDFLAGS)
 
-lsmtree_single_thread:
-	for f in $(File); do \
-		echo $(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH && \
-		$(CPP) $(CPPFLAGS) -c $$f.cpp -o $$f.o -DNOLATCH || exit ; \
-	done
-	$(CPP) $(CPPFLAGS) -o lsmtree_single_thread $(OBJ) ../test/queue.cpp -DNOLATCH
+blinktree_single_thread: $(OBJ) $(QUEUE)
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
-lsmtree_with_queue: $(OBJ) ../test/queue.cpp
-	$(CPP) $(CPPFLAGS) -o lsmtree_with_queue $(OBJ) ../test/queue.cpp
+blinktree_with_queue: $(OBJ) $(QUEUE)
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
-lsmtree_multi_thread: $(OBJ) ../test/multi_thread.cpp
-	$(CPP) $(CPPFLAGS) -o lsmtree_multi_thread $(OBJ) ../test/multi_thread.cpp
+blinktree_multi_thread: $(OBJ) $(THREAD)
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
+
+lsmtree_single_thread:$(OBJ) $(QUEUE)
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
+
+lsmtree_with_queue: $(OBJ) $(QUEUE)
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
+
+lsmtree_multi_thread: $(OBJ) $(THREAD)
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
 tag:
-	cd .. && ctags -R -f .tags -h .cpp -h .hpp
+	cd .. && ctags -R -f .tags
 
 clean:
 	rm *.o blinktree_* lsmtree_*

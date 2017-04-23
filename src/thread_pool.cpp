@@ -69,6 +69,7 @@ ThreadPool::~ThreadPool()
 	working_ = false;
 	for (int i = 0; i != thread_num; ++i)
 		delete threads_[i];
+
 	delete [] threads_;
 	delete queue_;
 }

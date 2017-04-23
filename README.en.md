@@ -2,7 +2,7 @@
 [中文版 README](./README.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-0.6.4-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.7.0-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
