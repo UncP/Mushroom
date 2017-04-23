@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./mushroom.png"><br><br>
+  <img src="./mushroom.png" style="width: 100%; height: 100%"><br>
 </div>
 
 ## Mushroom（蘑菇）：并发B<sup>link</sup>树索引

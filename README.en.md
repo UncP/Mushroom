@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./mushroom.png"><br><br>
+  <img src="./mushroom.png" style="width: 100%; height: 100%"><br>
 </div>
 
 ## Mushroom: Concurrent B<sup>link</sup> Tree Index
