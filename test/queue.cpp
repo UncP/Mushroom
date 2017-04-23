@@ -10,11 +10,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "../src/slice.hpp"
-#include "../src/db.hpp"
+#include "../src/mushroom/slice.hpp"
+#include "../src/mushroom/db.hpp"
 
 #ifndef NOLATCH
-#include "../src/thread_pool.hpp"
+#include "../src/mushroom/thread_pool.hpp"
 #endif
 
 using namespace Mushroom;

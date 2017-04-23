@@ -3,7 +3,7 @@ CPPFLAGS = -std=c++11 -Wall -Wextra -O3
 LDFLAGS = -pthread
 DFLAGS =
 
-File = $(shell find -maxdepth 1 -name '*.cpp')
+File = $(shell find mushroom -name '*.cpp')
 
 OBJ = $(File:.cpp=.o)
 
@@ -36,4 +36,5 @@ tag:
 	cd .. && ctags -R -f .tags
 
 clean:
-	rm *.o blinktree_* lsmtree_*
+	rm */*.o
+	rm blinktree_* lsmtree_*
