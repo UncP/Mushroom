@@ -1,10 +1,6 @@
-  __  __             _<br></br>
- |  \/  |           | |<br></br>
- | \  / |_   _  ___ | |____  ___ ___   ___  _    _<br></br>
- | |\/| | | | |/ _ \| |__  \/ _// _ \ / _ \| \  / |<br></br>
- | |  | | |_| |\_|_ | |  | _ / | (_) | (_) | |\/| |<br></br>
- |_|  |_|\__,_| _\_||_|  |_|_|  \___/ \___/|_|  |_|<br></br>
-
+<div align="center">
+  <img src="./mushroom.png"><br><br>
+</div>
 
 ## Mushroom（蘑菇）：并发B<sup>link</sup>树索引
 [English Version of README](./README.en.md)
