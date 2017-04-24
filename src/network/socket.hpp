@@ -8,15 +8,33 @@
 #ifndef _SOCKET_HPP_
 #define _SOCKET_HPP_
 
+#include "endpoint.hpp"
+
 namespace Mushroom {
 
 class Socket
 {
 	public:
-		void Close();
+		Socket();
+
+		~Socket();
+
+		int fd() const;
+
+		bool Create();
+
+		bool Close();
+
+		bool Connect(const EndPoint &end_point);
+
+		bool Bind();
+
+		bool Listen();
+
+		bool Accept();
 
 	private:
-		int fd_;
+		int      fd_;
 };
 
 } // namespace Mushroom

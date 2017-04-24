@@ -9,5 +9,18 @@
 
 namespace Mushroom {
 
+bool Client::Connect(const EndPoint &server)
+{
+	if (!socket_.Create()) {
+		// Log(Error, "client socket create failed :(\n");
+		return false;
+	}
+	if (!socket_.Connect(server)) {
+		// Log(Error, "connect server failed :(\n");
+		return false;
+	}
+	end_point_ = server;
+	return true;
+}
 
 } // namespace Mushroom

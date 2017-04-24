@@ -8,11 +8,21 @@
 #ifndef _CLIENT_HPP_
 #define _CLIENT_HPP_
 
+#include "socket.hpp"
+#include "endpoint.hpp"
+
 namespace Mushroom {
 
 class Client
 {
+	public:
+		Client();
 
+		bool Connect(const EndPoint &server);
+
+	private:
+		EndPoint end_point_;
+		Socket   socket_;
 };
 
 } // namespace Mushroom

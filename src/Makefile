@@ -3,9 +3,11 @@ CPPFLAGS = -std=c++11 -Wall -Wextra -O3
 LDFLAGS = -pthread
 DFLAGS =
 
-File = $(shell find mushroom -name '*.cpp')
+MushroomFile = $(shell find mushroom -name '*.cpp')
+NetworkFile  = $(shell find network -name '*.cpp')
 
-OBJ = $(File:.cpp=.o)
+MOBJ = $(MushroomFile:.cpp=.o)
+NOBJ = $(NetworkFile:.cpp=.o)
 
 QUEUE = ../test/queue.cpp
 
@@ -14,23 +16,25 @@ THREAD = ../test/thread.cpp
 .cpp.o:
 		$(CPP) $(CPPFLAGS) -c $< -o $@ $(DFLAGS) $(LDFLAGS)
 
-blinktree_single_thread: $(OBJ) $(QUEUE)
+blinktree_single_thread: $(MOBJ) $(QUEUE)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
-blinktree_with_queue: $(OBJ) $(QUEUE)
+blinktree_with_queue: $(MOBJ) $(QUEUE)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
-blinktree_multi_thread: $(OBJ) $(THREAD)
+blinktree_multi_thread: $(MOBJ) $(THREAD)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
-lsmtree_single_thread:$(OBJ) $(QUEUE)
+lsmtree_single_thread:$(MOBJ) $(QUEUE)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
-lsmtree_with_queue: $(OBJ) $(QUEUE)
+lsmtree_with_queue: $(MOBJ) $(QUEUE)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
-lsmtree_multi_thread: $(OBJ) $(THREAD)
+lsmtree_multi_thread: $(MOBJ) $(THREAD)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
+
+network: $(NOBJ)
 
 tag:
 	cd .. && ctags -R -f .tags
