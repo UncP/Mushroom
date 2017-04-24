@@ -12,7 +12,7 @@
 
 namespace Mushroom {
 
-EndPoint::EndPoint() { }
+EndPoint::EndPoint():address_(0) { }
 
 EndPoint::EndPoint(const char *str)
 {

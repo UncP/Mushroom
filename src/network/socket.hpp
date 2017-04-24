@@ -33,6 +33,14 @@ class Socket
 
 		bool Accept();
 
+		bool SetOption(int value, bool flag);
+
+		bool GetOption(int value, bool *flag);
+
+		bool SetNonBlock(bool flag);
+
+		bool AddFlag(int flag);
+
 	private:
 		int      fd_;
 };

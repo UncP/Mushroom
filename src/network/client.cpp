@@ -9,6 +9,8 @@
 
 namespace Mushroom {
 
+Client::Client() { }
+
 bool Client::Connect(const EndPoint &server)
 {
 	if (!socket_.Create()) {
@@ -19,8 +21,14 @@ bool Client::Connect(const EndPoint &server)
 		// Log(Error, "connect server failed :(\n");
 		return false;
 	}
-	end_point_ = server;
+	server_ = server;
 	return true;
 }
+
+bool Close()
+{
+	return socket_.Close();
+}
+
 
 } // namespace Mushroom

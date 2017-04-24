@@ -78,4 +78,29 @@ bool Socket::Accept()
 	return flag;
 }
 
+bool Socket::SetOption(int value, bool flag)
+{
+	return !setsockopt(fd_, SOL_SOCKET, value, &flag, sizeof(flag));
+}
+
+bool Socket::GetOption(int value, bool *flag)
+{
+	return !getsockopt(fd_, SOL_SOCKET, value, flag, sizeof(*flag));
+}
+
+bool Socket::SetNonBlock(bool flag)
+{
+	int value = fcntl(fd_, F_GETFL, 0);
+	if (value < 0) return false;
+	if (flag)
+	value = flag ? (value | O_NONBLOCK) : (value & ~O_NONBLOCK);
+	return !fcntl(fd_, F_SETFL, value);
+}
+
+bool Socket::AddFlag(int flag)
+{
+	int value = fcntl(fd_, F_GETFL, 0);
+	return !fcntl(fd_, F_SETFL, value | flag);
+}
+
 } // namespace Mushroom

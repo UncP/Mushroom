@@ -20,9 +20,15 @@ class Client
 
 		bool Connect(const EndPoint &server);
 
+		void OnRead();
+
+		void OnWrite();
+
+		bool Close();
+
 	private:
-		EndPoint end_point_;
 		Socket   socket_;
+		EndPoint server_;
 };
 
 } // namespace Mushroom
