@@ -6,28 +6,25 @@
 **/
 
 #include "client.hpp"
+#include "connection.hpp"
 
 namespace Mushroom {
 
-Client::Client() { }
+Client::Client():connection_(0) { }
 
 bool Client::Connect(const EndPoint &server)
 {
-	if (!socket_.Create()) {
-		// Log(Error, "client socket create failed :(\n");
-		return false;
-	}
-	if (!socket_.Connect(server)) {
-		// Log(Error, "connect server failed :(\n");
-		return false;
-	}
+	connection_ = new Connection(server);
 	server_ = server;
 	return true;
 }
 
 bool Close()
 {
-	return socket_.Close();
+	if (connection_)
+		return connection_->Close();
+	else
+		return true;
 }
 
 

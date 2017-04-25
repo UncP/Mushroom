@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <cstring>
 #include <cassert>
 
@@ -23,6 +24,11 @@ Socket::~Socket() { }
 int Socket::fd() const
 {
 	return fd_;
+}
+
+bool Socket::Valid() const
+{
+	return fd_ != -1;
 }
 
 bool Socket::Create()
@@ -83,9 +89,10 @@ bool Socket::SetOption(int value, bool flag)
 	return !setsockopt(fd_, SOL_SOCKET, value, &flag, sizeof(flag));
 }
 
-bool Socket::GetOption(int value, bool *flag)
+bool Socket::GetOption(int value, int *ret)
 {
-	return !getsockopt(fd_, SOL_SOCKET, value, flag, sizeof(*flag));
+	socklen_t len = sizeof(*ret);
+	return !getsockopt(fd_, SOL_SOCKET, value, ret, &len);
 }
 
 bool Socket::SetNonBlock(bool flag)

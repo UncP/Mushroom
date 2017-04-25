@@ -13,7 +13,7 @@
 
 namespace Mushroom {
 
-Poller::Poller(int listen_fd):listen_fd_(listen_fd)
+Poller::Poller()
 {
 	fd_ = epoll_create1(EPOLL_CLOEXEC);
 	assert(fd_ >= 0);

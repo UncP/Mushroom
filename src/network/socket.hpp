@@ -21,6 +21,8 @@ class Socket
 
 		int fd() const;
 
+		bool Valid() const;
+
 		bool Create();
 
 		bool Close();
@@ -35,7 +37,7 @@ class Socket
 
 		bool SetOption(int value, bool flag);
 
-		bool GetOption(int value, bool *flag);
+		bool GetOption(int value, int *ret);
 
 		bool SetNonBlock(bool flag);
 

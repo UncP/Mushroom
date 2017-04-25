@@ -21,7 +21,7 @@ namespace Mushroom {
 class Poller
 {
 	public:
-		Poller(const Socket &listen);
+		Poller();
 
 		~Poller();
 
