@@ -27,9 +27,10 @@ class Server
 		bool Close();
 
 	private:
-		EndPoint end_point_;
 		Socket   socket_;
 		Poller  *poller_;
+
+		void Accept();
 };
 
 } // namespace Mushroom

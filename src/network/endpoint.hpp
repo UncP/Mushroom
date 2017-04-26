@@ -21,6 +21,8 @@ class EndPoint
 
 		EndPoint();
 
+		EndPoint(uint32_t address);
+
 		EndPoint(const char *str);
 
 		~EndPoint();

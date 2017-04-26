@@ -15,11 +15,16 @@ Client::Client():connection_(0) { }
 bool Client::Connect(const EndPoint &server)
 {
 	connection_ = new Connection(server);
+	if (!connection_->Success()) {
+		delete connection_;
+		connection_ = 0;
+		return false;
+	}
 	server_ = server;
 	return true;
 }
 
-bool Close()
+bool Client::Close()
 {
 	if (connection_)
 		return connection_->Close();

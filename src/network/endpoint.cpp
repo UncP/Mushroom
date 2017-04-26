@@ -5,14 +5,16 @@
  *    > Created Time:  2017-04-23 23:25:45
 **/
 
-#include <cassert>
 #include <arpa/inet.h>
+#include <cassert>
 
 #include "endpoint.hpp"
 
 namespace Mushroom {
 
 EndPoint::EndPoint():address_(0) { }
+
+EndPoint::EndPoint(uint32_t address):address_(address) { }
 
 EndPoint::EndPoint(const char *str)
 {

@@ -8,6 +8,7 @@
 #include "connection.hpp"
 
 #include <sys/poll.h>
+#include <cassert>
 
 namespace Mushroom {
 
@@ -19,28 +20,39 @@ Connection::Connection(const EndPoint &server):state_(Invalid)
 	}
 	if (!socket_.Connect(server)) {
 		state_ = Failed;
-		Log(Error, )
+		// Log(Error, "connect server %s failed :(\n", server.ToString());
 		return ;
+	}
+	struct pollfd pfd;
+	pfd.fd = socket_.fd();
+	pfd.events = POLLOUT | POLLERR;
+	int r = poll(&pfd, 1, 0);
+	if (r == 1 && pfd.revents == POLLOUT) {
+		state_ = Connected;
+		assert(socket_.GetSockName(&local_));
+		assert(socket_.GetPeerName(&peer_));
+	} else {
+		state_ = Failed;
 	}
 }
 
-bool Connection::Connect(const EndPoint &server)
+Connection::Connection(const Socket &socket):state_(Invalid), socket_(socket)
 {
-	if (state_ == Connected) return false;
-	if (!socket_.Valid())
-		if (!socket_.Create())
-			return false;
-	assert(socket_.Valid());
-	if (!socket.Connect(server))
-		return false;
-	struct pollfd pfd;
-	pfd.fd = socket_->fd();
-  pfd.events = POLLOUT | POLLERR;
-  int r = poll(&pfd, 1, 0);
-  if ()
-
-	return true;
+	if (socket_.GetSockName(&local_) && socket_.GetPeerName(&peer_))
+		state_ = Connected;
 }
 
+bool Connection::Success() const
+{
+	return state_ == Connected;
+}
+
+bool Connection::Close()
+{
+	if (state_ == Connected && !socket_.Close())
+		return false;
+	state_ = Invalid;
+	return true;
+}
 
 } // namespace Mushroom

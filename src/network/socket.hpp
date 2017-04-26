@@ -17,6 +17,8 @@ class Socket
 	public:
 		Socket();
 
+		Socket(int fd);
+
 		~Socket();
 
 		int fd() const;
@@ -33,13 +35,17 @@ class Socket
 
 		bool Listen();
 
-		bool Accept();
+		int Accept();
 
 		bool SetOption(int value, bool flag);
 
 		bool GetOption(int value, int *ret);
 
 		bool SetNonBlock(bool flag);
+
+		bool GetPeerName(EndPoint *endpoint);
+
+		bool GetSockName(EndPoint *endpoint);
 
 		bool AddFlag(int flag);
 

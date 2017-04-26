@@ -6,6 +6,9 @@
 **/
 
 #include "server.hpp"
+#include "connection.hpp"
+
+#include <cassert>
 
 namespace Mushroom {
 
@@ -37,6 +40,16 @@ bool Server::Close()
 		// Log(Info, "server closed")
 	}
 	return flag;
+}
+
+void Server::Accept()
+{
+	int fd;
+	if ((fd = socket_.Accept()) >= 0) {
+		Socket client(fd);
+		Connection *connection = new Connection(client);
+		assert(connection->Success());
+	}
 }
 
 } // namespaceMushroom

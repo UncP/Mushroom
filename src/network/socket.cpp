@@ -19,6 +19,8 @@ namespace Mushroom {
 
 Socket::Socket():fd_(-1) { }
 
+Socket::Socket(int fd):fd_(fd) { }
+
 Socket::~Socket() { }
 
 int Socket::fd() const
@@ -72,16 +74,17 @@ bool Socket::Listen()
 	return !listen(fd_, 1024);
 }
 
-bool Socket::Accept()
+int Socket::Accept()
 {
 	struct sockaddr_in client;
+	memset(&client, 0, sizeof(client));
 	socklen_t len = sizeof(client);
-	bool flag = !accept(fd_, (struct sockaddr *)&client, &len);
+	int fd = accept(fd_, (struct sockaddr *)&client, &len);
 	// char buf[EndPoint::MaxLen];
 	// assert(inet_ntop(AF_INET, &client.sin_addr, buf, EndPoint::MaxLen));
 	// in_port_t port = ntohs(client.sin_port);
 	// Log(Info, "connection from %15s  port: %d\n", buf, port);
-	return flag;
+	return fd;
 }
 
 bool Socket::SetOption(int value, bool flag)
@@ -102,6 +105,30 @@ bool Socket::SetNonBlock(bool flag)
 	if (flag)
 	value = flag ? (value | O_NONBLOCK) : (value & ~O_NONBLOCK);
 	return !fcntl(fd_, F_SETFL, value);
+}
+
+bool Socket::GetPeerName(EndPoint *endpoint)
+{
+	struct sockaddr_in addr;
+	memset(&addr, 0, sizeof(addr));
+	socklen_t len = sizeof(addr);
+	if (!getsockname(fd_, (struct sockaddr *)&addr, &len)) {
+		*endpoint = EndPoint(addr.sin_addr.s_addr);
+		return true;
+	}
+	return false;
+}
+
+bool Socket::GetSockName(EndPoint *endpoint)
+{
+	struct sockaddr_in addr;
+	memset(&addr, 0, sizeof(addr));
+	socklen_t len = sizeof(addr);
+	if (!getpeername(fd_, (struct sockaddr *)&addr, &len)) {
+		*endpoint = EndPoint(addr.sin_addr.s_addr);
+		return true;
+	}
+	return false;
 }
 
 bool Socket::AddFlag(int flag)

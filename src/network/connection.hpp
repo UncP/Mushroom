@@ -9,6 +9,7 @@
 #define _CONNECTION_HPP_
 
 #include "socket.hpp"
+#include "endpoint.hpp"
 
 namespace Mushroom {
 
@@ -17,14 +18,22 @@ class Poller;
 class Connection
 {
 	public:
-		static enum { Invalid, Connected, Closed, Failed } State;
+		enum State { Invalid, Connected, Closed, Failed };
+
+		Connection(const Socket &socket);
 
 		Connection(const EndPoint &server);
 
+		bool Success() const;
+
+		bool Close();
+
 	private:
-		State   state_;
-		Socket  socket_;
-		Poller *poller_;
+		State    state_;
+		Socket   socket_;
+		EndPoint local_;
+		EndPoint peer_;
+		Poller  *poller_;
 };
 
 } // namespace Mushroom
