@@ -10,8 +10,6 @@
 
 #include <cstdint>
 
-#include "pthread_spin_lock_shim.h"
-
 namespace Mushroom {
 
 typedef uint32_t valptr;
