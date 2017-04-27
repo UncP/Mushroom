@@ -4,8 +4,7 @@ language:
   - c++
 
 compiler:
-  - gcc-5.3
-  # - clang
+  - gcc-5.4
 
 matrix:
   include:
@@ -16,12 +15,11 @@ matrix:
 before_install:
   - pwd
   - echo $PATH
-  # - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update             ; fi
-  # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew upgrade       ; fi
 
 script:
-  - g++ -std=c++11 -O3 test_data.cpp -o test_data 
-  - cd src && make -j8 blinktree_single_thread blinktree_with_queue blinktree_multi_thread lsmtree_single_thread lsmtree_with_queue lsmtree_multi_thread
+  - g++ -std=c++11 -O3 test_data.cpp -o test_data
+  - cd src && make -j8 blinktree_single_thread blinktree_with_queue blinktree_multi_thread \
+  lsmtree_single_thread lsmtree_with_queue lsmtree_multi_thread
 
 notifications:
   email:
