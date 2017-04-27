@@ -36,7 +36,7 @@ class MushroomDBTestData
 			std::ostringstream os;
 			os << total;
 			if (access("data", F_OK))
-				assert(mkdir("data", S_IRUSR | S_IWUSR | S_IROTH) >= 0);
+				assert(mkdir("data", S_IRUSR | S_IWUSR | S_IXUSR | S_IROTH) >= 0);
 			std::string base("data/"+os.str());
 			for (int i = 0; i != file_num; ++i) {
 				std::ostringstream o;

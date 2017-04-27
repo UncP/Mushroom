@@ -28,7 +28,7 @@ class Key
 		}
 		Key& operator=(const Key &key) {
 			if (size_ != key.size_) {
-				delete data_;
+				delete [] data_;
 				size_ = key.size_;
 				data_ = new char[size_];
 			}
@@ -45,7 +45,7 @@ class Key
 
 		std::string ToString() const { return std::string(data_, size_) + "\n"; }
 
-		~Key() { delete data_; }
+		~Key() { delete [] data_; }
 
 		uint32_t size_;
 		char    *data_;
