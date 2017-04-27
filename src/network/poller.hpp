@@ -10,13 +10,13 @@
 
 #include <sys/epoll.h>
 
-#include "socket.hpp"
-
 const uint32_t ReadEvent  = EPOLLIN;
 const uint32_t WriteEvent = EPOLLOUT;
 const uint32_t MaxEvents  = 1024;
 
 namespace Mushroom {
+
+class Connection;
 
 class Poller
 {
@@ -25,11 +25,11 @@ class Poller
 
 		~Poller();
 
-		void AddChannel(Socket *socket);
+		void AddConnection(Connection *connection);
 
-		void UpdateChannel(Socket *socket);
+		void UpdateConnection(Connection *connection);
 
-		void RemoveChannel(Socket *socket);
+		void RemoveConnection(Connection *connection);
 
 		void LoopOnce();
 

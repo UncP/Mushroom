@@ -10,6 +10,7 @@
 #include <cstring>
 
 #include "poller.hpp"
+#include "connection.hpp"
 
 namespace Mushroom {
 
@@ -24,26 +25,45 @@ Poller::~Poller()
 	close(fd_);
 }
 
-void Poller::AddChannel(Socket *socket)
+void Poller::AddConnection(Connection *connection)
 {
-
+	struct epoll_event event;
+	memset(&event, 0, sizeof(event));
+	event.events = connection->Events();
+	event.data.ptr = connection;
+	assert(!epoll_ctl(fd_, EPOLL_CTL_ADD, connection->fd(), &event));
 }
 
-void Poller::UpdateChannel(Socket *socket)
+void Poller::UpdateConnection(Connection *connection)
 {
-	// struct epoll_event event;
-	// memset(&event, 0, sizeof(event));
+	struct epoll_event event;
+	memset(&event, 0, sizeof(event));
+	event.events = connection->Events();
+	event.data.ptr = connection;
+	assert(!epoll_ctl(fd_, EPOLL_CTL_MOD, connection->fd(), &event));
 }
 
-void Poller::RemoveChannel(Socket *socket)
+void Poller::RemoveConnection(Connection *connection)
 {
 
 }
 
 void Poller::LoopOnce()
 {
-
+	int ready = epoll_wait(fd_, events_, MaxEvents, -1);
+	assert(ready != -1 || errno != EINTR);
+	for (; --ready >= 0; ) {
+		Connection *connection = (Connection *)events_[ready].data.ptr;
+		uint32_t event = events_[ready].events;
+		if (event & ReadEvent)
+			// connection->HandleRead();
+			;
+		else if (event & WriteEvent)
+			// connection->HandleWrite();
+			;
+		else
+			assert(0);
+	}
 }
-
 
 } // namespace Mushroom

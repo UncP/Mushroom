@@ -5,14 +5,15 @@
  *    > Created Time:  2017-04-25 22:11:08
 **/
 
-#include "connection.hpp"
-
-#include <sys/poll.h>
+#include <poll.h>
 #include <cassert>
+
+#include "connection.hpp"
+#include "poller.hpp"
 
 namespace Mushroom {
 
-Connection::Connection(const EndPoint &server):state_(Invalid)
+Connection::Connection(const EndPoint &server):state_(Invalid), events_(ReadEvent | WriteEvent)
 {
 	if (!socket_.Create()) {
 		// Log(Error, "socket create failed :(\n");
@@ -36,7 +37,8 @@ Connection::Connection(const EndPoint &server):state_(Invalid)
 	}
 }
 
-Connection::Connection(const Socket &socket):state_(Invalid), socket_(socket)
+Connection::Connection(const Socket &socket):state_(Invalid), socket_(socket),
+events_(ReadEvent | WriteEvent)
 {
 	if (socket_.GetSockName(&local_) && socket_.GetPeerName(&peer_))
 		state_ = Connected;
@@ -45,6 +47,16 @@ Connection::Connection(const Socket &socket):state_(Invalid), socket_(socket)
 bool Connection::Success() const
 {
 	return state_ == Connected;
+}
+
+int Connection::fd() const
+{
+	return socket_.fd();
+}
+
+uint32_t Connection::Events() const
+{
+	return events_;
 }
 
 bool Connection::Close()

@@ -13,12 +13,10 @@
 
 namespace Mushroom {
 
-class Poller;
-
 class Connection
 {
 	public:
-		enum State { Invalid, Connected, Closed, Failed };
+		enum State { Invalid, HandShake, Connected, Closed, Failed };
 
 		Connection(const Socket &socket);
 
@@ -26,14 +24,18 @@ class Connection
 
 		bool Success() const;
 
+		int fd() const;
+
+		uint32_t Events() const;
+
 		bool Close();
 
 	private:
 		State    state_;
 		Socket   socket_;
+		uint32_t events_;
 		EndPoint local_;
 		EndPoint peer_;
-		Poller  *poller_;
 };
 
 } // namespace Mushroom
