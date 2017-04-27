@@ -37,6 +37,10 @@ class Socket
 
 		int Accept();
 
+		ssize_t Send(const char *data, uint32_t len);
+
+		ssize_t Read(char *data, uint32_t *len);
+
 		bool SetOption(int value, bool flag);
 
 		bool GetOption(int value, int *ret);

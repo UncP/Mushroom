@@ -1,7 +1,24 @@
-dist: trusty
+# dist: trusty
 
-language:
-  - c++
+# language:
+#   - c++
+
+# compiler:
+#   - gcc-5.4
+
+# matrix:
+#   include:
+#     - os: linux
+#     - os: osx
+#       osx_image: xcode8
+
+# before_install:
+#   - pwd
+#   - echo $PATH
+
+sudo: required
+
+language: cpp
 
 compiler:
   - gcc-5.4
@@ -9,17 +26,10 @@ compiler:
 matrix:
   include:
     - os: linux
-    - os: osx
-      osx_image: xcode8
-
-before_install:
-  - pwd
-  - echo $PATH
 
 script:
   - g++ -std=c++11 -O3 test_data.cpp -o test_data
-  - cd src && make -j8 blinktree_single_thread blinktree_with_queue blinktree_multi_thread \
-  lsmtree_single_thread lsmtree_with_queue lsmtree_multi_thread
+  - cd src && make -j8 lsmtree_with_queue
 
 notifications:
   email:

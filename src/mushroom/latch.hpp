@@ -31,7 +31,6 @@ typedef std::atomic_flag pthread_spinlock_t;
 
 static inline int pthread_spin_destroy(pthread_spinlock_t *lock) {
   UNUSED(lock);
-  // do nothing
   return 0;
 }
 

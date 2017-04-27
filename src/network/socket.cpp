@@ -87,6 +87,19 @@ int Socket::Accept()
 	return fd;
 }
 
+ssize_t Socket::Send(const char *data, uint32_t len)
+{
+	ssize_t sent = 0;
+	for (; sent < len;) {
+		send(fd_, data, len);
+	}
+}
+
+ssize_t Socket::Read(char *data, uint32_t *len)
+{
+
+}
+
 bool Socket::SetOption(int value, bool flag)
 {
 	return !setsockopt(fd_, SOL_SOCKET, value, &flag, sizeof(flag));

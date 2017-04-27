@@ -21,6 +21,16 @@ class Buffer
 
 		~Buffer();
 
+		uint32_t size() const;
+
+		char* begin() const;
+
+		char* end() const;
+
+		void Append(const char *data, uint32_t len);
+
+		void Consume(uint32_t len);
+
 	private:
 		char    *data_;
 		uint32_t size_;

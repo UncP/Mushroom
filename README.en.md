@@ -35,6 +35,7 @@
 | 0.6.2  | reduce dependency on standard library, speed up compile, reduce program size about 42.1%|
 | 0.6.4  |using posix spin lock, Optimize MushroomDB and BLinkTree structure|
 | 0.7.0  |         Log-Structured Merge Tree |
+| 0.8.0  |       TCP Communication Library (in construction)   |
 
 
 ### B<sup>link</sup> Tree BenchFuck
