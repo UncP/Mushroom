@@ -37,8 +37,8 @@ Connection::Connection(const EndPoint &server):state_(Invalid), events_(ReadEven
 	}
 }
 
-Connection::Connection(const Socket &socket):state_(Invalid), socket_(socket),
-events_(ReadEvent | WriteEvent)
+Connection::Connection(const Socket &socket, uint32_t events):state_(Invalid), socket_(socket),
+events_(events)
 {
 	if (socket_.GetSockName(&local_) && socket_.GetPeerName(&peer_))
 		state_ = Connected;

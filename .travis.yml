@@ -1,26 +1,6 @@
-
-# language:
-#   - c++
-
-# compiler:
-#   - gcc-5.4
-
-# matrix:
-#   include:
-#     - os: linux
-#     - os: osx
-#       osx_image: xcode8
-
-# before_install:
-#   - pwd
-#   - echo $PATH
-
 dist: trusty
 
 language: cpp
-
-compiler:
-  - g++
 
 matrix:
   include:

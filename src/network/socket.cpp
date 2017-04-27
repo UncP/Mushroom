@@ -12,8 +12,10 @@
 #include <fcntl.h>
 #include <cstring>
 #include <cassert>
+#include <cerrno>
 
 #include "socket.hpp"
+#include "buffer.hpp"
 
 namespace Mushroom {
 
@@ -71,7 +73,7 @@ bool Socket::Bind()
 
 bool Socket::Listen()
 {
-	return !listen(fd_, 1024);
+	return !listen(fd_, 32);
 }
 
 int Socket::Accept()
@@ -87,17 +89,30 @@ int Socket::Accept()
 	return fd;
 }
 
-ssize_t Socket::Send(const char *data, uint32_t len)
+void Socket::Write(Buffer *buffer)
 {
-	ssize_t sent = 0;
-	for (; sent < len;) {
-		send(fd_, data, len);
+	uint32_t left = buffer->size();
+	for (; left;) {
+		ssize_t r = write(fd_, buffer->begin(), buffer->size());
+		if (r == -1 && errno == EINTR)
+			continue;
+		assert(r > 0);
+		left -= r;
+		buffer->Consume(r);
 	}
 }
 
-ssize_t Socket::Read(char *data, uint32_t *len)
+void Socket::Read(Buffer *buffer)
 {
-
+	for (;;) {
+		ssize_t r = read(fd_, buffer->end(), buffer->space());
+		if (r == -1 && errno == EINTR)
+			continue;
+		if (r == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+			break;
+		assert(r > 0);
+		buffer->Expand(r);
+	}
 }
 
 bool Socket::SetOption(int value, bool flag)

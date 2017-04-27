@@ -37,9 +37,9 @@ class Socket
 
 		int Accept();
 
-		ssize_t Send(const char *data, uint32_t len);
+		void Write(Buffer *buffer);
 
-		ssize_t Read(char *data, uint32_t *len);
+		void Read(Buffer *buffer);
 
 		bool SetOption(int value, bool flag);
 

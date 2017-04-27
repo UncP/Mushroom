@@ -34,6 +34,11 @@ char* Buffer::end() const
 	return data_ + end_;
 }
 
+uint32_t Buffer::space() const
+{
+	return BufferSize - end_;
+}
+
 void Buffer::Append(const char *data, uint32_t len)
 {
 	assert((end_ + len) <= BufferSize);
@@ -42,7 +47,14 @@ void Buffer::Append(const char *data, uint32_t len)
 
 void Buffer::Consume(uint32_t len)
 {
-	beg_ += len;
+	beg_  += len;
+	size_ -= len;
+}
+
+void Buffer::Expand(uint32_t len)
+{
+	end_  += len;
+	size_ += len;
 }
 
 } // namespace Mushroom
