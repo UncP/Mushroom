@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 	auto beg = std::chrono::high_resolution_clock::now();
 	int all = total == 1 ? 1 : total / thread_num;
 	pthread_t ids[thread_num];
-	ThreadArg args[thread_num];
+	ThreadArg *args = new ThreadArg[thread_num];
 	for (int i = 0; i != thread_num; ++i) {
 		args[i].i = i;
 		args[i].all = all;
@@ -113,6 +113,7 @@ int main(int argc, char **argv)
 	// auto t2 = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	// printf("\033[34mget time: %f  s\033[0m\n", t2);
 
+	delete [] args;
 	db->Close();
 	delete db;
 
