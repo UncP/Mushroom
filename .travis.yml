@@ -20,7 +20,7 @@ dist: trusty
 language: cpp
 
 compiler:
-  - gcc-5.3
+  - g++
 
 matrix:
   include:
