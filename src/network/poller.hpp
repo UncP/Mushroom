@@ -10,6 +10,8 @@
 
 #include <sys/epoll.h>
 
+#include "socket.hpp"
+
 const uint32_t ReadEvent  = EPOLLIN;
 const uint32_t WriteEvent = EPOLLOUT;
 const uint32_t MaxEvents  = 1024;
@@ -21,21 +23,18 @@ class Connection;
 class Poller
 {
 	public:
-		Poller();
+		Poller(Connection *connection);
 
 		~Poller();
-
-		void AddConnection(Connection *connection);
-
-		void UpdateConnection(Connection *connection);
-
-		void RemoveConnection(Connection *connection);
 
 		void LoopOnce();
 
 	private:
+		Socket             listen_;
 		int                fd_;
 		struct epoll_event events_[MaxEvents];
+
+		void AddConnection(Connection *connection);
 };
 
 } // namespace Mushroom

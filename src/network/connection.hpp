@@ -8,34 +8,59 @@
 #ifndef _CONNECTION_HPP_
 #define _CONNECTION_HPP_
 
+#include <functional>
+
 #include "socket.hpp"
 #include "endpoint.hpp"
+#include "buffer.hpp"
 
 namespace Mushroom {
+
+typedef std::function<void()> ReadCallBack;
+typedef std::function<void()> WriteCallBack;
 
 class Connection
 {
 	public:
-		enum State { Invalid, HandShake, Connected, Closed, Failed };
-
-		Connection(const Socket &socket);
+		Connection(const Socket &socket, uint32_t events);
 
 		Connection(const EndPoint &server);
 
-		bool Success() const;
-
-		int fd() const;
+		Socket socket() const;
 
 		uint32_t Events() const;
 
+		bool Success() const;
+
+		Buffer& GetInput();
+
+		Buffer& GetOutput();
+
+		void HandleRead();
+
+		void HandleWrite();
+
+		void OnRead(const ReadCallBack &readcb);
+
+		void OnWrite(const WriteCallBack &writecb_);
+
 		bool Close();
 
+		void Send(const char *str);
+
+		void Send(Buffer &buffer);
+
+		uint32_t Send(const char *str, uint32_t len);
+
 	private:
-		State    state_;
 		Socket   socket_;
 		uint32_t events_;
-		EndPoint local_;
-		EndPoint peer_;
+		bool     state_;
+		Buffer   input_;
+		Buffer   output_;
+
+		ReadCallBack  readcb_;
+		WriteCallBack writecb_;
 };
 
 } // namespace Mushroom

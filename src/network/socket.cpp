@@ -15,7 +15,6 @@
 #include <cerrno>
 
 #include "socket.hpp"
-#include "buffer.hpp"
 
 namespace Mushroom {
 
@@ -56,7 +55,7 @@ bool Socket::Connect(const EndPoint &end_point)
 	struct sockaddr_in server;
 	memset(&server, 0, sizeof(server));
 	server.sin_family      = AF_INET;
-	server.sin_port        = htons(ServerPort);
+	server.sin_port        = htons(8000);
 	server.sin_addr.s_addr = end_point.Address();
 	return !connect(fd_, (const struct sockaddr *)&server, sizeof(server));
 }
@@ -66,7 +65,7 @@ bool Socket::Bind()
 	struct sockaddr_in server;
 	memset(&server, 0, sizeof(server));
 	server.sin_family      = AF_INET;
-	server.sin_port        = htons(ServerPort);
+	server.sin_port        = htons(8000);
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 	return !bind(fd_, (const struct sockaddr *)&server, sizeof(server));
 }
@@ -82,37 +81,7 @@ int Socket::Accept()
 	memset(&client, 0, sizeof(client));
 	socklen_t len = sizeof(client);
 	int fd = accept(fd_, (struct sockaddr *)&client, &len);
-	// char buf[EndPoint::MaxLen];
-	// assert(inet_ntop(AF_INET, &client.sin_addr, buf, EndPoint::MaxLen));
-	// in_port_t port = ntohs(client.sin_port);
-	// Log(Info, "connection from %15s  port: %d\n", buf, port);
 	return fd;
-}
-
-void Socket::Write(Buffer *buffer)
-{
-	uint32_t left = buffer->size();
-	for (; left;) {
-		ssize_t r = write(fd_, buffer->begin(), buffer->size());
-		if (r == -1 && errno == EINTR)
-			continue;
-		assert(r > 0);
-		left -= r;
-		buffer->Consume(r);
-	}
-}
-
-void Socket::Read(Buffer *buffer)
-{
-	for (;;) {
-		ssize_t r = read(fd_, buffer->end(), buffer->space());
-		if (r == -1 && errno == EINTR)
-			continue;
-		if (r == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
-			break;
-		assert(r > 0);
-		buffer->Expand(r);
-	}
 }
 
 bool Socket::SetOption(int value, bool flag)
@@ -124,15 +93,6 @@ bool Socket::GetOption(int value, int *ret)
 {
 	socklen_t len = sizeof(*ret);
 	return !getsockopt(fd_, SOL_SOCKET, value, ret, &len);
-}
-
-bool Socket::SetNonBlock(bool flag)
-{
-	int value = fcntl(fd_, F_GETFL, 0);
-	if (value < 0) return false;
-	if (flag)
-	value = flag ? (value | O_NONBLOCK) : (value & ~O_NONBLOCK);
-	return !fcntl(fd_, F_SETFL, value);
 }
 
 bool Socket::GetPeerName(EndPoint *endpoint)
@@ -162,7 +122,54 @@ bool Socket::GetSockName(EndPoint *endpoint)
 bool Socket::AddFlag(int flag)
 {
 	int value = fcntl(fd_, F_GETFL, 0);
+	assert(value != -1);
 	return !fcntl(fd_, F_SETFL, value | flag);
+}
+
+bool Socket::SetNonBlock()
+{
+	int value = fcntl(fd_, F_GETFL, 0);
+	assert(value != -1);
+	return !fcntl(fd_, F_SETFL, value | O_NONBLOCK);
+}
+
+bool Socket::operator==(const Socket &that) const
+{
+	return fd_ == that.fd_;
+}
+
+uint32_t Socket::Write(const char *data, uint32_t len)
+{
+	uint32_t written = 0;
+	for (; written < len;) {
+		ssize_t r = write(fd_, data + written, len - written);
+		if (r == -1 && errno == EINTR)
+			continue;
+		if (r == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+			break;
+		if (r == 0)
+			break;
+		assert(r > 0);
+		written += r;
+	}
+	return written;
+}
+
+uint32_t Socket::Read(char *data, uint32_t len)
+{
+	uint32_t has_read = 0;
+	for (;;) {
+		ssize_t r = read(fd_, data + has_read, len - has_read);
+		if (r == -1 && errno == EINTR)
+			continue;
+		if (r == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+			break;
+		if (r == 0)
+			break;
+		assert(r > 0);
+		has_read += r;
+	}
+	return has_read;
 }
 
 } // namespace Mushroom

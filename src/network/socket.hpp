@@ -37,21 +37,23 @@ class Socket
 
 		int Accept();
 
-		void Write(Buffer *buffer);
+		uint32_t Write(const char *data, uint32_t len);
 
-		void Read(Buffer *buffer);
+		uint32_t Read(char *data, uint32_t len);
 
 		bool SetOption(int value, bool flag);
 
 		bool GetOption(int value, int *ret);
-
-		bool SetNonBlock(bool flag);
 
 		bool GetPeerName(EndPoint *endpoint);
 
 		bool GetSockName(EndPoint *endpoint);
 
 		bool AddFlag(int flag);
+
+		bool SetNonBlock();
+
+		bool operator==(const Socket &socket) const;
 
 	private:
 		int      fd_;

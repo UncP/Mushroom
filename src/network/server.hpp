@@ -8,11 +8,9 @@
 #ifndef _SERVER_HPP_
 #define _SERVER_HPP_
 
-#include "endpoint.hpp"
-#include "socket.hpp"
-
 namespace Mushroom {
 
+class Connection;
 class Poller;
 
 class Server
@@ -24,13 +22,16 @@ class Server
 
 		bool Start();
 
+		void Stop();
+
 		bool Close();
 
-	private:
-		Socket   socket_;
-		Poller  *poller_;
+		void Run();
 
-		void Accept();
+	private:
+		Connection *connection_;
+		Poller     *poller_;
+		bool        running_;
 };
 
 } // namespace Mushroom

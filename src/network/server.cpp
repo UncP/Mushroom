@@ -7,48 +7,53 @@
 
 #include "server.hpp"
 #include "connection.hpp"
+#include "poller.hpp"
 
 #include <cassert>
 
 namespace Mushroom {
 
-Server::Server() { }
+Server::Server():connection_(0), poller_(0), running_(false) { }
 
-Server::~Server() { }
+Server::~Server()
+{
+	delete connection_;
+	delete poller_;
+}
 
 bool Server::Start()
 {
-	if (!socket_.Create()) {
-		// Log(Error, "server socket create failed :(\n");
+	Socket socket;
+	if (!socket.Create())
 		return false;
-	}
-	if (!socket_.Bind()) {
-		// Log(Error, "server socket bind port %hu failed :(\n", Port);
+	if (!socket.Bind())
 		return false;
-	}
-	if (!socket_.Listen()) {
-		// Log(Error, "server socket listen failed :(\n");
+	if (!socket.Listen())
 		return false;
-	}
+	connection_ = new Connection(socket, ReadEvent);
+	poller_ = new Poller(connection_);
+	running_ = true;
 	return true;
+}
+
+void Server::Stop()
+{
+	running_ = false;
 }
 
 bool Server::Close()
 {
-	bool flag = socket_.Close();
-	if (flag) {
-		// Log(Info, "server closed")
-	}
-	return flag;
+	running_ = false;
+	if (connection_)
+		return connection_->Close();
+	else
+		return true;
 }
 
-void Server::Accept()
+void Server::Run()
 {
-	int fd;
-	if ((fd = socket_.Accept()) >= 0) {
-		Socket client(fd);
-		Connection *connection = new Connection(client);
-		assert(connection->Success());
+	for (; running_;) {
+		poller_->LoopOnce();
 	}
 }
 

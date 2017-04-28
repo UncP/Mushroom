@@ -35,11 +35,15 @@ class Buffer
 
 		void Expand(uint32_t len);
 
+		void Clear();
+
 	private:
-		char    *data_;
-		uint32_t size_;
-		uint32_t beg_;
-		uint32_t end_;
+		char     *data_;
+		uint32_t  size_;
+		uint32_t  beg_;
+		uint32_t  end_;
+
+		void Reset();
 };
 
 } // namespace Mushroom

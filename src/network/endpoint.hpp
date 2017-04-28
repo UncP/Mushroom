@@ -12,8 +12,6 @@
 
 namespace Mushroom {
 
-const uint16_t ServerPort = 8000;
-
 class EndPoint
 {
 	public:

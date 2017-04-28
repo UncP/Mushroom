@@ -14,10 +14,11 @@
 
 namespace Mushroom {
 
-Poller::Poller()
+Poller::Poller(Connection *connection):listen_(connection->socket())
 {
 	fd_ = epoll_create1(EPOLL_CLOEXEC);
 	assert(fd_ >= 0);
+	AddConnection(connection);
 }
 
 Poller::~Poller()
@@ -31,38 +32,30 @@ void Poller::AddConnection(Connection *connection)
 	memset(&event, 0, sizeof(event));
 	event.events = connection->Events();
 	event.data.ptr = connection;
-	assert(!epoll_ctl(fd_, EPOLL_CTL_ADD, connection->fd(), &event));
-}
-
-void Poller::UpdateConnection(Connection *connection)
-{
-	struct epoll_event event;
-	memset(&event, 0, sizeof(event));
-	event.events = connection->Events();
-	event.data.ptr = connection;
-	assert(!epoll_ctl(fd_, EPOLL_CTL_MOD, connection->fd(), &event));
-}
-
-void Poller::RemoveConnection(Connection *connection)
-{
-
+	assert(!epoll_ctl(fd_, EPOLL_CTL_ADD, connection->socket().fd(), &event));
 }
 
 void Poller::LoopOnce()
 {
-	int ready = epoll_wait(fd_, events_, MaxEvents, -1);
-	assert(ready != -1 || errno != EINTR);
+	int ready = epoll_wait(fd_, events_, MaxEvents, 1000);
 	for (; --ready >= 0; ) {
 		Connection *connection = (Connection *)events_[ready].data.ptr;
+		Socket socket = connection->socket();
 		uint32_t event = events_[ready].events;
-		if (event & ReadEvent)
-			// connection->HandleRead();
-			;
-		else if (event & WriteEvent)
-			// connection->HandleWrite();
-			;
-		else
+		if (socket == listen_) {
+			int fd;
+			if ((fd = socket.Accept()) >= 0) {
+				Socket new_sock(fd);
+				assert(new_sock.SetNonBlock());
+				AddConnection(new Connection(new_sock, ReadEvent | WriteEvent));
+			}
+		} else if (event & ReadEvent) {
+			connection->HandleRead();
+		} else if (event & WriteEvent) {
+			connection->HandleWrite();
+		} else {
 			assert(0);
+		}
 	}
 }
 

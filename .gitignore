@@ -3,3 +3,5 @@ lsmtree_*
 *.o
 run
 .tags*
+client
+server
