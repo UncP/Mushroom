@@ -6,16 +6,20 @@ DFLAGS =
 MushroomFile = $(shell find mushroom -name '*.cpp')
 NetworkFile  = $(shell find network -name '*.cpp')
 LogFile  = $(shell find log -name '*.cpp')
+RaftFile = $(shell find raft -name '*.cpp')
 
 MOBJ = $(MushroomFile:.cpp=.o)
 NOBJ = $(NetworkFile:.cpp=.o)
 LOBJ = $(LogFile:.cpp=.o)
+ROBJ = $(RaftFile:.cpp=.o)
 
 QUEUE = ../test/mushroom_with_queue.cpp
 
 THREAD = ../test/mushroom_multi_thread.cpp
 
 network: client server
+
+raft: $(ROBJ)
 
 client: $(LOBJ) $(NOBJ) ../test/network_client.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^

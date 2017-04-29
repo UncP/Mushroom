@@ -10,6 +10,14 @@
 
 namespace Mushroom {
 
+class RPC
+{
+	public:
+		void Add();
+
+		bool Call(const char *fun, const void *args, void *reply);
+	private:
+};
 
 } // namespace Mushroom
 
