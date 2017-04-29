@@ -14,6 +14,9 @@ int main()
 	Server server;
 	server.Start();
 	server.Run();
+	server.OnRead([](Connection *con) {
+		printf("read %u bytes :)\n", con->GetInput().size());
+	});
 	server.Close();
 	return 0;
 }

@@ -57,4 +57,14 @@ void Server::Run()
 	}
 }
 
+void Server::OnRead(const ServerReadCallBack &readcb)
+{
+	readcb_ = readcb;
+}
+
+void Server::OnWrite(const ServerWriteCallBack &writecb)
+{
+	writecb_ = writecb;
+}
+
 } // namespaceMushroom

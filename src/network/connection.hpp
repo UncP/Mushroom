@@ -18,6 +18,7 @@ namespace Mushroom {
 
 typedef std::function<void()> ReadCallBack;
 typedef std::function<void()> WriteCallBack;
+typedef std::function<void()> SendCallBack;
 
 class Connection
 {
@@ -44,6 +45,8 @@ class Connection
 
 		void OnWrite(const WriteCallBack &writecb_);
 
+		void OnSend(const SendCallBack &sendcb);
+
 		bool Close();
 
 		void Send(const char *str);
@@ -55,12 +58,13 @@ class Connection
 	private:
 		Socket   socket_;
 		uint32_t events_;
-		bool     state_;
+		bool     connected_;
 		Buffer   input_;
 		Buffer   output_;
 
 		ReadCallBack  readcb_;
 		WriteCallBack writecb_;
+		SendCallBack  sendcb_;
 };
 
 } // namespace Mushroom

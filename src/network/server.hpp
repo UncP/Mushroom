@@ -8,9 +8,14 @@
 #ifndef _SERVER_HPP_
 #define _SERVER_HPP_
 
+#include "../log/log.hpp"
+#include "connection.hpp"
+
 namespace Mushroom {
 
-class Connection;
+typedef std::function<void(Connection *)> ServerReadCallBack;
+typedef std::function<void(Connection *)> ServerWriteCallBack;
+
 class Poller;
 
 class Server
@@ -28,10 +33,17 @@ class Server
 
 		void Run();
 
+		void OnRead(const ServerReadCallBack &readcb);
+
+		void OnWrite(const ServerWriteCallBack &writecb);
+
 	private:
 		Connection *connection_;
 		Poller     *poller_;
 		bool        running_;
+
+		ServerReadCallBack  readcb_;
+		ServerWriteCallBack writecb_;
 };
 
 } // namespace Mushroom

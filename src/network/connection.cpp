@@ -8,28 +8,33 @@
 #include <cassert>
 #include <cstring>
 
+#include "../log/log.hpp"
 #include "connection.hpp"
 #include "poller.hpp"
 
 namespace Mushroom {
 
-Connection::Connection(const EndPoint &server):events_(ReadEvent | WriteEvent), state_(false),
-readcb_(0), writecb_(0)
+Connection::Connection(const EndPoint &server):events_(ReadEvent | WriteEvent),
+connected_(false),
+readcb_(0), writecb_(0), sendcb_(0)
 {
-	if (!socket_.Create())
+	FatalIf(!socket_.Create(), "socket create failed :(\n");
+
+	if (!socket_.Connect(server)) {
+		Error("socket connect server %s failed :(\n", server.ToString().c_str());
 		return ;
-	if (!socket_.Connect(server))
-		return ;
-	assert(socket_.SetNonBlock());
-	state_ = true;
+	}
+
+	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(\n");
+	connected_ = true;
 }
 
 Connection::Connection(const Socket &socket, uint32_t events)
-:socket_(socket), events_(events) { }
+:socket_(socket), events_(events), readcb_(0), writecb_(0), sendcb_(0) { }
 
 bool Connection::Success() const
 {
-	return state_;
+	return connected_;
 }
 
 Socket Connection::socket() const
@@ -67,12 +72,18 @@ void Connection::OnWrite(const WriteCallBack &writecb)
 	writecb_ = writecb;
 }
 
+void Connection::OnSend(const SendCallBack &sendcb)
+{
+	sendcb_ = sendcb;
+}
+
 void Connection::HandleRead()
 {
 	input_.Clear();
 	input_.Expand(socket_.Read(input_.end(), input_.space()));
 	if (readcb_)
 		readcb_();
+	printf("read %u bytes\n", input_.size());
 }
 
 void Connection::HandleWrite()
@@ -96,6 +107,8 @@ uint32_t Connection::Send(const char *str, uint32_t len)
 {
 	uint32_t sent = socket_.Write(str, len);
 	output_.Append(str, sent);
+	if (sendcb_)
+		sendcb_();
 	return sent;
 }
 

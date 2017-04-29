@@ -38,6 +38,7 @@ void Poller::AddConnection(Connection *connection)
 void Poller::LoopOnce()
 {
 	int ready = epoll_wait(fd_, events_, MaxEvents, 1000);
+	printf("ready %d\n", ready);
 	for (; --ready >= 0; ) {
 		Connection *connection = (Connection *)events_[ready].data.ptr;
 		Socket socket = connection->socket();
@@ -48,6 +49,7 @@ void Poller::LoopOnce()
 				Socket new_sock(fd);
 				assert(new_sock.SetNonBlock());
 				AddConnection(new Connection(new_sock, ReadEvent | WriteEvent));
+				printf("new connection ;)\n");
 			}
 		} else if (event & ReadEvent) {
 			connection->HandleRead();

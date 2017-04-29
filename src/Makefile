@@ -5,9 +5,11 @@ DFLAGS =
 
 MushroomFile = $(shell find mushroom -name '*.cpp')
 NetworkFile  = $(shell find network -name '*.cpp')
+LogFile  = $(shell find log -name '*.cpp')
 
 MOBJ = $(MushroomFile:.cpp=.o)
 NOBJ = $(NetworkFile:.cpp=.o)
+LOBJ = $(LogFile:.cpp=.o)
 
 QUEUE = ../test/mushroom_with_queue.cpp
 
@@ -15,10 +17,10 @@ THREAD = ../test/mushroom_multi_thread.cpp
 
 network: client server
 
-client: $(NOBJ) ../test/network_client.cpp
+client: $(LOBJ) $(NOBJ) ../test/network_client.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^
 
-server: $(NOBJ) ../test/network_server.cpp
+server: $(LOBJ) $(NOBJ) ../test/network_server.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^
 
 blinktree_single_thread: $(MOBJ) $(QUEUE)
