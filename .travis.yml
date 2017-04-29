@@ -11,7 +11,4 @@ script:
   - cd src && make -j8 lsmtree_with_queue
 
 notifications:
-  email:
-    on_success: always
-    on_failure: never
-    on_error: never
+  email: never

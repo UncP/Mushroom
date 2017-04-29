@@ -1,7 +1,4 @@
-blinktree_*
-lsmtree_*
+*_test
 *.o
 run
 .tags*
-client
-server
