@@ -16,7 +16,6 @@
 namespace Mushroom {
 
 class Channel;
-class Connection;
 class Poller;
 
 class Server
@@ -34,9 +33,10 @@ class Server
 
 		void Run();
 
-		void OnRead(const ReadCallBack &readcb);
+		void OnConnect(const ConnectCallBack &connectcb);
 
-		void OnWrite(const WriteCallBack &writecb);
+		Server(const Server &) = delete;
+		Server& operator=(const Server &) = delete;
 
 	private:
 		Socket   socket_;
@@ -46,8 +46,7 @@ class Server
 
 		std::unordered_set<Connection *> connections_;
 
-		ReadCallBack  readcb_;
-		WriteCallBack writecb_;
+		ConnectCallBack connectcb_;
 
 		void Accept();
 };

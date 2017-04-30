@@ -49,7 +49,9 @@ class Connection
 
 		void Send(Buffer &buffer);
 
-		uint32_t Send(const char *str, uint32_t len);
+		void Send(const char *str, uint32_t len);
+
+		void SendOutput();
 
 	private:
 		Socket   socket_;

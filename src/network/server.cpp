@@ -13,7 +13,7 @@
 
 namespace Mushroom {
 
-Server::Server():listen_(0), poller_(new Poller()), running_(false) { }
+Server::Server():listen_(0), poller_(new Poller()), running_(false), connectcb_(0) { }
 
 Server::~Server()
 {
@@ -34,7 +34,7 @@ bool Server::Start()
 	FatalIf(!socket_.Bind(), "socket bind failed, %s :(", strerror(errno));
 	FatalIf(!socket_.Listen(), "socket listen failed, %s :(", strerror(errno));
 	listen_ = new Channel(socket_.fd(), ReadEvent, poller_);
-	listen_->OnRead([this]() { this->Accept(); });
+	listen_->OnRead([this]() { Accept(); });
 	running_ = true;
 	return true;
 }
@@ -57,28 +57,22 @@ void Server::Run()
 	}
 }
 
-void Server::OnRead(const ReadCallBack &readcb)
+void Server::OnConnect(const ConnectCallBack &connectcb)
 {
-	readcb_ = readcb;
-}
-
-void Server::OnWrite(const WriteCallBack &writecb)
-{
-	writecb_ = writecb;
+	connectcb_ = connectcb;
 }
 
 void Server::Accept()
 {
+	printf("accept\n");
 	int fd = socket_.Accept();
 	if (fd < 0) {
 		Error("socket accept failed, %s :(", strerror(errno));
 		return ;
 	}
 	Connection *connection = new Connection(Socket(fd), ReadEvent | WriteEvent, poller_);
-	if (readcb_)
-		connection->OnRead(readcb_);
-	if (writecb_)
-		connection->OnWrite(writecb_);
+	if (connectcb_)
+		connectcb_(connection);
 	connections_.insert(connection);
 }
 

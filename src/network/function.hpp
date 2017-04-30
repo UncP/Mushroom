@@ -12,9 +12,13 @@
 
 namespace Mushroom {
 
+class Connection;
+
 typedef std::function<void()> ReadCallBack;
 typedef std::function<void()> WriteCallBack;
-typedef std::function<void()> SendCallBack;
+typedef std::function<void(uint32_t)> SendCallBack;
+
+typedef std::function<void(Connection *)> ConnectCallBack;
 
 } // namespace Mushroom
 

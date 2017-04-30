@@ -15,8 +15,10 @@ Connection::Connection(const EndPoint &server)
 :connected_(false), channel_(0), readcb_(0), writecb_(0), sendcb_(0)
 {
 	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
-	FatalIf(!socket_.Connect(server), "socket connect server %s failed, %s :(",
-		server.ToString().c_str(), strerror(errno));
+	if (!socket_.Connect(server)) {
+		Error("socket connect server %s failed, %s :(", server.ToString().c_str(), strerror(errno));
+		return ;
+	}
 	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));
 	connected_ = true;
 }
@@ -78,7 +80,7 @@ void Connection::HandleRead()
 	input_.Clear();
 	uint32_t read = socket_.Read(input_.end(), input_.space());
 
-	if (!read) {
+	if (!read && channel_) {
 		channel_->readcb_ = 0;
 		channel_->writecb_ = 0;
 		Channel *tmp = channel_;
@@ -105,16 +107,22 @@ void Connection::Send(const char *str)
 
 void Connection::Send(Buffer &buffer)
 {
-	buffer.Consume(Send(buffer.begin(), buffer.size()));
+	output_.Append(buffer.begin(), buffer.size());
+	SendOutput();
 }
 
-uint32_t Connection::Send(const char *str, uint32_t len)
+void Connection::Send(const char *str, uint32_t len)
 {
-	uint32_t sent = socket_.Write(str, len);
-	output_.Append(str, sent);
+	output_.Append(str, len);
+	SendOutput();
+}
+
+void Connection::SendOutput()
+{
+	uint32_t sent = socket_.Write(output_.begin(), output_.size());
 	if (sendcb_)
-		sendcb_();
-	return sent;
+		sendcb_(sent);
+	output_.Consume(sent);
 }
 
 } // namespace Mushroom

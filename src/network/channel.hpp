@@ -12,7 +12,6 @@
 
 namespace Mushroom {
 
-class Connection;
 class Poller;
 
 class Channel
