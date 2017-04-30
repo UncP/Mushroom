@@ -8,36 +8,25 @@
 #ifndef _RPC_HPP_
 #define _RPC_HPP_
 
-#include <string>
-#include <map>
-
 namespace Mushroom {
 
 template<typename T1, typename T2, typename T3>
 class RPC
 {
 	public:
-		RPC() { }
-
-		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
-			services_[std::string(str)] = Service(obj, fun);
+		RPC(T1 *obj, void (T1::*(fun))(const T2 *, T3 *)) {
+			service_ = [=](Marshal &in, Marshal &out) {
+				T2 args;
+				T3 reply;
+				in >> args;
+				(obj->*fun)(&args, &reply);
+				out << reply;
+			}
 		}
 
-		bool Call(const std::string &str, const T2 *args, T3 *reply) {
-			Service &service = services_[str];
-		}
-
-		struct Service {
-			Service() { }
-
-			Service(T1 *obj, void (T1::*(fun))(const T2*, T3*)):obj_(obj), fun_(fun) { }
-
-			T1 *obj_;
-			void (T1::*(fun_))(const T2*, T3*);
-		};
-
+		void operator()(T2, T3)
 	private:
-		std::map<std::string, Service> services_;
+		std::function<void()> service_;
 };
 
 } // namespace Mushroom
