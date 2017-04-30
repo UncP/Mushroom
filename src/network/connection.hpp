@@ -8,28 +8,24 @@
 #ifndef _CONNECTION_HPP_
 #define _CONNECTION_HPP_
 
-#include <functional>
-
+#include "function.hpp"
 #include "socket.hpp"
 #include "endpoint.hpp"
 #include "buffer.hpp"
 
 namespace Mushroom {
 
-typedef std::function<void()> ReadCallBack;
-typedef std::function<void()> WriteCallBack;
-typedef std::function<void()> SendCallBack;
+class Channel;
+class Poller;
 
 class Connection
 {
 	public:
-		Connection(const Socket &socket, uint32_t events);
+		Connection(const Socket &socket, uint32_t events, Poller *poller);
 
 		Connection(const EndPoint &server);
 
-		Socket socket() const;
-
-		uint32_t Events() const;
+		~Connection();
 
 		bool Success() const;
 
@@ -57,8 +53,8 @@ class Connection
 
 	private:
 		Socket   socket_;
-		uint32_t events_;
 		bool     connected_;
+		Channel *channel_;
 		Buffer   input_;
 		Buffer   output_;
 

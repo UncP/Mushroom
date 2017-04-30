@@ -9,16 +9,17 @@
 #include <cassert>
 #include <cstring>
 
+#include "../log/log.hpp"
 #include "poller.hpp"
-#include "connection.hpp"
+#include "channel.hpp"
 
 namespace Mushroom {
 
-Poller::Poller(Connection *connection):listen_(connection->socket())
+Poller::Poller()
 {
-	fd_ = epoll_create1(EPOLL_CLOEXEC);
+	FatalIf((fd_ = epoll_create1(EPOLL_CLOEXEC)) < 0,
+		"epoll create failed, %s :(", strerror(errno));
 	assert(fd_ >= 0);
-	AddConnection(connection);
 }
 
 Poller::~Poller()
@@ -26,13 +27,24 @@ Poller::~Poller()
 	close(fd_);
 }
 
-void Poller::AddConnection(Connection *connection)
+void Poller::AddChannel(Channel *channel)
 {
 	struct epoll_event event;
 	memset(&event, 0, sizeof(event));
-	event.events = connection->Events();
-	event.data.ptr = connection;
-	assert(!epoll_ctl(fd_, EPOLL_CTL_ADD, connection->socket().fd(), &event));
+	event.events = channel->events();
+	event.data.ptr = channel;
+	FatalIf(epoll_ctl(fd_, EPOLL_CTL_ADD, channel->fd(), &event),
+		"epoll add event failed, %s :(", strerror(errno));
+}
+
+void Poller::RemoveChannel(Channel *channel)
+{
+	struct epoll_event event;
+	memset(&event, 0, sizeof(event));
+	event.events = channel->events();
+	event.data.ptr = channel;
+	FatalIf(epoll_ctl(fd_, EPOLL_CTL_DEL, channel->fd(), &event),
+		"epoll remove event failed, %s :(", strerror(errno));
 }
 
 void Poller::LoopOnce()
@@ -40,23 +52,14 @@ void Poller::LoopOnce()
 	int ready = epoll_wait(fd_, events_, MaxEvents, 1000);
 	printf("ready %d\n", ready);
 	for (; --ready >= 0; ) {
-		Connection *connection = (Connection *)events_[ready].data.ptr;
-		Socket socket = connection->socket();
+		Channel *channel = (Channel *)events_[ready].data.ptr;
 		uint32_t event = events_[ready].events;
-		if (socket == listen_) {
-			int fd;
-			if ((fd = socket.Accept()) >= 0) {
-				Socket new_sock(fd);
-				assert(new_sock.SetNonBlock());
-				AddConnection(new Connection(new_sock, ReadEvent | WriteEvent));
-				printf("new connection ;)\n");
-			}
-		} else if (event & ReadEvent) {
-			connection->HandleRead();
+		if (event & ReadEvent) {
+			channel->HandleRead();
 		} else if (event & WriteEvent) {
-			connection->HandleWrite();
+			channel->HandleWrite();
 		} else {
-			assert(0);
+			Fatal("unexpected epoll event :(");
 		}
 	}
 }

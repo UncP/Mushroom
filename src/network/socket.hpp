@@ -53,8 +53,6 @@ class Socket
 
 		bool SetNonBlock();
 
-		bool operator==(const Socket &socket) const;
-
 	private:
 		int      fd_;
 };

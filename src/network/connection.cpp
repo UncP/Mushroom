@@ -5,46 +5,47 @@
  *    > Created Time:  2017-04-25 22:11:08
 **/
 
-#include <cassert>
-#include <cstring>
-
 #include "../log/log.hpp"
 #include "connection.hpp"
-#include "poller.hpp"
+#include "channel.hpp"
 
 namespace Mushroom {
 
-Connection::Connection(const EndPoint &server):events_(ReadEvent | WriteEvent),
-connected_(false),
-readcb_(0), writecb_(0), sendcb_(0)
+Connection::Connection(const EndPoint &server)
+:connected_(false), channel_(0), readcb_(0), writecb_(0), sendcb_(0)
 {
-	FatalIf(!socket_.Create(), "socket create failed :(\n");
-
-	if (!socket_.Connect(server)) {
-		Error("socket connect server %s failed :(\n", server.ToString().c_str());
-		return ;
-	}
-
-	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(\n");
+	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
+	FatalIf(!socket_.Connect(server), "socket connect server %s failed, %s :(",
+		server.ToString().c_str(), strerror(errno));
+	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));
 	connected_ = true;
 }
 
-Connection::Connection(const Socket &socket, uint32_t events)
-:socket_(socket), events_(events), readcb_(0), writecb_(0), sendcb_(0) { }
+Connection::Connection(const Socket &socket, uint32_t events, Poller *poller)
+:socket_(socket), readcb_(0), writecb_(0), sendcb_(0)
+{
+	channel_ = new Channel(socket.fd(), events, poller);
+	channel_->OnRead([this]() { this->HandleRead(); });
+	channel_->OnWrite([this]() { this->HandleWrite(); });
+}
+
+Connection::~Connection()
+{
+	delete channel_;
+
+	if (socket_.Valid())
+		socket_.Close();
+}
+
+bool Connection::Close()
+{
+	Info("connection closed ;)");
+	return socket_.Close();
+}
 
 bool Connection::Success() const
 {
 	return connected_;
-}
-
-Socket Connection::socket() const
-{
-	return socket_;
-}
-
-uint32_t Connection::Events() const
-{
-	return events_;
 }
 
 Buffer& Connection::GetInput()
@@ -55,11 +56,6 @@ Buffer& Connection::GetInput()
 Buffer& Connection::GetOutput()
 {
 	return output_;
-}
-
-bool Connection::Close()
-{
-	return socket_.Close();
 }
 
 void Connection::OnRead(const ReadCallBack &readcb)
@@ -80,10 +76,19 @@ void Connection::OnSend(const SendCallBack &sendcb)
 void Connection::HandleRead()
 {
 	input_.Clear();
-	input_.Expand(socket_.Read(input_.end(), input_.space()));
+	uint32_t read = socket_.Read(input_.end(), input_.space());
+
+	if (!read) {
+		channel_->readcb_ = 0;
+		channel_->writecb_ = 0;
+		Channel *tmp = channel_;
+		channel_ = 0;
+		delete tmp;
+		return ;
+	}
+	input_.Expand(read);
 	if (readcb_)
 		readcb_();
-	printf("read %u bytes\n", input_.size());
 }
 
 void Connection::HandleWrite()

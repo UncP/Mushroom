@@ -8,12 +8,17 @@
 #ifndef _LOG_HPP_
 #define _LOG_HPP_
 
+#include <cassert>
+#include <cerrno>
+#include <cstring>
+
 namespace Mushroom {
 
-#define Info(...)  Log::GetLogger().logv(__VA_ARGS__);
-#define Warn(...)  Log::GetLogger().logv(__VA_ARGS__);
-#define Error(...) Log::GetLogger().logv(__VA_ARGS__);
-#define FatalIf(b, ...) if (b) Log::GetLogger().logv(__VA_ARGS__);
+#define Info(...)  Log::GetLogger().logv(__VA_ARGS__)
+#define Warn(...)  Log::GetLogger().logv(__VA_ARGS__)
+#define Error(...) Log::GetLogger().logv(__VA_ARGS__)
+#define Fatal(...) Log::GetLogger().logv(__VA_ARGS__)
+#define FatalIf(b, ...) do { if (b) {Log::GetLogger().logv(__VA_ARGS__); assert(0);} } while (0)
 
 class Log
 {

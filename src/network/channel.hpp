@@ -2,56 +2,49 @@
  *    > Author:            UncP
  *    > Mail:         770778010@qq.com
  *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2017-04-23 10:50:39
+ *    > Created Time:  2017-04-30 17:07:38
 **/
 
-#ifndef _SERVER_HPP_
-#define _SERVER_HPP_
-
-#include <unordered_set>
+#ifndef _CHANNEL_HPP_
+#define _CHANNEL_HPP_
 
 #include "function.hpp"
-#include "socket.hpp"
 
 namespace Mushroom {
 
-class Channel;
 class Connection;
 class Poller;
 
-class Server
+class Channel
 {
 	public:
-		Server();
+		friend class Connection;
 
-		~Server();
+		Channel(int fd, uint32_t events, Poller *poller);
 
-		bool Start();
+		~Channel();
 
-		void Stop();
+		int fd() const;
 
-		bool Close();
-
-		void Run();
+		uint32_t events() const;
 
 		void OnRead(const ReadCallBack &readcb);
 
 		void OnWrite(const WriteCallBack &writecb);
 
-	private:
-		Socket   socket_;
-		Channel *listen_;
-		Poller  *poller_;
-		bool     running_;
+		void HandleRead();
 
-		std::unordered_set<Connection *> connections_;
+		void HandleWrite();
+
+	private:
+		int      fd_;
+		uint32_t events_;
+		Poller  *poller_;
 
 		ReadCallBack  readcb_;
 		WriteCallBack writecb_;
-
-		void Accept();
 };
 
 } // namespace Mushroom
 
-#endif /* _SERVER_HPP_ */
+#endif /* _CHANNEL_HPP_ */

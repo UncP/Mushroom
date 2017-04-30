@@ -133,22 +133,19 @@ bool Socket::SetNonBlock()
 	return !fcntl(fd_, F_SETFL, value | O_NONBLOCK);
 }
 
-bool Socket::operator==(const Socket &that) const
-{
-	return fd_ == that.fd_;
-}
-
 uint32_t Socket::Write(const char *data, uint32_t len)
 {
 	uint32_t written = 0;
 	for (; written < len;) {
 		ssize_t r = write(fd_, data + written, len - written);
-		if (r == -1 && errno == EINTR)
-			continue;
-		if (r == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
-			break;
 		if (r == 0)
 			break;
+		if (r == -1) {
+			if (errno == EINTR)
+				continue;
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				break;
+		}
 		assert(r > 0);
 		written += r;
 	}
@@ -158,14 +155,14 @@ uint32_t Socket::Write(const char *data, uint32_t len)
 uint32_t Socket::Read(char *data, uint32_t len)
 {
 	uint32_t has_read = 0;
-	for (;;) {
-		ssize_t r = read(fd_, data + has_read, len - has_read);
-		if (r == -1 && errno == EINTR)
-			continue;
-		if (r == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
-			break;
-		if (r == 0)
-			break;
+	ssize_t r;
+	for (; (r = read(fd_, data + has_read, len - has_read));) {
+		if (r == -1) {
+			if (errno == EINTR)
+				continue;
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				break;
+		}
 		assert(r > 0);
 		has_read += r;
 	}

@@ -29,6 +29,8 @@ void Log::logv(const char *fmt ...)
 	va_start(args, fmt);
 	p += vsnprintf(p, e - p, fmt, args);
 	va_end(args);
+	*p++ = '\n';
+	*p++ = '\0';
 	printf("%s", buf);
 }
 

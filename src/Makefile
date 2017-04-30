@@ -19,9 +19,9 @@ QUEUE = ../test/mushroom_with_queue.cpp
 
 THREAD = ../test/mushroom_multi_thread.cpp
 
-network: client server
+network: client_test server_test
 
-raft: $(RaftOBJ)
+raft_test: $(RaftOBJ)
 
 rpc_test: $(RpcOBJ) ../test/rpc.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^
