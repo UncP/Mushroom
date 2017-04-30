@@ -39,14 +39,10 @@ bool Server::Start()
 	return true;
 }
 
-void Server::Stop()
-{
-	running_ = false;
-}
-
 bool Server::Close()
 {
 	Info("server closed ;)");
+	running_ = false;
 	return socket_.Close();
 }
 

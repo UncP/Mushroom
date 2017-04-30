@@ -27,8 +27,6 @@ class Server
 
 		bool Start();
 
-		void Stop();
-
 		bool Close();
 
 		void Run();

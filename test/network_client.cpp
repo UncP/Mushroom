@@ -16,14 +16,16 @@ int main()
 	Connection *con = new Connection(EndPoint("127.0.0.1"));
 	if (!con->Success()) return 0;
 
-	con->OnRead([&]() {
-		printf("read %u bytes :)\n", con->GetInput().size());
+	con->OnSend([&](uint32_t sent) {
+		printf("send %u bytes\n", sent);
 	});
-	con->OnSend([&]() {
-		printf("send %u bytes :)\n", con->GetOutput().size());
+	con->OnRead([&]() {
+		printf("read %u bytes\n", con->GetInput().size());
 	});
 	con->Send("hello world :)");
+
 	sleep(2);
+	con->HandleRead();
 	printf("%s\n", con->GetInput().begin());
 	con->Close();
 
