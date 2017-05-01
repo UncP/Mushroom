@@ -5,6 +5,8 @@
  *    > Created Time:  2017-04-25 22:11:08
 **/
 
+#include <unistd.h>
+
 #include "../log/log.hpp"
 #include "connection.hpp"
 #include "channel.hpp"
@@ -29,20 +31,25 @@ Connection::Connection(const Socket &socket, uint32_t events, Poller *poller)
 	channel_ = new Channel(socket.fd(), events, poller);
 	channel_->OnRead([this]() { this->HandleRead(); });
 	channel_->OnWrite([this]() { this->HandleWrite(); });
+	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));
+	connected_ = true;
 }
 
 Connection::~Connection()
 {
-	delete channel_;
-
 	if (socket_.Valid())
 		socket_.Close();
 }
 
 bool Connection::Close()
 {
-	Info("connection closed ;)");
-	return socket_.Close();
+	if (socket_.Valid()) {
+		Info("connection closed ;)");
+		connected_ = false;
+		delete channel_;
+		return socket_.Close();
+	}
+	return true;
 }
 
 bool Connection::Success() const
@@ -77,26 +84,30 @@ void Connection::OnSend(const SendCallBack &sendcb)
 
 void Connection::HandleRead()
 {
+	if (!connected_) {
+		Error("connection has closed :(");
+		return ;
+	}
 	input_.Clear();
-	uint32_t read = socket_.Read(input_.end(), input_.space());
-
-	if (!read && channel_) {
-		channel_->readcb_ = 0;
-		channel_->writecb_ = 0;
-		Channel *tmp = channel_;
-		channel_ = 0;
-		delete tmp;
+	bool blocked = false;
+	uint32_t read = socket_.Read(input_.end(), input_.space(), &blocked);
+	if (!read && !blocked) {
+		Close();
 		return ;
 	}
 	input_.Expand(read);
-	if (readcb_)
+	if (readcb_ && read)
 		readcb_();
 }
 
 void Connection::HandleWrite()
 {
+	if (!connected_) {
+		Error("connection has closed :(");
+		return ;
+	}
 	output_.Consume(socket_.Write(output_.begin(), output_.size()));
-	if (writecb_)
+	if (writecb_ && output_.empty())
 		writecb_();
 }
 
@@ -108,21 +119,24 @@ void Connection::Send(const char *str)
 void Connection::Send(Buffer &buffer)
 {
 	output_.Append(buffer.begin(), buffer.size());
-	SendOutput();
+	DoSend();
 }
 
 void Connection::Send(const char *str, uint32_t len)
 {
 	output_.Append(str, len);
-	SendOutput();
+	DoSend();
 }
 
-void Connection::SendOutput()
+void Connection::DoSend()
 {
-	uint32_t sent = socket_.Write(output_.begin(), output_.size());
-	if (sendcb_)
-		sendcb_(sent);
-	output_.Consume(sent);
+	if (!connected_) {
+		Error("connection has closed :(");
+		return ;
+	}
+	output_.Consume(socket_.Write(output_.begin(), output_.size()));
+	if (sendcb_ && output_.empty())
+		sendcb_();
 }
 
 } // namespace Mushroom

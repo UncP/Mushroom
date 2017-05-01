@@ -23,6 +23,10 @@ class Buffer
 
 		uint32_t size() const;
 
+		bool empty() const;
+
+		char* data() const;
+
 		char* begin() const;
 
 		char* end() const;
@@ -42,8 +46,6 @@ class Buffer
 		uint32_t  size_;
 		uint32_t  beg_;
 		uint32_t  end_;
-
-		void Reset();
 };
 
 } // namespace Mushroom

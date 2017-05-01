@@ -51,7 +51,7 @@ class Connection
 
 		void Send(const char *str, uint32_t len);
 
-		void SendOutput();
+		void DoSend();
 
 	private:
 		Socket   socket_;

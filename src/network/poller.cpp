@@ -50,7 +50,6 @@ void Poller::RemoveChannel(Channel *channel)
 void Poller::LoopOnce()
 {
 	int ready = epoll_wait(fd_, events_, MaxEvents, 1000);
-	printf("ready %d\n", ready);
 	for (; --ready >= 0; ) {
 		Channel *channel = (Channel *)events_[ready].data.ptr;
 		uint32_t event = events_[ready].events;

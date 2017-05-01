@@ -31,6 +31,7 @@ Server::~Server()
 bool Server::Start()
 {
 	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
+	FatalIf(!socket_.SetResuseAddress(), "socket option set failed :(", strerror(errno));
 	FatalIf(!socket_.Bind(), "socket bind failed, %s :(", strerror(errno));
 	FatalIf(!socket_.Listen(), "socket listen failed, %s :(", strerror(errno));
 	listen_ = new Channel(socket_.fd(), ReadEvent, poller_);
@@ -60,16 +61,15 @@ void Server::OnConnect(const ConnectCallBack &connectcb)
 
 void Server::Accept()
 {
-	printf("accept\n");
 	int fd = socket_.Accept();
 	if (fd < 0) {
 		Error("socket accept failed, %s :(", strerror(errno));
 		return ;
 	}
-	Connection *connection = new Connection(Socket(fd), ReadEvent | WriteEvent, poller_);
+	Connection *con = new Connection(Socket(fd), ReadEvent | WriteEvent, poller_);
 	if (connectcb_)
-		connectcb_(connection);
-	connections_.insert(connection);
+		connectcb_(con);
+	connections_.insert(con);
 }
 
 } // namespaceMushroom

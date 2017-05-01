@@ -23,7 +23,6 @@ class Signal
 		}
 
 		static void signal_handler(int sig) {
-			printf("\nsignal captured\n");
 			handlers_[sig]();
 		}
 

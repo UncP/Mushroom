@@ -14,6 +14,7 @@
 #include <cassert>
 #include <cerrno>
 
+#include "../log/log.hpp"
 #include "socket.hpp"
 
 namespace Mushroom {
@@ -95,6 +96,12 @@ bool Socket::GetOption(int value, int *ret)
 	return !getsockopt(fd_, SOL_SOCKET, value, ret, &len);
 }
 
+bool Socket::SetResuseAddress()
+{
+	int flag = 1;
+	return !setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+}
+
 bool Socket::GetPeerName(EndPoint *endpoint)
 {
 	struct sockaddr_in addr;
@@ -138,21 +145,21 @@ uint32_t Socket::Write(const char *data, uint32_t len)
 	uint32_t written = 0;
 	for (; written < len;) {
 		ssize_t r = write(fd_, data + written, len - written);
-		if (r == 0)
-			break;
-		if (r == -1) {
+		if (r > 0) {
+			written += r;
+		} else if (r == -1) {
 			if (errno == EINTR)
 				continue;
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				break;
+				return 0;
+		} else {
+			Fatal("write error, %s", strerror(errno));
 		}
-		assert(r > 0);
-		written += r;
 	}
 	return written;
 }
 
-uint32_t Socket::Read(char *data, uint32_t len)
+uint32_t Socket::Read(char *data, uint32_t len, bool *blocked)
 {
 	uint32_t has_read = 0;
 	ssize_t r;
@@ -160,10 +167,12 @@ uint32_t Socket::Read(char *data, uint32_t len)
 		if (r == -1) {
 			if (errno == EINTR)
 				continue;
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				*blocked = true;
 				break;
+			}
 		}
-		assert(r > 0);
+		FatalIf(r == -1, "read error, %s", strerror(errno));
 		has_read += r;
 	}
 	return has_read;

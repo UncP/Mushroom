@@ -39,7 +39,7 @@ class Socket
 
 		uint32_t Write(const char *data, uint32_t len);
 
-		uint32_t Read(char *data, uint32_t len);
+		uint32_t Read(char *data, uint32_t len, bool *blocked);
 
 		bool SetOption(int value, bool flag);
 
@@ -52,6 +52,8 @@ class Socket
 		bool AddFlag(int flag);
 
 		bool SetNonBlock();
+
+		bool SetResuseAddress();
 
 	private:
 		int      fd_;
