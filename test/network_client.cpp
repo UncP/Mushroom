@@ -6,6 +6,7 @@
 **/
 
 #include <unistd.h>
+#include <string>
 
 #include "../src/network/connection.hpp"
 
@@ -14,19 +15,23 @@ using namespace Mushroom;
 int main()
 {
 	Connection *con = new Connection(EndPoint("127.0.0.1"));
-	if (!con->Success()) return 0;
+	if (!con->Success()) {
+		delete con;
+		return 0;
+	}
 
-	con->OnSend([&](uint32_t sent) {
-		printf("send %u bytes\n", sent);
+	con->OnSend([]() {
+		printf("send\n");
 	});
-	con->OnRead([&]() {
-		printf("read %u bytes\n", con->GetInput().size());
+	con->OnRead([=]() {
+		printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
 	});
-	con->Send("hello world :)");
-
+	for (int i = 0; i < 10; ++i) {
+		std::string msg = "hello world " + std::to_string(i);
+		con->Send(msg.c_str(), msg.size());
+	}
 	sleep(2);
 	con->HandleRead();
-	printf("%s\n", con->GetInput().begin());
 	con->Close();
 
 	delete con;

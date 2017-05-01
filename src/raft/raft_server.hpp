@@ -5,21 +5,21 @@
  *    > Created Time:  2017-04-22 21:19:57
 **/
 
-#ifndef _RAFT_HPP_
-#define _RAFT_HPP_
+#ifndef _RAFT_SERVER_HPP_
+#define _RAFT_SERVER_HPP_
 
 #include <cstdint>
 
 namespace Mushroom {
 
-class Raft
+class RaftServer
 {
 	public:
 		enum State { Follower, Candidate, Leader };
 
-		Raft(uint32_t heartbeat_interval, uint32_t election_interval);
+		RaftServer(uint32_t heartbeat_interval, uint32_t election_interval);
 
-		~Raft();
+		~RaftServer();
 
 		void Run();
 
@@ -37,4 +37,4 @@ class Raft
 
 } // namespace Mushroom
 
-#endif /* _RAFT_HPP_ */
+#endif /* _RAFT_SERVER_HPP_ */

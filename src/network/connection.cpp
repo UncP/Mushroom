@@ -95,7 +95,7 @@ void Connection::HandleRead()
 		Close();
 		return ;
 	}
-	input_.Expand(read);
+	input_.Append(read);
 	if (readcb_ && read)
 		readcb_();
 }
@@ -106,7 +106,7 @@ void Connection::HandleWrite()
 		Error("connection has closed :(");
 		return ;
 	}
-	output_.Consume(socket_.Write(output_.begin(), output_.size()));
+	output_.Erase(socket_.Write(output_.begin(), output_.size()));
 	if (writecb_ && output_.empty())
 		writecb_();
 }
@@ -118,23 +118,23 @@ void Connection::Send(const char *str)
 
 void Connection::Send(Buffer &buffer)
 {
-	output_.Append(buffer.begin(), buffer.size());
-	DoSend();
+	output_.Expand(buffer.begin(), buffer.size());
+	SendOutput();
 }
 
 void Connection::Send(const char *str, uint32_t len)
 {
-	output_.Append(str, len);
-	DoSend();
+	output_.Expand(str, len);
+	SendOutput();
 }
 
-void Connection::DoSend()
+void Connection::SendOutput()
 {
 	if (!connected_) {
 		Error("connection has closed :(");
 		return ;
 	}
-	output_.Consume(socket_.Write(output_.begin(), output_.size()));
+	output_.Erase(socket_.Write(output_.begin(), output_.size()));
 	if (sendcb_ && output_.empty())
 		sendcb_();
 }

@@ -8,6 +8,9 @@
 #ifndef _RPC_SERVER_HPP_
 #define _RPC_SERVER_HPP_
 
+#include <string>
+#include <unordered_map>
+
 #include "rpc.hpp"
 
 namespace Mushroom {
@@ -23,12 +26,10 @@ class RpcServer
 		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
 			std::string key(str);
 			assert(RPCs_.find(key) == RPCs_.end());
-			RPCs_[key] = RPC(obj, fun);
 		}
 
 	private:
 		std::unordered_map<std::string, RPC> RPCs_;
-
 };
 
 } // namespace Mushroom

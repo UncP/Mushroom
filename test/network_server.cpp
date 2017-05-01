@@ -17,11 +17,11 @@ int main()
 	Signal::Register(SIGINT, [&] { server.Close(); exit(0); });
 	server.Start();
 	server.OnConnect([](Connection *con) {
-		con->OnSend([con](uint32_t sent) {
-			printf("send %u bytes\n", sent);
+		con->OnSend([con]() {
+			printf("send\n");
 		});
 		con->OnRead([con]() {
-			printf("read %u bytes\n", con->GetInput().size());
+			printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
 			con->Send(con->GetInput());
 		});
 	});

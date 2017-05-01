@@ -12,7 +12,11 @@
 
 namespace Mushroom {
 
-Buffer::Buffer():data_(new char[BufferSize]) { memset(data_, 0, BufferSize); }
+Buffer::Buffer():data_(new char[BufferSize])
+{
+	memset(data_, 0, BufferSize);
+	Clear();
+}
 
 Buffer::~Buffer()
 {
@@ -50,23 +54,14 @@ uint32_t Buffer::space() const
 	return BufferSize - end_;
 }
 
-void Buffer::Append(const char *data, uint32_t len)
-{
-	assert(len <= BufferSize);
-	Clear();
-	memcpy(data_ + end_, data, len);
-	end_  += len;
-	size_ += len;
-}
-
-void Buffer::Consume(uint32_t len)
+void Buffer::Erase(uint32_t len)
 {
 	assert(beg_ + len <= end_);
 	beg_  += len;
 	size_ -= len;
 }
 
-void Buffer::Expand(uint32_t len)
+void Buffer::Append(uint32_t len)
 {
 	assert(end_ + len <= BufferSize);
 	end_  += len;
@@ -78,6 +73,20 @@ void Buffer::Clear()
 	beg_  = 0;
 	end_  = 0;
 	size_ = 0;
+}
+
+void Buffer::Expand(const char *data, uint32_t len)
+{
+	assert(end_ + len <= BufferSize);
+	memcpy(end(), data, len);
+	end_ += len;
+}
+
+void Buffer::Consume(char *data, uint32_t len)
+{
+	assert(beg_ + len <= end_);
+	memcpy(data, begin(), len);
+	beg_ += len;
 }
 
 } // namespace Mushroom

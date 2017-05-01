@@ -9,18 +9,7 @@
 
 using namespace Mushroom;
 
-struct obj {
-	obj() { }
-
-	void fun(const int *, int *) {
-
-	}
-};
-
 int main()
 {
-	RPC<obj, int, int> rpc;
-	obj o;
-	rpc.Register("obj::fun", &o, &obj::fun);
 	return 0;
 }

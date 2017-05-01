@@ -8,6 +8,8 @@
 #ifndef _RPC_HPP_
 #define _RPC_HPP_
 
+#include <functional>
+
 namespace Mushroom {
 
 template<typename T1, typename T2, typename T3>
@@ -15,16 +17,9 @@ class RPC
 {
 	public:
 		RPC(T1 *obj, void (T1::*(fun))(const T2 *, T3 *)) {
-			service_ = [=](Marshal &in, Marshal &out) {
-				T2 args;
-				T3 reply;
-				in >> args;
-				(obj->*fun)(&args, &reply);
-				out << reply;
-			}
+
 		}
 
-		void operator()(T2, T3)
 	private:
 		std::function<void()> service_;
 };
