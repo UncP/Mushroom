@@ -8,7 +8,6 @@
 #ifndef _MARSHAL_HPP_
 #define _MARSHAL_HPP_
 
-#include <cstring>
 #include <vector>
 
 #include "../network/buffer.hpp"
@@ -31,8 +30,8 @@ class Marshal
 		Buffer &output_;
 };
 
-inline Marshal& operator<<(Marshal &marshal, const char *str) {
-	marshal.Read(str, strlen(str));
+inline Marshal& operator<<(Marshal &marshal, const char &v) {
+	marshal.Read(&v, 1);
 	return marshal;
 }
 
@@ -56,8 +55,8 @@ inline Marshal& operator<<(Marshal &marshal, const std::vector<T> &v) {
 }
 
 
-inline Marshal& operator>>(Marshal &marshal, char *str) {
-	marshal.Write(str, strlen(str));
+inline Marshal& operator>>(Marshal &marshal, char &v) {
+	marshal.Write(&v, 1);
 	return marshal;
 }
 

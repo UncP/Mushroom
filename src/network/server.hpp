@@ -33,10 +33,7 @@ class Server
 
 		void OnConnect(const ConnectCallBack &connectcb);
 
-		Server(const Server &) = delete;
-		Server& operator=(const Server &) = delete;
-
-	private:
+	protected:
 		Socket   socket_;
 		Channel *listen_;
 		Poller  *poller_;

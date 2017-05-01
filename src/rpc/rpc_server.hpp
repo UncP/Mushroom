@@ -8,14 +8,16 @@
 #ifndef _RPC_SERVER_HPP_
 #define _RPC_SERVER_HPP_
 
-#include <string>
+#include <cassert>
 #include <unordered_map>
 
+#include "marshal.hpp"
 #include "rpc.hpp"
+#include "../network/server.hpp"
 
 namespace Mushroom {
 
-class RpcServer
+class RpcServer : public Server
 {
 	public:
 		RpcServer();
@@ -24,12 +26,19 @@ class RpcServer
 
 		template<typename T1, typename T2, typename T3>
 		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
-			std::string key(str);
-			assert(RPCs_.find(key) == RPCs_.end());
+			RPC rpc;
+			rpc_t id = rpc.Generate(str, obj, fun);
+			assert(RPCs_.find(id) == RPCs_.end());
+			RPCs_[id] = rpc;
+		}
+
+		void Execute(rpc_t id, Marshal &marshal) {
+			assert(RPCs_.find(id) != RPCs_.end());
+			RPCs_[id](marshal);
 		}
 
 	private:
-		std::unordered_map<std::string, RPC> RPCs_;
+		std::unordered_map<rpc_t, RPC> RPCs_;
 };
 
 } // namespace Mushroom

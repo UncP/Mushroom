@@ -23,7 +23,12 @@ network: client_test server_test
 
 raft_test: $(RaftOBJ)
 
-rpc_test: $(RpcOBJ) ../test/rpc.cpp
+rpc: rpc_client_test rpc_server_test
+
+rpc_client_test: $(LOBJ) $(NOBJ) $(RpcOBJ) ../test/rpc_client.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^
+
+rpc_server_test: $(LOBJ) $(NOBJ) $(RpcOBJ) ../test/rpc_server.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^
 
 client_test: $(LOBJ) $(NOBJ) ../test/network_client.cpp

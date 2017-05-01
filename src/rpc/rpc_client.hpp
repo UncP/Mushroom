@@ -13,6 +13,7 @@
 #include "../network/endpoint.hpp"
 #include "../network/function.hpp"
 #include "../network/connection.hpp"
+#include "rpc.hpp"
 #include "marshal.hpp"
 
 namespace Mushroom {
@@ -29,13 +30,19 @@ class RpcClient
 		bool Connect(const EndPoint &server);
 
 		template<typename T1, typename T2>
-		void Call(const char *str, const T1 *args, T2 *reply) {
+		bool Call(const char *str, const T1 *args, T2 *reply) {
 			assert(connection_);
 			connection_->GetOutput().Clear();
-			*marshal_ <<  str;
+			rpc_t id = RPC::Hash(str);
+			*marshal_ <<  '#';
+			*marshal_ <<  id;
 			*marshal_ << *args;
+			*marshal_ <<  '#';
 			connection_->SendOutput();
+			return true;
 		}
+
+		bool Close();
 
 	private:
 		Connection *connection_;

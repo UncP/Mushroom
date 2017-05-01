@@ -34,4 +34,11 @@ bool RpcClient::Connect(const EndPoint &server)
 	return true;
 }
 
+bool RpcClient::Close()
+{
+	if (connection_)
+		return connection_->Close();
+	return true;
+}
+
 } // namespace Mushroom
