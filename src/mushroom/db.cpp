@@ -13,9 +13,7 @@
 #endif
 #include "pool_manager.hpp"
 
-#ifndef NOLATCH
 #include "latch_manager.hpp"
-#endif
 
 namespace Mushroom {
 

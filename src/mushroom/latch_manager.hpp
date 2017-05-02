@@ -8,13 +8,9 @@
 #ifndef _LATCH_MANAGER_HPP_
 #define _LATCH_MANAGER_HPP_
 
-#ifndef NOLATCH
 #include "latch.hpp"
-#endif
 
 namespace Mushroom {
-
-#ifndef NOLATCH
 
 class LatchManager
 {
@@ -38,8 +34,6 @@ class LatchManager
 		HashEntry *entries_;
 		Latch     *latches_;
 };
-
-#endif
 
 } // namespace Mushroom
 

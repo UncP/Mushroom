@@ -9,11 +9,11 @@
 
 namespace Mushroom {
 
-RpcClient::RpcClient():connection_(0), marshal_(0), connectcb_(0) { }
+RpcClient::RpcClient():connection_(0), marshaller_(0), connectcb_(0) { }
 
 RpcClient::~RpcClient()
 {
-	delete marshal_;
+	delete marshaller_;
 	delete connection_;
 }
 
@@ -30,7 +30,7 @@ bool RpcClient::Connect(const EndPoint &server)
 		connection_ = 0;
 		return false;
 	}
-	marshal_ = new Marshal(connection_->GetInput(), connection_->GetOutput());
+	marshaller_ = new Marshaller(connection_->GetInput(), connection_->GetOutput());
 	return true;
 }
 

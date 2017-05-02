@@ -9,7 +9,7 @@
 ### Behold, the power of Mushroom!
 
 ### Feature
-+ Concurrent B<sup>link</sup> Tree Index (Prefix Compression)
++ B<sup>link</sup> Tree Index (with Prefix Compression)
 + Log-Structured Merge Tree
 + Two-Phase Hashing Page Manager
 + Mulit-Thread (Latch Manager, Thread Pool, Bounded Thread-Safe Queue)
@@ -17,6 +17,15 @@
 + RPC Framework
 
 ******
+
+### B<sup>link</sup> Tree BenchFuck
+|total key|key length| total size |     CPU    | Mem |
+|:-------:|:--------:|:---------:|:--------------:|:----:|
+|100 million | 16 bytes | 1.6 G | Intel i3 2.1 GHz 4 cores|4 G|
+
+| Version | Sorting Time(s) |       Detail       |
+|:------:|:------:|:-----------------------------------:|
+| 0.6.1 | 142.5 | B<sup>link</sup> tree occupies memory about 2.7G |
 
 ### Version Information
 | Version |       Improvements       |
@@ -37,16 +46,6 @@
 | 0.6.4  |using posix spin lock, Optimize MushroomDB and BLinkTree structure|
 | 0.7.0  |         Log-Structured Merge Tree |
 | 0.8.0  |       TCP Communication Library & RPC Framework   |
-
-
-### B<sup>link</sup> Tree BenchFuck
-|total key|key length| total size |     CPU    | Mem |
-|:-------:|:--------:|:---------:|:--------------:|:----:|
-|100 million | 16 bytes | 1.6 G | Intel i3 2.1 GHz 4 cores|4 G|
-
-| Version | Sorting Time(s) |       Detail       |
-|:------:|:------:|:-----------------------------------:|
-| 0.6.1 | 142.5 | B<sup>link</sup> tree occupies memory about 2.7G |
 
 ### Other
 + Version 0.6.0 is the first stable version

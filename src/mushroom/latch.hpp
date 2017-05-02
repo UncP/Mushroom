@@ -12,10 +12,8 @@
 
 #include <cerrno>
 #include <atomic>
-#include <thread>  // NOLINT(build/c++11) for std::this_thread::yield();
+#include <thread>
 
-// workaround for pshared
-// ref: https://linux.die.net/man/3/pthread_spin_init
 #ifndef PTHREAD_PROCESS_SHARED
 #define PTHREAD_PROCESS_SHARED 1
 #endif
@@ -66,8 +64,6 @@ static inline int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
 #include "utility.hpp"
 
 namespace Mushroom {
-
-#ifndef NOLATCH
 
 class ConditionVariable;
 
@@ -208,14 +204,10 @@ class Latch
 		pthread_rwlock_t  lock_[1];
 };
 
-#endif
-
 class HashEntry {
 	public:
 		HashEntry():slot_(0) { }
-		#ifndef NOLATCH
 		SpinLatch latch_;
-		#endif
 		uint16_t  slot_;
 };
 

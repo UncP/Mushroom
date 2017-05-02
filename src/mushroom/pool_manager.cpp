@@ -64,9 +64,7 @@ Page* PoolManager::GetPage(page_t page_no)
 	page_t hash = (page_no >> PagePool::SegBits) & HashMask;
 	Page *page = 0;
 
-	#ifndef NOLATCH
 	entries_[hash].latch_.Lock();
-	#endif
 
 	uint16_t slot = entries_[hash].slot_;
 	if (slot) {
@@ -76,9 +74,7 @@ Page* PoolManager::GetPage(page_t page_no)
 				break;
 		if (pool) {
 			page = pool->GetPage(page_no);
-			#ifndef NOLATCH
 			entries_[hash].latch_.Unlock();
-			#endif
 			return page;
 		}
 	}
@@ -89,9 +85,7 @@ Page* PoolManager::GetPage(page_t page_no)
 	pool_[victim].Initialize(page_no);
 	Link(hash, victim);
 	page = pool_[victim].GetPage(page_no);
-	#ifndef NOLATCH
 	entries_[hash].latch_.Unlock();
-	#endif
 	return page;
 }
 

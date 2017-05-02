@@ -12,10 +12,7 @@
 
 #include "../src/mushroom/slice.hpp"
 #include "../src/mushroom/db.hpp"
-
-#ifndef NOLATCH
 #include "../src/mushroom/thread_pool.hpp"
-#endif
 
 using namespace Mushroom;
 
@@ -24,11 +21,7 @@ static int total;
 
 double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *))
 {
-	#ifndef NOLATCH
 	ThreadPool *pool = new ThreadPool(new Queue(1024, key_len));
-	#else
-	printf("NOLATCH defined, using single thread ;)\n");
-	#endif
 
 	TempSlice(key, sizeof(valptr) + key_len);
 	int fd = open(file, O_RDONLY);
@@ -48,11 +41,7 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->key_, tmp, key_len);
-			#ifndef NOLATCH
 			pool->AddTask(fun, db, key);
-			#else
-			assert((db->*fun)(key));
-			#endif
 			if (++count == total) {
 				flag = false;
 				break;
@@ -61,14 +50,10 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 		}
 	}
 	close(fd);
-	#ifndef NOLATCH
 	pool->Clear();
-	#endif
 	auto end = std::chrono::high_resolution_clock::now();
 
-	#ifndef NOLATCH
 	delete pool;
-	#endif
 	auto t = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	return t;
 }

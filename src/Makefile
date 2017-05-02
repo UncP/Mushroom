@@ -37,16 +37,10 @@ client_test: $(LOBJ) $(NOBJ) ../test/network_client.cpp
 server_test: $(LOBJ) $(NOBJ) ../test/network_server.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^
 
-blinktree_single_thread_test: $(MOBJ) $(QUEUE)
-	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
-
 blinktree_with_queue_test: $(MOBJ) $(QUEUE)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
 blinktree_multi_thread_test: $(MOBJ) $(THREAD)
-	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
-
-lsmtree_single_thread_test: $(MOBJ) $(QUEUE)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
 lsmtree_with_queue_test: $(MOBJ) $(QUEUE)

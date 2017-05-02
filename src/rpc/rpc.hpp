@@ -10,7 +10,7 @@
 
 #include <functional>
 
-#include "marshal.hpp"
+#include "marshaller.hpp"
 
 namespace Mushroom {
 
@@ -25,12 +25,12 @@ class RPC
 
 		template<typename T1, typename T2, typename T3>
 		rpc_t Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
-			service_ = [=](Marshal &marshal) {
+			service_ = [=](Marshaller &marshaller) {
 				T2 args;
-				marshal >> args;
+				marshaller >> args;
 				T3 reply;
 				(obj->*fun)(&args, &reply);
-				marshal << reply;
+				marshaller << reply;
 			};
 			return Hash(str);
 		}
@@ -48,7 +48,7 @@ class RPC
 		}
 
 	private:
-		std::function<void(Marshal &)> service_;
+		std::function<void(Marshaller &)> service_;
 };
 
 } // namespace Mushroom

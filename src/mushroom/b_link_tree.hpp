@@ -8,11 +8,8 @@
 #ifndef _B_LINK_TREE_HPP_
 #define _B_LINK_TREE_HPP_
 
-#ifndef NOLATCH
-#include "latch.hpp"
-#endif
-
 #include "utility.hpp"
+#include "latch.hpp"
 #include "pool_manager.hpp"
 
 namespace Mushroom {
@@ -58,11 +55,9 @@ class BLinkTree
 
 		inline bool ReachThreshold() const { return pool_manager_->ReachMaxPool(); }
 		inline void Clear() const {
-			#ifndef NOLATCH
 			#ifndef NOLSM
 			while (ref_) sched_yield();
 			assert(!ref_);
-			#endif
 			#endif
 		}
 
@@ -78,9 +73,7 @@ class BLinkTree
 		struct Set {
 			Set():depth_(0) { }
 			page_t   page_no_;
-			#ifndef NOLATCH
 			Latch   *latch_;
-			#endif
 			Page    *page_;
 			page_t   stack_[8];
 			uint32_t depth_;
@@ -92,11 +85,9 @@ class BLinkTree
 
 		void Insert(Set &set, KeySlice *key);
 
-		#ifndef NOLATCH
 		LatchManager *latch_manager_;
 		#ifndef NOLSM
 		uint32_t      ref_;
-		#endif
 		#endif
 
 		PoolManager *pool_manager_;

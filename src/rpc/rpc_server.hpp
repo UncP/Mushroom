@@ -11,7 +11,7 @@
 #include <cassert>
 #include <unordered_map>
 
-#include "marshal.hpp"
+#include "marshaller.hpp"
 #include "rpc.hpp"
 #include "../network/server.hpp"
 
@@ -32,9 +32,9 @@ class RpcServer : public Server
 			RPCs_[id] = rpc;
 		}
 
-		void Execute(rpc_t id, Marshal &marshal) {
+		void Execute(Marshaller &marshaller) {
 			assert(RPCs_.find(id) != RPCs_.end());
-			RPCs_[id](marshal);
+			RPCs_[id](marshaller);
 		}
 
 	private:

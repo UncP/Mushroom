@@ -5,20 +5,20 @@
  *    > Created Time:  2017-04-30 09:18:05
 **/
 
-#include "marshal.hpp"
+#include "marshaller.hpp"
 
 namespace Mushroom {
 
-Marshal::Marshal(Buffer &input, Buffer &output):input_(input), output_(output) { }
+Marshaller::Marshaller(Buffer &input, Buffer &output):input_(input), output_(output) { }
 
-Marshal::~Marshal() { }
+Marshaller::~Marshaller() { }
 
-void Marshal::Read(const void *str, uint32_t len)
+void Marshaller::Read(const void *str, uint32_t len)
 {
 	output_.Expand((const char *)str, len);
 }
 
-void Marshal::Write(void *str, uint32_t len)
+void Marshaller::Write(void *str, uint32_t len)
 {
 	input_.Consume((char *)str, len);
 }

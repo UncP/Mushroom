@@ -14,7 +14,7 @@
 #include "../network/function.hpp"
 #include "../network/connection.hpp"
 #include "rpc.hpp"
-#include "marshal.hpp"
+#include "marshaller.hpp"
 
 namespace Mushroom {
 
@@ -34,10 +34,7 @@ class RpcClient
 			assert(connection_);
 			connection_->GetOutput().Clear();
 			rpc_t id = RPC::Hash(str);
-			*marshal_ <<  '#';
-			*marshal_ <<  id;
-			*marshal_ << *args;
-			*marshal_ <<  '#';
+			marshaller_->Marshal(id, args);
 			connection_->SendOutput();
 			return true;
 		}
@@ -46,7 +43,7 @@ class RpcClient
 
 	private:
 		Connection *connection_;
-		Marshal    *marshal_;
+		Marshaller *marshaller_;
 
 		ConnectCallBack connectcb_;
 };
