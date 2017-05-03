@@ -69,7 +69,7 @@ void Server::Accept()
 	Connection *con = new Connection(Socket(fd), ReadEvent | WriteEvent, poller_);
 	if (connectcb_)
 		connectcb_(con);
-	connections_.insert(con);
+	connections_.push_back(con);
 }
 
 } // namespaceMushroom

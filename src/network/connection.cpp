@@ -44,7 +44,7 @@ Connection::~Connection()
 bool Connection::Close()
 {
 	if (socket_.Valid()) {
-		Info("connection closed ;)");
+		Info("close connection ;)");
 		connected_ = false;
 		delete channel_;
 		return socket_.Close();
@@ -92,10 +92,11 @@ void Connection::HandleRead()
 	bool blocked = false;
 	uint32_t read = socket_.Read(input_.end(), input_.space(), &blocked);
 	if (!read && !blocked) {
+		Error("server closed :(");
 		Close();
 		return ;
 	}
-	input_.Append(read);
+	input_.AdvanceTail(read);
 	if (readcb_ && read)
 		readcb_();
 }
@@ -106,7 +107,7 @@ void Connection::HandleWrite()
 		Error("connection has closed :(");
 		return ;
 	}
-	output_.Erase(socket_.Write(output_.begin(), output_.size()));
+	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
 	if (writecb_ && output_.empty())
 		writecb_();
 }
@@ -134,7 +135,7 @@ void Connection::SendOutput()
 		Error("connection has closed :(");
 		return ;
 	}
-	output_.Erase(socket_.Write(output_.begin(), output_.size()));
+	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
 	if (sendcb_ && output_.empty())
 		sendcb_();
 }

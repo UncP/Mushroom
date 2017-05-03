@@ -23,7 +23,7 @@
 
 #ifndef UNUSED
 #define UNUSED(expr) (void)(expr)
-#endif  // UNUSED
+#endif
 
 typedef std::atomic_flag pthread_spinlock_t;
 
@@ -56,7 +56,7 @@ static inline int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
   return 0;
 }
 
-#endif  // __APPLE__
+#endif  /* __APPLE__ */
 
 #include <cassert>
 #include <pthread.h>
@@ -108,6 +108,10 @@ class ConditionVariable
 
 		void Signal() {
 			pthread_cond_signal(cond_);
+		}
+
+		void Broadcast() {
+			pthread_cond_broadcast(cond_);
 		}
 
 		~ConditionVariable() {

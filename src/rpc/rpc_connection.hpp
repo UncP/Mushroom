@@ -20,6 +20,8 @@ class RpcConnection : public Connection
 	public:
 		RpcConnection(const EndPoint &server);
 
+		RpcConnection(const Socket &socket, uint32_t events, Poller *poller);
+
 		~RpcConnection();
 
 		template<typename T1, typename T2>
@@ -35,7 +37,9 @@ bool RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
 	output_.Clear();
 	rpc_t id = RPC::Hash(str);
 	marshaller_.Marshal(id, args);
-	SendOutput();
+	for (; connected_ && !output_.empty();) {
+		SendOutput();
+	}
 	return true;
 }
 

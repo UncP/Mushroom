@@ -8,9 +8,8 @@
 #ifndef _QUEUE_HPP_
 #define _QUEUE_HPP_
 
-#include <pthread.h>
-
 #include "utility.hpp"
+#include "latch.hpp"
 
 namespace Mushroom {
 
@@ -28,17 +27,17 @@ class Queue
 		~Queue();
 
 	private:
-		bool                    clear_;
-		int                     capacity_;
-		Task*                  *queue_;
-		int                    *avail_;
-		int                    *work_;
-		int                     front_;
-		int                     avail_back_;
-		int                     work_back_;
-		pthread_mutex_t         mutex_[1];
-		pthread_cond_t          ready_[1];
-		pthread_cond_t          empty_[1];
+		bool               clear_;
+		int                capacity_;
+		Task*             *queue_;
+		int               *avail_;
+		int               *work_;
+		int                front_;
+		int                avail_back_;
+		int                work_back_;
+		Mutex              mutex_;
+		ConditionVariable  ready_;
+		ConditionVariable  empty_;
 };
 
 } // namespace Mushroom

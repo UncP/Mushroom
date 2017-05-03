@@ -8,7 +8,7 @@
 #ifndef _SERVER_HPP_
 #define _SERVER_HPP_
 
-#include <unordered_set>
+#include <vector>
 
 #include "function.hpp"
 #include "socket.hpp"
@@ -39,7 +39,7 @@ class Server
 		Poller  *poller_;
 		bool     running_;
 
-		std::unordered_set<Connection *> connections_;
+		std::vector<Connection *> connections_;
 
 		ConnectCallBack connectcb_;
 

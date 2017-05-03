@@ -29,17 +29,13 @@ front_(0), avail_back_(0), work_back_(0)
 	work_ = new int[capacity_];
 	for (int i = 0; i != capacity_; ++i)
 		work_[i] = -1;
-
-	assert(!pthread_mutex_init(mutex_, 0));
-	assert(!pthread_cond_init(ready_, 0));
-	assert(!pthread_cond_init(empty_, 0));
 }
 
 void Queue::Push(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key)
 {
-	pthread_mutex_lock(mutex_);
+	mutex_.Lock();
 	while (avail_[front_] < 0)
-		pthread_cond_wait(empty_, mutex_);
+		empty_.Wait(&mutex_);
 	int seq = avail_[front_];
 	Task *task = queue_[seq];
 	task->Assign(fun, db, key);
@@ -47,18 +43,18 @@ void Queue::Push(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice
 	work_[front_++] = seq;
 	if (front_ == capacity_)
 		front_ = 0;
-	pthread_mutex_unlock(mutex_);
-	pthread_cond_signal(ready_);
+	mutex_.Unlock();
+	ready_.Signal();
 }
 
 void Queue::Pull()
 {
-	pthread_mutex_lock(mutex_);
+	mutex_.Lock();
 	while (work_[work_back_] < 0 && !clear_)
-		pthread_cond_wait(ready_, mutex_);
+		ready_.Wait(&mutex_);
 
 	if (clear_) {
-		pthread_mutex_unlock(mutex_);
+		mutex_.Unlock();
 		return ;
 	}
 
@@ -67,37 +63,33 @@ void Queue::Pull()
 	work_[work_back_++] = -1;
 	if (work_back_ == capacity_)
 		work_back_ = 0;
-	pthread_mutex_unlock(mutex_);
+	mutex_.Unlock();
 
 	(*task)();
 
-	pthread_mutex_lock(mutex_);
+	mutex_.Lock();
 	avail_[avail_back_++] = seq;
 	if (avail_back_ == capacity_)
 		avail_back_ = 0;
-	pthread_mutex_unlock(mutex_);
-	pthread_cond_signal(empty_);
+	mutex_.Unlock();
+	empty_.Signal();
 }
 
 void Queue::Clear()
 {
-	pthread_mutex_lock(mutex_);
+	mutex_.Lock();
 	while (front_ != avail_back_ || front_ != work_back_)
-		pthread_cond_wait(empty_, mutex_);
+		empty_.Wait(&mutex_);
 	clear_ = true;
-	pthread_mutex_unlock(mutex_);
+	mutex_.Unlock();
 
-	pthread_cond_broadcast(ready_);
+	ready_.Broadcast();
 }
 
 Queue::~Queue()
 {
 	if (!clear_)
 		Clear();
-
-	assert(!pthread_mutex_destroy(mutex_));
-	assert(!pthread_cond_destroy(ready_));
-	assert(!pthread_cond_destroy(empty_));
 
 	delete [] avail_;
 	delete [] work_;

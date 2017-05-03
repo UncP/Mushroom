@@ -15,12 +15,12 @@ Marshaller::~Marshaller() { }
 
 void Marshaller::Read(const void *str, uint32_t len)
 {
-	output_.Expand((const char *)str, len);
+	output_.Read((const char *)str, len);
 }
 
 void Marshaller::Write(void *str, uint32_t len)
 {
-	input_.Consume((char *)str, len);
+	input_.Write((char *)str, len);
 }
 
 } // namespace Mushroom

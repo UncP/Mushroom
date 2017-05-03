@@ -84,7 +84,7 @@ inline uint32_t Marshaller::Marshal(rpc_t id, const T *args)
 {
 	output_.Clear();
 	uint32_t *len = (uint32_t *)output_.data();
-	output_.Append(4);
+	output_.AdvanceTail(4);
 	*this <<  id;
 	*this << *args;
 	*len = output_.size() - 4;

@@ -33,13 +33,13 @@ class Buffer
 
 		uint32_t space() const;
 
-		void Expand(const char *data, uint32_t len);
+		void Read(const char *data, uint32_t len);
 
-		void Consume(char *data, uint32_t len);
+		void Write(char *data, uint32_t len);
 
-		void Erase(uint32_t len);
+		void AdvanceHead(uint32_t len);
 
-		void Append(uint32_t len);
+		void AdvanceTail(uint32_t len);
 
 		void Clear();
 

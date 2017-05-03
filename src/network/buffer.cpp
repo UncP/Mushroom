@@ -54,14 +54,14 @@ uint32_t Buffer::space() const
 	return BufferSize - end_;
 }
 
-void Buffer::Erase(uint32_t len)
+void Buffer::AdvanceHead(uint32_t len)
 {
 	assert(beg_ + len <= end_);
 	beg_  += len;
 	size_ -= len;
 }
 
-void Buffer::Append(uint32_t len)
+void Buffer::AdvanceTail(uint32_t len)
 {
 	assert(end_ + len <= BufferSize);
 	end_  += len;
@@ -75,14 +75,14 @@ void Buffer::Clear()
 	size_ = 0;
 }
 
-void Buffer::Expand(const char *data, uint32_t len)
+void Buffer::Read(const char *data, uint32_t len)
 {
 	assert(end_ + len <= BufferSize);
 	memcpy(end(), data, len);
 	end_ += len;
 }
 
-void Buffer::Consume(char *data, uint32_t len)
+void Buffer::Write(char *data, uint32_t len)
 {
 	assert(beg_ + len <= end_);
 	memcpy(data, begin(), len);
