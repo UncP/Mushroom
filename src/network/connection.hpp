@@ -25,7 +25,7 @@ class Connection
 
 		Connection(const EndPoint &server);
 
-		~Connection();
+		virtual ~Connection();
 
 		bool Success() const;
 
@@ -53,7 +53,7 @@ class Connection
 
 		void SendOutput();
 
-	private:
+	protected:
 		Socket   socket_;
 		bool     connected_;
 		Channel *channel_;

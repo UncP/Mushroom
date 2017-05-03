@@ -10,42 +10,13 @@
 
 #include <cassert>
 
-#include "../network/endpoint.hpp"
-#include "../network/function.hpp"
-#include "../network/connection.hpp"
-#include "rpc.hpp"
-#include "marshaller.hpp"
-
 namespace Mushroom {
 
 class RpcClient
 {
 	public:
-		RpcClient();
-
-		~RpcClient();
-
-		void OnConnect(const ConnectCallBack &connectcb);
-
-		bool Connect(const EndPoint &server);
-
-		template<typename T1, typename T2>
-		bool Call(const char *str, const T1 *args, T2 *reply) {
-			assert(connection_);
-			connection_->GetOutput().Clear();
-			rpc_t id = RPC::Hash(str);
-			marshaller_->Marshal(id, args);
-			connection_->SendOutput();
-			return true;
-		}
-
-		bool Close();
 
 	private:
-		Connection *connection_;
-		Marshaller *marshaller_;
-
-		ConnectCallBack connectcb_;
 };
 
 } // namespace Mushroom

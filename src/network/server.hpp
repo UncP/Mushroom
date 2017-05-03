@@ -23,7 +23,7 @@ class Server
 	public:
 		Server();
 
-		~Server();
+		virtual ~Server();
 
 		bool Start();
 

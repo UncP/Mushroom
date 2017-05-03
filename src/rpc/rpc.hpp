@@ -10,11 +10,10 @@
 
 #include <functional>
 
+#include "utility.hpp"
 #include "marshaller.hpp"
 
 namespace Mushroom {
-
-typedef uint32_t rpc_t;
 
 class RPC
 {
@@ -35,8 +34,8 @@ class RPC
 			return Hash(str);
 		}
 
-		inline void operator()(Marshal &marshal) {
-			service_(marshal);
+		inline void operator()(Marshaller &marshaller) {
+			service_(marshaller);
 		}
 
 		static rpc_t Hash(const char *str) {

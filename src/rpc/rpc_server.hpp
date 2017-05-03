@@ -11,6 +11,7 @@
 #include <cassert>
 #include <unordered_map>
 
+#include "utility.hpp"
 #include "marshaller.hpp"
 #include "rpc.hpp"
 #include "../network/server.hpp"
@@ -25,17 +26,7 @@ class RpcServer : public Server
 		~RpcServer();
 
 		template<typename T1, typename T2, typename T3>
-		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
-			RPC rpc;
-			rpc_t id = rpc.Generate(str, obj, fun);
-			assert(RPCs_.find(id) == RPCs_.end());
-			RPCs_[id] = rpc;
-		}
-
-		void Execute(Marshaller &marshaller) {
-			assert(RPCs_.find(id) != RPCs_.end());
-			RPCs_[id](marshaller);
-		}
+		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
 	private:
 		std::unordered_map<rpc_t, RPC> RPCs_;

@@ -10,6 +10,7 @@
 
 #include <vector>
 
+#include "utility.hpp"
 #include "../network/buffer.hpp"
 
 namespace Mushroom {
@@ -22,24 +23,10 @@ class Marshaller
 		~Marshaller();
 
 		template<typename T>
-		uint32_t Marshal(rpc_t id, const T *args) {
-			output_.Clear();
-			uint32_t *len = (uint32_t *)output_.data();
-			output_.Append(4);
-			*this <<  id;
-			*this << *args;
-			*len = output_.size() - 4;
-			return *len;
-		}
+		inline uint32_t Marshal(rpc_t id, const T *args);
 
 		template<typename T>
-		uint32_t Unmarshal(rpc_t *id, T *reply) {
-			uint32_t len;
-			*this >> len;
-			*this >> *id;
-			*this >> *reply;
-			return len;
-		}
+		uint32_t Unmarshal(rpc_t *id, T *reply);
 
 		void Read(const void *str, uint32_t len);
 
@@ -90,6 +77,28 @@ inline Marshaller& operator>>(Marshaller &marshaller, std::vector<T> &v) {
 		v.push_back(t);
 	}
 	return marshaller;
+}
+
+template<typename T>
+inline uint32_t Marshaller::Marshal(rpc_t id, const T *args)
+{
+	output_.Clear();
+	uint32_t *len = (uint32_t *)output_.data();
+	output_.Append(4);
+	*this <<  id;
+	*this << *args;
+	*len = output_.size() - 4;
+	return *len;
+}
+
+template<typename T>
+inline uint32_t Marshaller::Unmarshal(rpc_t *id, T *reply)
+{
+	uint32_t len;
+	*this >> len;
+	*this >> *id;
+	*this >> *reply;
+	return len;
 }
 
 } // namespace Mushroom

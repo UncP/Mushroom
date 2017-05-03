@@ -8,7 +8,7 @@
 #ifndef _RPC_CALL_HPP_
 #define _RPC_CALL_HPP_
 
-#include "../src/rpc/marshal.hpp"
+#include "../src/rpc/marshaller.hpp"
 
 namespace Mushroom {
 
@@ -39,18 +39,18 @@ struct Test
 	}
 };
 
-inline Marshal& operator<<(Marshal &marshal, const Test::Pair &v)
+inline Marshaller& operator<<(Marshaller &marshaller, const Test::Pair &v)
 {
-	marshal << v.num1;
-	marshal << v.num2;
-	return marshal;
+	marshaller << v.num1;
+	marshaller << v.num2;
+	return marshaller;
 }
 
-inline Marshal& operator>>(Marshal &marshal, Test::Pair &v)
+inline Marshaller& operator>>(Marshaller &marshaller, Test::Pair &v)
 {
-	marshal >> v.num1;
-	marshal >> v.num2;
-	return marshal;
+	marshaller >> v.num1;
+	marshaller >> v.num2;
+	return marshaller;
 }
 
 } // namespace Mushroom

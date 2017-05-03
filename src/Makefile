@@ -4,7 +4,7 @@ LDFLAGS = -pthread
 DFLAGS =
 
 MushroomFile = $(shell find mushroom -name '*.cpp')
-NetworkFile  = $(shell find network -name '*.cpp')
+NetworkFile = $(shell find network -name '*.cpp')
 LogFile  = $(shell find log -name '*.cpp')
 RaftFile = $(shell find raft -name '*.cpp')
 RpcFile = $(shell find rpc -name '*.cpp')

@@ -9,5 +9,9 @@
 
 namespace Mushroom {
 
+RpcConnection::RpcConnection(const EndPoint &server)
+:Connection(server), marshaller_(input_, output_) { }
+
+RpcConnection::~RpcConnection() { }
 
 } // namespace Mushroom
