@@ -58,14 +58,14 @@ static inline int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
 
 #endif  /* __APPLE__ */
 
-#include <cassert>
 #include <pthread.h>
+#include <sys/time.h>
+#include <cassert>
+#include <cerrno>
 
-#include "utility.hpp"
+#include "../mushroom/utility.hpp"
 
 namespace Mushroom {
-
-class ConditionVariable;
 
 class Mutex
 {
@@ -102,8 +102,8 @@ class ConditionVariable
 			assert(!pthread_cond_init(cond_, 0));
 		}
 
-		void Wait(Mutex *mutex) {
-			pthread_cond_wait(cond_, mutex->mutex_);
+		void Wait(Mutex &mutex) {
+			pthread_cond_wait(cond_, mutex.mutex_);
 		}
 
 		void Signal() {
@@ -112,6 +112,15 @@ class ConditionVariable
 
 		void Broadcast() {
 			pthread_cond_broadcast(cond_);
+		}
+
+		bool TimedWait(Mutex &mutex, uint32_t millisecond) {
+			struct timeval tv;
+			gettimeofday(&tv, 0);
+			timespec abstime;
+			abstime.tv_sec  = tv.tv_sec;
+			abstime.tv_nsec = tv.tv_usec * 1000 + millisecond * 1000000;
+			return pthread_cond_timedwait(cond_, mutex.mutex_, &abstime) == ETIMEDOUT;
 		}
 
 		~ConditionVariable() {
@@ -171,13 +180,16 @@ class Latch
 		void LockShared() {
 			pthread_rwlock_rdlock(lock_);
 		}
+
 		void Lock() {
 			pthread_rwlock_wrlock(lock_);
 		}
+
 		void UnlockShared() {
 			pthread_rwlock_unlock(lock_);
 			Unpin();
 		}
+
 		void Unlock() {
 			pthread_rwlock_unlock(lock_);
 			Unpin();

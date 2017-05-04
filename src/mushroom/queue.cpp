@@ -35,7 +35,7 @@ void Queue::Push(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice
 {
 	mutex_.Lock();
 	while (avail_[front_] < 0)
-		empty_.Wait(&mutex_);
+		empty_.Wait(mutex_);
 	int seq = avail_[front_];
 	Task *task = queue_[seq];
 	task->Assign(fun, db, key);
@@ -51,7 +51,7 @@ void Queue::Pull()
 {
 	mutex_.Lock();
 	while (work_[work_back_] < 0 && !clear_)
-		ready_.Wait(&mutex_);
+		ready_.Wait(mutex_);
 
 	if (clear_) {
 		mutex_.Unlock();
@@ -79,7 +79,7 @@ void Queue::Clear()
 {
 	mutex_.Lock();
 	while (front_ != avail_back_ || front_ != work_back_)
-		empty_.Wait(&mutex_);
+		empty_.Wait(mutex_);
 	clear_ = true;
 	mutex_.Unlock();
 

@@ -17,24 +17,14 @@ static inline void* run(void *pool)
 	return 0;
 }
 
-bool Thread::Start()
-{
-	return !pthread_create(&id_, 0, func_, pool_);
-}
-
-bool Thread::Stop()
-{
-	return !pthread_join(id_, 0);
-}
-
 ThreadPool::ThreadPool(Queue *queue):queue_(queue), working_(false)
 {
-	threads_ = new Thread*[thread_num];
+	threads_ = new Thread<ThreadPool>*[thread_num];
 
 	working_ = true;
 
 	for (int i = 0; i != thread_num; ++i) {
-		threads_[i] = new Thread(&run, this);
+		threads_[i] = new Thread<ThreadPool>(&run, this);
 		assert(threads_[i]->Start());
 	}
 }

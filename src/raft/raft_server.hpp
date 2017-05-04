@@ -8,22 +8,30 @@
 #ifndef _RAFT_SERVER_HPP_
 #define _RAFT_SERVER_HPP_
 
-#include <cstdint>
+#include "../utility/latch.hpp"
 
 namespace Mushroom {
+
+template<typename T> class Thread;
 
 class RaftServer
 {
 	public:
 		enum State { Follower, Candidate, Leader };
 
-		RaftServer(uint32_t heartbeat_interval, uint32_t election_interval);
+		static uint32_t ElectionInterval;
+		static uint32_t HeartbeatInterval;
+
+		RaftServer();
 
 		~RaftServer();
 
 		void Run();
 
+		void Elect();
+
 	private:
+		bool     running_;
 		State    state_;
 
 		uint32_t term_;
@@ -31,8 +39,12 @@ class RaftServer
 		int32_t  commit_;
 		int32_t  applied_;
 
-		uint32_t heartbeat_interval_;
-		uint32_t election_interval_;
+		Mutex    mutex_;
+
+		bool                election_time_out_;
+		bool                reset_timer_;
+		Thread<RaftServer> *election_thread_;
+		ConditionVariable   election_cond_;
 };
 
 } // namespace Mushroom

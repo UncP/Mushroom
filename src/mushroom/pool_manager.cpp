@@ -5,7 +5,7 @@
  *    > Created Time:  2017-03-19 13:13:52
 **/
 
-#include "latch.hpp"
+#include "../utility/latch.hpp"
 #include "page.hpp"
 #include "page_pool.hpp"
 

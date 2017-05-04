@@ -19,6 +19,7 @@ typedef uint32_t block_t;
 
 class Key;
 class KeySlice;
+class ConditionVariable;
 class SpinLatch;
 class Latch;
 class HashEntry;

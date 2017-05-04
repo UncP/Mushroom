@@ -9,7 +9,7 @@
 #define _QUEUE_HPP_
 
 #include "utility.hpp"
-#include "latch.hpp"
+#include "../utility/latch.hpp"
 
 namespace Mushroom {
 

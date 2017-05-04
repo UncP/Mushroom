@@ -49,14 +49,10 @@ bool LSMTree::Get(KeySlice *key) const
 
 void LSMTree::SwitchMemoryTree()
 {
-	#ifndef NOLATCH
 	spin_.Lock();
-	#endif
 	if (mem_tree_->ReachThreshold()) {
 		BLinkTree *new_tree = imm_tree_;
-		#ifndef NOLATCH
 		mutex_.Lock();
-		#endif
 		imm_tree_ = mem_tree_;
 		if (!new_tree) {
 			__sync_bool_compare_and_swap(&mem_tree_, mem_tree_, new BLinkTree(key_len_));
@@ -64,18 +60,12 @@ void LSMTree::SwitchMemoryTree()
 			new_tree->Reset();
 			__sync_bool_compare_and_swap(&mem_tree_, mem_tree_, new_tree);
 		}
-		#ifndef NOLATCH
 		spin_.Unlock();
-		#endif
 		imm_tree_->Clear();
 		lvl_tree_->AppendLevel0SSTable(imm_tree_);
-		#ifndef NOLATCH
 		mutex_.Unlock();
-		#endif
 	} else {
-		#ifndef NOLATCH
 		spin_.Unlock();
-		#endif
 	}
 }
 

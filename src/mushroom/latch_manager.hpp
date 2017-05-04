@@ -8,7 +8,7 @@
 #ifndef _LATCH_MANAGER_HPP_
 #define _LATCH_MANAGER_HPP_
 
-#include "latch.hpp"
+#include "../utility/latch.hpp"
 
 namespace Mushroom {
 

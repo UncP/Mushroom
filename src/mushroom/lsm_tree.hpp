@@ -9,9 +9,7 @@
 #define _LSM_TREE_HPP_
 
 #include "utility.hpp"
-#ifndef NOLATCH
-#include "latch.hpp"
-#endif
+#include "../utility/latch.hpp"
 
 namespace Mushroom {
 

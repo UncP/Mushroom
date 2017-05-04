@@ -8,8 +8,9 @@
 #ifndef _B_LINK_TREE_HPP_
 #define _B_LINK_TREE_HPP_
 
+#include <sched.h>
+
 #include "utility.hpp"
-#include "latch.hpp"
 #include "pool_manager.hpp"
 
 namespace Mushroom {
