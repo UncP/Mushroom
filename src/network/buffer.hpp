@@ -41,7 +41,7 @@ class Buffer
 
 		void AdvanceTail(uint32_t len);
 
-		void Clear();
+		void Reset();
 
 	private:
 		char     *data_;

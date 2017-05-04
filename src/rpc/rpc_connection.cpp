@@ -20,8 +20,33 @@ RpcConnection::RpcConnection(const Socket &socket, uint32_t events, Poller *poll
 	channel_ = new Channel(socket.fd(), events, poller);
 	channel_->OnRead([this]() { this->HandleRead(); });
 	channel_->OnWrite([this]() { this->HandleWrite(); });
-	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));
+	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed, %s :(", strerror(errno));
 	connected_ = true;
+}
+
+void RpcConnection::HandleRead()
+{
+	if (!connected_) {
+		Error("connection has closed :(");
+		return ;
+	}
+	input_.Reset();
+	bool blocked = false;
+	uint32_t read = socket_.Read(input_.end(), input_.space(), &blocked);
+	if (!read && !blocked) {
+		Error("server closed :(");
+		Close();
+		return ;
+	}
+	input_.AdvanceTail(read);
+	marshaller_
+	if (readcb_ && read)
+		readcb_();
+}
+
+void RpcConnection::HandleWrite()
+{
+
 }
 
 RpcConnection::~RpcConnection() { }

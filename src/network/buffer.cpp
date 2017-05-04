@@ -12,11 +12,7 @@
 
 namespace Mushroom {
 
-Buffer::Buffer():data_(new char[BufferSize])
-{
-	memset(data_, 0, BufferSize);
-	Clear();
-}
+Buffer::Buffer():data_(new char[BufferSize]), beg_(0), end_(0), size_(0) { }
 
 Buffer::~Buffer()
 {
@@ -54,6 +50,11 @@ uint32_t Buffer::space() const
 	return BufferSize - end_;
 }
 
+void Buffer::Reset()
+{
+	if (empty()) beg_  = 0, end_  = 0, size_ = 0;
+}
+
 void Buffer::AdvanceHead(uint32_t len)
 {
 	assert(beg_ + len <= end_);
@@ -66,13 +67,6 @@ void Buffer::AdvanceTail(uint32_t len)
 	assert(end_ + len <= BufferSize);
 	end_  += len;
 	size_ += len;
-}
-
-void Buffer::Clear()
-{
-	beg_  = 0;
-	end_  = 0;
-	size_ = 0;
 }
 
 void Buffer::Read(const char *data, uint32_t len)

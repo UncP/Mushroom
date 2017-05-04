@@ -82,12 +82,13 @@ inline Marshaller& operator>>(Marshaller &marshaller, std::vector<T> &v) {
 template<typename T>
 inline uint32_t Marshaller::Marshal(rpc_t id, const T *args)
 {
-	output_.Clear();
-	uint32_t *len = (uint32_t *)output_.data();
+	output_.Reset();
+	uint32_t *len = (uint32_t *)output_.begin();
 	output_.AdvanceTail(4);
+	uint32_t before = output_.size();
 	*this <<  id;
 	*this << *args;
-	*len = output_.size() - 4;
+	*len = output_.size() - before;
 	return *len;
 }
 

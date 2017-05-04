@@ -19,7 +19,8 @@ class RaftServer
 	public:
 		enum State { Follower, Candidate, Leader };
 
-		static uint32_t ElectionInterval;
+		static uint32_t ElectionTimeoutBase;
+		static uint32_t ElectionTimeoutLimit;
 		static uint32_t HeartbeatInterval;
 
 		RaftServer();
@@ -31,8 +32,12 @@ class RaftServer
 		void Elect();
 
 	private:
+		int32_t  id_;
+
 		bool     running_;
 		State    state_;
+
+		std::vector<RpcConnection *> peers_;
 
 		uint32_t term_;
 		int32_t  vote_for_;

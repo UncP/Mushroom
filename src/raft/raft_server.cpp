@@ -6,6 +6,7 @@
 **/
 
 #include <cassert>
+#include <ctime>
 #include <random>
 
 #include "raft_server.hpp"
@@ -19,8 +20,8 @@ static inline void* run(void *raft_server)
 	return 0;
 }
 
-uint32_t RaftServer::ElectionInterval = 150;
-
+uint32_t RaftServer::ElectionTimeoutBase  = 150;
+uint32_t RaftServer::ElectionTimeoutLimit = 300;
 uint32_t RaftServer::HeartbeatInterval = 30;
 
 RaftServer::RaftServer()
@@ -38,18 +39,19 @@ RaftServer::~RaftServer()
 
 void RaftServer::Run()
 {
-	std::default_random_engine engine;
-	std::uniform_int_distribution<uint32_t> distribution(0, 150);
+	std::default_random_engine engine(time(0));
+	std::uniform_int_distribution<int> dist(ElectionTimeoutBase, ElectionTimeoutLimit);
 	for (; running_;) {
 		mutex_.Lock();
 		while (!election_time_out_ && !reset_timer_)
-			election_time_out_ = election_cond_.TimedWait(mutex_, distribution(engine));
+			election_time_out_ = election_cond_.TimedWait(mutex_, dist(engine));
 		if (reset_timer_) {
 			reset_timer_ = false;
 			election_time_out_ = false;
 			mutex_.Unlock();
 			continue;
 		}
+		for ()
 	}
 }
 

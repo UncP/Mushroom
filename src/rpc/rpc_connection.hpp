@@ -24,6 +24,10 @@ class RpcConnection : public Connection
 
 		~RpcConnection();
 
+		void HandleRead();
+
+		void HandleWrite();
+
 		template<typename T1, typename T2>
 		bool Call(const char *str, const T1 *args, T2 *reply);
 

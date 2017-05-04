@@ -114,7 +114,7 @@ class ConditionVariable
 			pthread_cond_broadcast(cond_);
 		}
 
-		bool TimedWait(Mutex &mutex, uint32_t millisecond) {
+		bool TimedWait(Mutex &mutex, int millisecond) {
 			struct timeval tv;
 			gettimeofday(&tv, 0);
 			timespec abstime;
