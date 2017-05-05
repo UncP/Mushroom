@@ -8,155 +8,10 @@
 #ifndef _LATCH_HPP_
 #define _LATCH_HPP_
 
-#ifdef __APPLE__
-
-#include <cerrno>
-#include <atomic>
-#include <thread>
-
-#ifndef PTHREAD_PROCESS_SHARED
-#define PTHREAD_PROCESS_SHARED 1
-#endif
-#ifndef PTHREAD_PROCESS_PRIVATE
-#define PTHREAD_PROCESS_PRIVATE 2
-#endif
-
-#ifndef UNUSED
-#define UNUSED(expr) (void)(expr)
-#endif
-
-typedef std::atomic_flag pthread_spinlock_t;
-
-static inline int pthread_spin_destroy(pthread_spinlock_t *lock) {
-  UNUSED(lock);
-  return 0;
-}
-
-static inline int pthread_spin_lock(pthread_spinlock_t *lock) {
-  while (lock->test_and_set(std::memory_order_acquire))
-    std::this_thread::yield();
-  return 0;
-}
-
-static inline int pthread_spin_trylock(pthread_spinlock_t *lock) {
-  if (lock->test_and_set(std::memory_order_acquire))
-    return 0;
-  else
-    return EBUSY;
-}
-
-static inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
-  lock->clear(std::memory_order_release);
-  return 0;
-}
-
-static inline int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
-  UNUSED(pshared);
-  pthread_spin_unlock(lock);
-  return 0;
-}
-
-#endif  /* __APPLE__ */
-
-#include <pthread.h>
-#include <sys/time.h>
-#include <cassert>
-#include <cerrno>
-
 #include "../mushroom/utility.hpp"
+#include "spin_lock.hpp"
 
 namespace Mushroom {
-
-class Mutex
-{
-	friend class ConditionVariable;
-	public:
-		Mutex() {
-			assert(!pthread_mutex_init(mutex_, 0));
-		}
-
-		void Lock() {
-			pthread_mutex_lock(mutex_);
-		}
-
-		bool TryLock() {
-			return !pthread_mutex_trylock(mutex_);
-		}
-
-		void Unlock() {
-			pthread_mutex_unlock(mutex_);
-		}
-
-		~Mutex() {
-			assert(!pthread_mutex_destroy(mutex_));
-		}
-
-	private:
-		pthread_mutex_t mutex_[1];
-};
-
-class ConditionVariable
-{
-	public:
-		ConditionVariable() {
-			assert(!pthread_cond_init(cond_, 0));
-		}
-
-		void Wait(Mutex &mutex) {
-			pthread_cond_wait(cond_, mutex.mutex_);
-		}
-
-		void Signal() {
-			pthread_cond_signal(cond_);
-		}
-
-		void Broadcast() {
-			pthread_cond_broadcast(cond_);
-		}
-
-		bool TimedWait(Mutex &mutex, int millisecond) {
-			struct timeval tv;
-			gettimeofday(&tv, 0);
-			timespec abstime;
-			abstime.tv_sec  = tv.tv_sec;
-			abstime.tv_nsec = tv.tv_usec * 1000 + millisecond * 1000000;
-			return pthread_cond_timedwait(cond_, mutex.mutex_, &abstime) == ETIMEDOUT;
-		}
-
-		~ConditionVariable() {
-			assert(!pthread_cond_destroy(cond_));
-		}
-
-	private:
-		pthread_cond_t   cond_[1];
-};
-
-class SpinLatch
-{
-	public:
-		SpinLatch() {
-			assert(!pthread_spin_init(lock_, 0));
-		}
-
-		void Lock() {
-			pthread_spin_lock(lock_);
-		}
-
-		bool TryLock() {
-			return !pthread_spin_trylock(lock_);
-		}
-
-		void Unlock() {
-			pthread_spin_unlock(lock_);
-		}
-
-		~SpinLatch() {
-			assert(!pthread_spin_destroy(lock_));
-		}
-
-	private:
-		pthread_spinlock_t lock_[1];
-};
 
 class Latch
 {
@@ -167,39 +22,39 @@ class Latch
 			assert(!pthread_rwlock_init(lock_, 0));
 		}
 
-		void Reset() {
+		inline void Reset() {
 			pin_  = 0;
 			hash_ = 0;
 			prev_ = 0;
 			next_ = 0;
-			page_no_ = ~page_t(0);
+			id_   = ~page_t(0);
 		}
 
-		void Pin() { __sync_fetch_and_add(&pin_, 1); }
+		inline void Pin() { __sync_fetch_and_add(&pin_, 1); }
 
-		void LockShared() {
+		inline void LockShared() {
 			pthread_rwlock_rdlock(lock_);
 		}
 
-		void Lock() {
+		inline void Lock() {
 			pthread_rwlock_wrlock(lock_);
 		}
 
-		void UnlockShared() {
+		inline void UnlockShared() {
 			pthread_rwlock_unlock(lock_);
 			Unpin();
 		}
 
-		void Unlock() {
+		inline void Unlock() {
 			pthread_rwlock_unlock(lock_);
 			Unpin();
 		}
 
-		bool TryWriteLock() {
+		inline bool TryWriteLock() {
 			return !pthread_rwlock_trywrlock(lock_);
 		}
 
-		void Upgrade() {
+		inline void Upgrade() {
 			pthread_rwlock_unlock(lock_);
 			pthread_rwlock_wrlock(lock_);
 		}
@@ -215,15 +70,37 @@ class Latch
 		uint16_t          hash_;
 		uint16_t          prev_;
 		uint16_t          next_;
-		page_t            page_no_;
-		SpinLatch         busy_;
+		page_t            id_;
+		SpinLock          busy_;
 		pthread_rwlock_t  lock_[1];
 };
 
 class HashEntry {
 	public:
 		HashEntry():slot_(0) { }
-		SpinLatch latch_;
+
+		inline void Lock() {
+			lock_.Lock();
+		}
+
+		inline bool TryLock() {
+			return lock_.TryLock();
+		}
+
+		inline void Unlock() {
+			lock_.Unlock();
+		}
+
+		inline void SetSlot(uint16_t slot) {
+			slot_ = slot;
+		}
+
+		inline uint16_t GetSlot() const {
+			return slot_;
+		}
+
+	private:
+		SpinLock  lock_;
 		uint16_t  slot_;
 };
 

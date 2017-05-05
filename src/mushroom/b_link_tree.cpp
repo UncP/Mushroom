@@ -111,7 +111,7 @@ bool BLinkTree::Put(KeySlice *key)
 	Set set;
 
 	#ifndef NOLSM
-	__sync_fetch_and_add(&ref_, 1);
+	++ref_;
 	#endif
 
 	DescendToLeaf(key, set);
@@ -140,7 +140,7 @@ bool BLinkTree::Put(KeySlice *key)
 	}
 	set.latch_->Unlock();
 	#ifndef NOLSM
-	__sync_fetch_and_add(&ref_, -1);
+	--ref_;
 	#endif
 	return true;
 }

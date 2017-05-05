@@ -27,7 +27,7 @@ void LatchManager::Reset()
 	victim_   = 0;
 
 	for (uint16_t i = 0; i != total; ++i) {
-		entries_[i].slot_ = 0;
+		entries_[i].SetSlot(0);
 		latches_[i].Reset();
 	}
 }
@@ -36,14 +36,14 @@ void LatchManager::Link(uint16_t hashidx, uint16_t victim, page_t page_no)
 {
 	Latch *latch = latches_ + victim;
 
-	if ((latch->next_ = entries_[hashidx].slot_))
+	if ((latch->next_ = entries_[hashidx].GetSlot()))
 		latches_[latch->next_].prev_ = victim;
 
-	entries_[hashidx].slot_ = victim;
+	entries_[hashidx].SetSlot(victim);
 
-	latch->page_no_ = page_no;
-	latch->hash_    = hashidx;
-	latch->prev_    = 0;
+	latch->id_   = page_no;
+	latch->hash_ = hashidx;
+	latch->prev_ = 0;
 }
 
 Latch* LatchManager::GetLatch(page_t page_no)
@@ -51,12 +51,12 @@ Latch* LatchManager::GetLatch(page_t page_no)
 	uint16_t hashidx = page_no & mask;
 	Latch *latch;
 
-  entries_[hashidx].latch_.Lock();
+  entries_[hashidx].Lock();
 
-	uint16_t slot = entries_[hashidx].slot_, avail = 0;
+	uint16_t slot = entries_[hashidx].GetSlot(), avail = 0;
 	for (; slot; slot = latch->next_) {
 		latch = latches_ + slot;
-		if (page_no == latch->page_no_)
+		if (page_no == latch->id_)
 			break;
 		if (!latch->pin_ && !avail)
 			avail = slot;
@@ -65,25 +65,25 @@ Latch* LatchManager::GetLatch(page_t page_no)
 	if (slot || (slot = avail)) {
 		latch = latches_ + slot;
 		latch->Pin();
-		latch->page_no_ = page_no;
-		entries_[hashidx].latch_.Unlock();
+		latch->id_ = page_no;
+		entries_[hashidx].Unlock();
 		return latch;
   }
 
-	uint16_t victim = __sync_fetch_and_add(&deployed_, 1) + 1;
+	uint16_t victim = ++deployed_;
 
 	if (victim < total) {
 		latch = latches_ + victim;
 		latch->Pin();
 		Link(hashidx, victim, page_no);
-		entries_[hashidx].latch_.Unlock();
+		entries_[hashidx].Unlock();
 		return latch;
 	}
 
-	victim = __sync_fetch_and_add(&deployed_, -1);
+	--deployed_;
 
   for (;;) {
-		victim = __sync_fetch_and_add(&victim_, 1);
+		victim = victim_++;
 
 		if ((victim %= total))
 			latch = latches_ + victim;
@@ -95,13 +95,13 @@ Latch* LatchManager::GetLatch(page_t page_no)
 
 		uint16_t idx = latch->hash_;
 
-		if (!entries_[idx].latch_.TryLock()) {
+		if (!entries_[idx].TryLock()) {
 			latch->busy_.Unlock();
 			continue;
 		}
 
 		if (latch->pin_) {
-			entries_[idx].latch_.Unlock();
+			entries_[idx].Unlock();
 			latch->busy_.Unlock();
 			continue;
 		}
@@ -109,15 +109,15 @@ Latch* LatchManager::GetLatch(page_t page_no)
 		if (latch->prev_)
 			latches_[latch->prev_].next_ = latch->next_;
 		else
-			entries_[idx].slot_ = latch->next_;
+			entries_[idx].SetSlot(latch->next_);
 
 		if (latch->next_)
 			latches_[latch->next_].prev_ = latch->prev_;
 
-		entries_[idx].latch_.Unlock();
+		entries_[idx].Unlock();
 		latch->Pin();
 		Link(hashidx, victim, page_no);
-		entries_[hashidx].latch_.Unlock();
+		entries_[hashidx].Unlock();
 		latch->busy_.Unlock();
 		return latch;
   }

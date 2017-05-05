@@ -18,11 +18,11 @@ class Thread
 	public:
 		Thread(void* (*func)(void *), T *args):func_(func), args_(args) { }
 
-		bool Start() {
+		inline bool Start() {
 			return !pthread_create(&id_, 0, func_, args_);
 		}
 
-		bool Stop() {
+		inline bool Stop() {
 			return !pthread_join(id_, 0);
 		}
 

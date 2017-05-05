@@ -37,7 +37,6 @@ class PoolManager
 		PoolManager& operator=(const PoolManager &) = delete;
 
 	private:
-
 		static uint32_t HashMask;
 		static uint32_t PoolSize;
 

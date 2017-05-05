@@ -12,6 +12,7 @@
 
 #include "utility.hpp"
 #include "pool_manager.hpp"
+#include "../utility/atomic.hpp"
 
 namespace Mushroom {
 
@@ -88,7 +89,7 @@ class BLinkTree
 
 		LatchManager *latch_manager_;
 		#ifndef NOLSM
-		uint32_t      ref_;
+		atomic_32_t   ref_;
 		#endif
 
 		PoolManager *pool_manager_;

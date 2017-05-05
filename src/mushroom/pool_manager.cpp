@@ -41,8 +41,9 @@ void PoolManager::Reset()
 {
 	cur_ = 0;
 	tot_ = 0;
+
 	for (uint32_t i = 0; i != (HashMask+1); ++i)
-		entries_[i].slot_ = 0;
+		entries_[i].SetSlot(0);
 	for (uint32_t i = 0; i != PoolSize; ++i)
 		pool_[i].Reset();
 }
@@ -51,11 +52,11 @@ void PoolManager::Link(uint16_t hash, uint16_t victim)
 {
 	PagePool *pool = pool_ + victim;
 
-	uint16_t slot = entries_[hash].slot_;
+	uint16_t slot = entries_[hash].GetSlot();
 	if (slot)
 		pool->next_ = pool_ + slot;
 
-	entries_[hash].slot_ = victim;
+	entries_[hash].SetSlot(victim);
 }
 
 Page* PoolManager::GetPage(page_t page_no)
@@ -64,9 +65,9 @@ Page* PoolManager::GetPage(page_t page_no)
 	page_t hash = (page_no >> PagePool::SegBits) & HashMask;
 	Page *page = 0;
 
-	entries_[hash].latch_.Lock();
+	entries_[hash].Lock();
 
-	uint16_t slot = entries_[hash].slot_;
+	uint16_t slot = entries_[hash].GetSlot();
 	if (slot) {
 		PagePool *pool = pool_ + slot;
 		for (; pool; pool = pool->next_)
@@ -74,7 +75,7 @@ Page* PoolManager::GetPage(page_t page_no)
 				break;
 		if (pool) {
 			page = pool->GetPage(page_no);
-			entries_[hash].latch_.Unlock();
+			entries_[hash].Unlock();
 			return page;
 		}
 	}
@@ -85,7 +86,7 @@ Page* PoolManager::GetPage(page_t page_no)
 	pool_[victim].Initialize(page_no);
 	Link(hash, victim);
 	page = pool_[victim].GetPage(page_no);
-	entries_[hash].latch_.Unlock();
+	entries_[hash].Unlock();
 	return page;
 }
 

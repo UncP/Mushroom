@@ -9,7 +9,8 @@
 #define _LSM_TREE_HPP_
 
 #include "utility.hpp"
-#include "../utility/latch.hpp"
+#include "../utility/mutex.hpp"
+#include "../utility/spin_lock.hpp"
 
 namespace Mushroom {
 
@@ -32,16 +33,15 @@ class LSMTree
 	private:
 		void SwitchMemoryTree();
 
-		uint32_t      key_len_;
-		BLinkTree    *mem_tree_;
-		BLinkTree    *imm_tree_;
+		uint32_t   key_len_;
 
-		LevelTree    *lvl_tree_;
+		BLinkTree *mem_tree_;
+		BLinkTree *imm_tree_;
 
-		#ifndef NOLATCH
-		Mutex             mutex_;
-		SpinLatch         spin_;
-		#endif
+		LevelTree *lvl_tree_;
+
+		Mutex      mutex_;
+		SpinLock   spin_;
 };
 
 } // namespace Mushroom

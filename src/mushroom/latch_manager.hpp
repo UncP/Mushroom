@@ -9,6 +9,7 @@
 #define _LATCH_MANAGER_HPP_
 
 #include "../utility/latch.hpp"
+#include "../utility/atomic.hpp"
 
 namespace Mushroom {
 
@@ -27,10 +28,11 @@ class LatchManager
 		void Link(uint16_t hashidx, uint16_t victim, page_t page_no);
 
 		static const uint16_t total = 256;
-		static const uint16_t mask  = total-1;
+		static const uint16_t mask  = total - 1;
 
-		uint16_t   deployed_;
-		uint16_t   victim_;
+		atomic_16_t deployed_;
+		atomic_16_t victim_;
+
 		HashEntry *entries_;
 		Latch     *latches_;
 };

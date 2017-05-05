@@ -9,7 +9,8 @@
 #define _QUEUE_HPP_
 
 #include "utility.hpp"
-#include "../utility/latch.hpp"
+#include "../utility/mutex.hpp"
+#include "../utility/cond.hpp"
 
 namespace Mushroom {
 
@@ -27,17 +28,17 @@ class Queue
 		~Queue();
 
 	private:
-		bool               clear_;
-		int                capacity_;
-		Task*             *queue_;
-		int               *avail_;
-		int               *work_;
-		int                front_;
-		int                avail_back_;
-		int                work_back_;
-		Mutex              mutex_;
-		ConditionVariable  ready_;
-		ConditionVariable  empty_;
+		bool   clear_;
+		int    capacity_;
+		Task* *queue_;
+		int   *avail_;
+		int   *work_;
+		int    front_;
+		int    avail_back_;
+		int    work_back_;
+		Mutex  mutex_;
+		Cond   ready_;
+		Cond   empty_;
 };
 
 } // namespace Mushroom
