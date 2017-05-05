@@ -14,7 +14,7 @@
 namespace Mushroom {
 
 Connection::Connection(const EndPoint &server)
-:connected_(false), channel_(0), readcb_(0), writecb_(0), sendcb_(0)
+:connected_(false), channel_(0), readcb_(0), writecb_(0)
 {
 	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
 	if (!socket_.Connect(server)) {
@@ -26,7 +26,7 @@ Connection::Connection(const EndPoint &server)
 }
 
 Connection::Connection(const Socket &socket, uint32_t events, Poller *poller)
-:socket_(socket), readcb_(0), writecb_(0), sendcb_(0)
+:socket_(socket), readcb_(0), writecb_(0)
 {
 	channel_ = new Channel(socket.fd(), events, poller);
 	channel_->OnRead([this]() { this->HandleRead(); });
@@ -77,11 +77,6 @@ void Connection::OnWrite(const WriteCallBack &writecb)
 	writecb_ = writecb;
 }
 
-void Connection::OnSend(const SendCallBack &sendcb)
-{
-	sendcb_ = sendcb;
-}
-
 void Connection::HandleRead()
 {
 	if (!connected_) {
@@ -92,7 +87,6 @@ void Connection::HandleRead()
 	bool blocked = false;
 	uint32_t read = socket_.Read(input_.end(), input_.space(), &blocked);
 	if (!read && !blocked) {
-		Error("server closed :(");
 		Close();
 		return ;
 	}
@@ -120,24 +114,18 @@ void Connection::Send(const char *str)
 void Connection::Send(Buffer &buffer)
 {
 	output_.Read(buffer.begin(), buffer.size());
-	SendOutput();
+	HandleWrite();
 }
 
 void Connection::Send(const char *str, uint32_t len)
 {
 	output_.Read(str, len);
-	SendOutput();
+	HandleWrite();
 }
 
 void Connection::SendOutput()
 {
-	if (!connected_) {
-		Error("connection has closed :(");
-		return ;
-	}
-	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
-	if (sendcb_ && output_.empty())
-		sendcb_();
+	HandleWrite();
 }
 
 } // namespace Mushroom

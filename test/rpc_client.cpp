@@ -6,13 +6,18 @@
 **/
 
 #include "rpc_call.hpp"
+#include "../src/rpc/rpc_connection.hpp"
 
 using namespace Mushroom;
 
 int main()
 {
-	// RpcClient client;
-
+	RpcConnection *con = new RpcConnection(EndPoint("127.0.0.1"));
+	if (!con->Success()) {
+		delete con;
+		return 0;
+	}
+	delete con;
 	// client.OnConnect([](Connection *con) {
 	// 	con->OnSend([]() {
 	// 		printf("send\n");

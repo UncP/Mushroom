@@ -21,9 +21,9 @@ QUEUE = ../test/mushroom_with_queue.cpp
 
 THREAD = ../test/mushroom_multi_thread.cpp
 
-network: client_test server_test
-
 raft_test: $(UOBJ) $(RaftOBJ)
+
+network: client_test server_test
 
 rpc: rpc_client_test rpc_server_test
 

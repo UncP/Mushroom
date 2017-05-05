@@ -39,9 +39,7 @@ class Connection
 
 		void OnRead(const ReadCallBack &readcb);
 
-		void OnWrite(const WriteCallBack &writecb_);
-
-		void OnSend(const SendCallBack &sendcb);
+		void OnWrite(const WriteCallBack &writecb);
 
 		bool Close();
 
@@ -62,7 +60,6 @@ class Connection
 
 		ReadCallBack  readcb_;
 		WriteCallBack writecb_;
-		SendCallBack  sendcb_;
 };
 
 } // namespace Mushroom
