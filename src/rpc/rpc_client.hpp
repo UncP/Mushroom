@@ -8,8 +8,6 @@
 #ifndef _RPC_CLIENT_HPP_
 #define _RPC_CLIENT_HPP_
 
-#include <cassert>
-
 namespace Mushroom {
 
 class RpcClient

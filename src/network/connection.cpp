@@ -88,7 +88,7 @@ void Connection::HandleRead()
 		Error("connection has closed :(");
 		return ;
 	}
-	input_.Clear();
+	input_.Reset();
 	bool blocked = false;
 	uint32_t read = socket_.Read(input_.end(), input_.space(), &blocked);
 	if (!read && !blocked) {
@@ -119,13 +119,13 @@ void Connection::Send(const char *str)
 
 void Connection::Send(Buffer &buffer)
 {
-	output_.Expand(buffer.begin(), buffer.size());
+	output_.Read(buffer.begin(), buffer.size());
 	SendOutput();
 }
 
 void Connection::Send(const char *str, uint32_t len)
 {
-	output_.Expand(str, len);
+	output_.Read(str, len);
 	SendOutput();
 }
 

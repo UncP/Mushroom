@@ -12,7 +12,7 @@
 
 namespace Mushroom {
 
-Buffer::Buffer():data_(new char[BufferSize]), beg_(0), end_(0), size_(0) { }
+Buffer::Buffer():data_(new char[BufferSize]), size_(0), beg_(0), end_(0) { }
 
 Buffer::~Buffer()
 {
@@ -69,18 +69,27 @@ void Buffer::AdvanceTail(uint32_t len)
 	size_ += len;
 }
 
+void Buffer::Unget(uint32_t len)
+{
+	assert(size_ >= len);
+	beg_  -= len;
+	size_ -= len;
+}
+
 void Buffer::Read(const char *data, uint32_t len)
 {
 	assert(end_ + len <= BufferSize);
 	memcpy(end(), data, len);
-	end_ += len;
+	end_  += len;
+	size_ += len;
 }
 
 void Buffer::Write(char *data, uint32_t len)
 {
-	assert(beg_ + len <= end_);
+	assert(size_ >= len);
 	memcpy(data, begin(), len);
-	beg_ += len;
+	beg_  += len;
+	size_ -= len;
 }
 
 } // namespace Mushroom

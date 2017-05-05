@@ -18,37 +18,32 @@ namespace Mushroom {
 class RPC
 {
 	public:
-		RPC() { }
+		RPC();
 
-		~RPC() { }
+		~RPC();
 
 		template<typename T1, typename T2, typename T3>
-		rpc_t Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
-			service_ = [=](Marshaller &marshaller) {
-				T2 args;
-				marshaller >> args;
-				T3 reply;
-				(obj->*fun)(&args, &reply);
-				marshaller << reply;
-			};
-			return Hash(str);
-		}
+		rpc_t Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
-		inline void operator()(Marshaller &marshaller) {
-			service_(marshaller);
-		}
+		void operator()(Marshaller &marshaller);
 
-		static rpc_t Hash(const char *str) {
-			rpc_t ret = 0;
-			char *p = (char *)str;
-			while (p)
-				ret += rpc_t(*p++);
-			return ret;
-		}
+		static rpc_t Hash(const char *str);
 
 	private:
 		std::function<void(Marshaller &)> service_;
 };
+
+template<typename T1, typename T2, typename T3>
+rpc_t RPC::Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
+	service_ = [=](Marshaller &marshaller) {
+		T2 args;
+		marshaller >> args;
+		T3 reply;
+		(obj->*fun)(&args, &reply);
+		marshaller << reply;
+	};
+	return Hash(str);
+}
 
 } // namespace Mushroom
 

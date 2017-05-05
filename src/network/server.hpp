@@ -37,13 +37,14 @@ class Server
 		Socket   socket_;
 		Channel *listen_;
 		Poller  *poller_;
-		bool     running_;
 
 		std::vector<Connection *> connections_;
 
-		ConnectCallBack connectcb_;
+	private:
+		bool                      running_;
+		ConnectCallBack           connectcb_;
 
-		void Accept();
+		void HandleAccept();
 };
 
 } // namespace Mushroom

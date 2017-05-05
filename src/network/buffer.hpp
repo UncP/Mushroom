@@ -43,6 +43,8 @@ class Buffer
 
 		void Reset();
 
+		void Unget(uint32_t len);
+
 	private:
 		char     *data_;
 		uint32_t  size_;

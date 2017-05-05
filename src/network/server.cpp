@@ -35,7 +35,7 @@ bool Server::Start()
 	FatalIf(!socket_.Bind(), "socket bind failed, %s :(", strerror(errno));
 	FatalIf(!socket_.Listen(), "socket listen failed, %s :(", strerror(errno));
 	listen_ = new Channel(socket_.fd(), ReadEvent, poller_);
-	listen_->OnRead([this]() { Accept(); });
+	listen_->OnRead([this]() { HandleAccept(); });
 	running_ = true;
 	return true;
 }
@@ -59,7 +59,7 @@ void Server::OnConnect(const ConnectCallBack &connectcb)
 	connectcb_ = connectcb;
 }
 
-void Server::Accept()
+void Server::HandleAccept()
 {
 	int fd = socket_.Accept();
 	if (fd < 0) {

@@ -25,14 +25,15 @@ class Marshaller
 		template<typename T>
 		inline uint32_t Marshal(rpc_t id, const T *args);
 
-		template<typename T>
-		uint32_t Unmarshal(rpc_t *id, T *reply);
-
 		void Read(const void *str, uint32_t len);
 
 		void Write(void *str, uint32_t len);
 
+		bool HasCompleteArgs();
+
 	private:
+		void Unget(uint32_t size);
+
 		Buffer &input_;
 		Buffer &output_;
 };
@@ -90,16 +91,6 @@ inline uint32_t Marshaller::Marshal(rpc_t id, const T *args)
 	*this << *args;
 	*len = output_.size() - before;
 	return *len;
-}
-
-template<typename T>
-inline uint32_t Marshaller::Unmarshal(rpc_t *id, T *reply)
-{
-	uint32_t len;
-	*this >> len;
-	*this >> *id;
-	*this >> *reply;
-	return len;
 }
 
 } // namespace Mushroom
