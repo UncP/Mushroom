@@ -30,7 +30,7 @@ LevelTree::~LevelTree()
 	delete sstable_manager_;
 }
 
-void LevelTree::AppendLevel0SSTable(const BLinkTree *b_link_tree)
+void LevelTree::AppendLevel0SSTable(BLinkTree *b_link_tree)
 {
 	SSTable *sstable = sstable_manager_->NewSSTable(0);
 	sstable->Generate(b_link_tree, sstable_manager_->block_manager_);

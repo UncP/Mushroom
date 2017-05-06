@@ -7,11 +7,13 @@
 
 #include <cstring>
 #include <cassert>
+#include <sched.h>
 
 #include "b_link_tree.hpp"
 #include "page.hpp"
-
 #include "latch_manager.hpp"
+#include "pool_manager.hpp"
+#include "../utility/latch.hpp"
 
 namespace Mushroom {
 
@@ -212,6 +214,18 @@ bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index)
 		return (*page)->Ascend(key, &page_no, index);
 	}
 	return false;
+}
+
+bool BLinkTree::ReachThreshold()
+{
+	return pool_manager_->ReachMaxPool();
+}
+
+void BLinkTree::Clear() {
+	#ifndef NOLSM
+	while (ref_.get()) sched_yield();
+	assert(!ref_.get());
+	#endif
 }
 
 BLinkTree::Iterator::Iterator(BLinkTree *b_link_tree, int32_t level)

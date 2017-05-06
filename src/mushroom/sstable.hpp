@@ -17,6 +17,9 @@
 
 namespace Mushroom {
 
+class BLinkTree;
+class BlockManager;
+
 class SSTable
 {
 	friend class SSTableManager;
@@ -36,7 +39,7 @@ class SSTable
 
 		bool LargerThan(Key &offset) const;
 
-		void Generate(const BLinkTree *b_link_tree, BlockManager *block_manager);
+		void Generate(BLinkTree *b_link_tree, BlockManager *block_manager);
 
 		void Free(BlockManager *block_manager);
 

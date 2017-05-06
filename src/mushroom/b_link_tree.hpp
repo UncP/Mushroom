@@ -8,13 +8,16 @@
 #ifndef _B_LINK_TREE_HPP_
 #define _B_LINK_TREE_HPP_
 
-#include <sched.h>
-
 #include "utility.hpp"
-#include "pool_manager.hpp"
 #include "../utility/atomic.hpp"
 
 namespace Mushroom {
+
+class KeySlice;
+class Page;
+class PoolManager;
+class Latch;
+class LatchManager;
 
 class BLinkTree
 {
@@ -43,7 +46,7 @@ class BLinkTree
 
 		~BLinkTree();
 
-		inline uint32_t KeyLength() const { return key_len_; }
+		inline uint32_t KeyLength() { return key_len_; }
 
 		bool Free();
 
@@ -55,13 +58,9 @@ class BLinkTree
 
 		void Reset();
 
-		inline bool ReachThreshold() const { return pool_manager_->ReachMaxPool(); }
-		inline void Clear() const {
-			#ifndef NOLSM
-			while (ref_) sched_yield();
-			assert(!ref_);
-			#endif
-		}
+		bool ReachThreshold();
+
+		void Clear();
 
 		BLinkTree(const BLinkTree &) = delete;
 		BLinkTree& operator=(const BLinkTree &) = delete;

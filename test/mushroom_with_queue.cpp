@@ -12,6 +12,7 @@
 
 #include "../src/mushroom/slice.hpp"
 #include "../src/mushroom/db.hpp"
+#include "../src/mushroom/queue.hpp"
 #include "../src/mushroom/thread_pool.hpp"
 
 using namespace Mushroom;

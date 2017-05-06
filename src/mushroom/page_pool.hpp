@@ -13,6 +13,8 @@
 
 namespace Mushroom {
 
+class PoolManager;
+
 class PagePool
 {
 	friend class PoolManager;

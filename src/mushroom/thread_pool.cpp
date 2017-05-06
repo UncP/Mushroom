@@ -8,6 +8,8 @@
 #include <cassert>
 
 #include "thread_pool.hpp"
+#include "../utility/thread.hpp"
+#include "queue.hpp"
 
 namespace Mushroom {
 

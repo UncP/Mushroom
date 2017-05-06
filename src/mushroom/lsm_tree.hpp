@@ -14,6 +14,10 @@
 
 namespace Mushroom {
 
+class BLinkTree;
+class LevelTree;
+class KeySlice;
+
 class LSMTree
 {
 	public:
@@ -25,7 +29,7 @@ class LSMTree
 
 		bool Put(KeySlice *key);
 
-		bool Get(KeySlice *key) const;
+		bool Get(KeySlice *key);
 
 		LSMTree(const LSMTree &) = delete;
 		LSMTree& operator=(const LSMTree &) = delete;

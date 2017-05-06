@@ -14,6 +14,13 @@
 
 namespace Mushroom {
 
+class Key;
+class BLinkTree;
+class SSTable;
+class SSTableManager;
+class Merger;
+class Level;
+
 class LevelTree
 {
 	public:
@@ -21,7 +28,7 @@ class LevelTree
 
 		~LevelTree();
 
-		void AppendLevel0SSTable(const BLinkTree *b_link_tree);
+		void AppendLevel0SSTable(BLinkTree *b_link_tree);
 
 		void MergeLevel(uint32_t level);
 

@@ -8,13 +8,14 @@
 #ifndef _THREAD_POOL_HPP_
 #define _THREAD_POOL_HPP_
 
-#include <pthread.h>
-
 #include "utility.hpp"
-#include "../utility/thread.hpp"
-#include "queue.hpp"
 
 namespace Mushroom {
+
+class MushroomDB;
+class KeySlice;
+class Queue;
+template<typename T> class Thread;
 
 class ThreadPool
 {

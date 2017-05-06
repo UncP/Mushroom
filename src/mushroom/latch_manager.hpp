@@ -8,10 +8,13 @@
 #ifndef _LATCH_MANAGER_HPP_
 #define _LATCH_MANAGER_HPP_
 
-#include "../utility/latch.hpp"
+#include "utility.hpp"
 #include "../utility/atomic.hpp"
 
 namespace Mushroom {
+
+class Latch;
+class HashEntry;
 
 class LatchManager
 {

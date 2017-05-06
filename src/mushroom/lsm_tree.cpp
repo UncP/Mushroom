@@ -39,7 +39,7 @@ bool LSMTree::Put(KeySlice *key)
 	return mem_tree_->Put(key);
 }
 
-bool LSMTree::Get(KeySlice *key) const
+bool LSMTree::Get(KeySlice *key)
 {
 	if (!mem_tree_->Get(key))
 		if (imm_tree_ && !imm_tree_->Get(key))

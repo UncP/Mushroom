@@ -13,6 +13,10 @@
 
 namespace Mushroom {
 
+class Page;
+class HashEntry;
+class PagePool;
+
 class PoolManager
 {
 	public:

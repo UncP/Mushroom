@@ -14,6 +14,10 @@
 
 namespace Mushroom {
 
+class MushroomDB;
+class KeySlice;
+class Task;
+
 class Queue
 {
 	public:

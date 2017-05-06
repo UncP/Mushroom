@@ -15,6 +15,8 @@
 
 namespace Mushroom {
 
+class Block;
+
 class BlockManager
 {
 	public:

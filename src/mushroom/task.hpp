@@ -13,6 +13,8 @@
 
 namespace Mushroom {
 
+class MushroomDB;
+
 class Task
 {
 	public:

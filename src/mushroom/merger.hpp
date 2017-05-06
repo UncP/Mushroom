@@ -14,6 +14,11 @@
 
 namespace Mushroom {
 
+class Key;
+class SSTable;
+class BlockManager;
+class SSTableManager;
+
 class Merger
 {
 	public:

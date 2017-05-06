@@ -12,6 +12,10 @@
 
 namespace Mushroom {
 
+class KeySlice;
+class BLinkTree;
+class LSMTree;
+
 class MushroomDB
 {
 	public:

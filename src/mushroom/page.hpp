@@ -17,6 +17,8 @@ namespace Mushroom {
 
 typedef enum { InsertOk, ExistedKey, MoveRight } InsertStatus;
 
+class KeySlice;
+
 class Page
 {
 	friend class BLinkTree;

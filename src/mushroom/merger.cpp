@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "merger.hpp"
+#include "slice.hpp"
 #include "sstable.hpp"
 #include "sstable_manager.hpp"
 

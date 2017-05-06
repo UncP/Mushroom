@@ -5,11 +5,10 @@
  *    > Created Time:  2017-03-19 13:13:52
 **/
 
-#include "../utility/latch.hpp"
 #include "page.hpp"
 #include "page_pool.hpp"
-
 #include "pool_manager.hpp"
+#include "../utility/latch.hpp"
 
 namespace Mushroom {
 

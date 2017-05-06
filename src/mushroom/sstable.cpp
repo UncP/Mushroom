@@ -25,10 +25,10 @@ uint32_t SSTable::MaxSizeInBytes(uint32_t level)
 SSTable::SSTable(table_t table_no, uint32_t level)
 :table_no_(table_no), level_(level), block_num_(0) { }
 
-void SSTable::Generate(const BLinkTree *b_link_tree, BlockManager *block_manager)
+void SSTable::Generate(BLinkTree *b_link_tree, BlockManager *block_manager)
 {
 	uint32_t key_len = b_link_tree->KeyLength();
-	BLinkTree::Iterator iter((BLinkTree *)b_link_tree);
+	BLinkTree::Iterator iter(b_link_tree);
 	blocks_.push_back(block_manager->NewBlock());
 	Block *curr = blocks_[block_num_++];
 	for (;;) {

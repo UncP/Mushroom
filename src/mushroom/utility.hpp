@@ -17,29 +17,6 @@ typedef uint32_t page_t;
 typedef uint32_t table_t;
 typedef uint32_t block_t;
 
-class Key;
-class KeySlice;
-class ConditionVariable;
-class SpinLatch;
-class Latch;
-class HashEntry;
-class Page;
-class BLinkTree;
-class LSMTree;
-class LatchManager;
-class PagePool;
-class PoolManager;
-class MushroomDB;
-class Task;
-class ThreadPool;
-class Block;
-class BlockManager;
-class SSTable;
-class SSTableManager;
-class Level;
-class LevelTree;
-class Merger;
-
 } // namespace Mushroom
 
 #endif /* _UTILITY_HPP_ */

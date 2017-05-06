@@ -15,6 +15,9 @@
 
 namespace Mushroom {
 
+class SSTable;
+class BlockManager;
+
 class SSTableManager
 {
 	public:

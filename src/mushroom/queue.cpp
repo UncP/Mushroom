@@ -5,8 +5,6 @@
  *    > Created Time:  2016-10-17 14:21:54
 **/
 
-#include <cassert>
-
 #include "queue.hpp"
 #include "task.hpp"
 
@@ -29,6 +27,20 @@ front_(0), avail_back_(0), work_back_(0)
 	work_ = new int[capacity_];
 	for (int i = 0; i != capacity_; ++i)
 		work_[i] = -1;
+}
+
+Queue::~Queue()
+{
+	if (!clear_)
+		Clear();
+
+	delete [] avail_;
+	delete [] work_;
+
+	for (int i = capacity_; i;)
+		delete queue_[--i];
+
+	delete [] queue_;
 }
 
 void Queue::Push(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key)
@@ -85,20 +97,6 @@ void Queue::Clear()
 	mutex_.Unlock();
 
 	ready_.Broadcast();
-}
-
-Queue::~Queue()
-{
-	if (!clear_)
-		Clear();
-
-	delete [] avail_;
-	delete [] work_;
-
-	for (int i = capacity_; i;)
-		delete queue_[--i];
-
-	delete [] queue_;
 }
 
 } // namespace Mushroom

@@ -14,6 +14,11 @@
 
 namespace Mushroom {
 
+class Key;
+class SSTableManager;
+class SSTable;
+class LevelTree;
+
 class Level
 {
 	public:
