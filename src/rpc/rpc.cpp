@@ -17,11 +17,11 @@ void RPC::operator()(Marshaller &marshaller) {
 	service_(marshaller);
 }
 
-rpc_t RPC::Hash(const char *str) {
-	rpc_t ret = 0;
+uint32_t RPC::Hash(const char *str) {
+	uint32_t ret = 0;
 	char *p = (char *)str;
 	while (p)
-		ret += rpc_t(*p++);
+		ret += uint32_t(*p++);
 	return ret;
 }
 

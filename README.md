@@ -2,7 +2,7 @@
 [English Version of README](./README.en.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](https://github.com/UncP)
-[![Version](https://img.shields.io/badge/Version-0.8.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.7.0-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
@@ -46,7 +46,8 @@
 | 0.6.2  | 减少对标准库的依赖，加快编译速度，减少程序体积约42.1%|
 | 0.6.4  | 使用posix自旋锁，优化MushroomDB和BLinkTree结构  |
 | 0.7.0  |        日志结构合并树（LSM Tree）  |
-| 0.8.0  |       TCP通信库和RPC框架   |
+| 0.8.0  |       TCP通信库和RPC框架（实现中）  |
+| 0.9.0  |       Raft——分布式一致性算法（实现中）   |
 
 ### 其他
 + 版本0.6.0是第一个稳定版本

@@ -10,7 +10,6 @@
 
 #include <vector>
 
-#include "utility.hpp"
 #include "../network/buffer.hpp"
 
 namespace Mushroom {
@@ -23,7 +22,7 @@ class Marshaller
 		~Marshaller();
 
 		template<typename T>
-		inline uint32_t Marshal(rpc_t id, const T *args);
+		inline uint32_t Marshal(uint32_t id, const T *args);
 
 		void Read(const void *str, uint32_t len);
 
@@ -81,7 +80,7 @@ inline Marshaller& operator>>(Marshaller &marshaller, std::vector<T> &v) {
 }
 
 template<typename T>
-inline uint32_t Marshaller::Marshal(rpc_t id, const T *args)
+inline uint32_t Marshaller::Marshal(uint32_t id, const T *args)
 {
 	output_.Reset();
 	uint32_t *len = (uint32_t *)output_.begin();

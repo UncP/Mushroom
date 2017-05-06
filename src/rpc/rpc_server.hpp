@@ -13,7 +13,6 @@
 
 #include "../log/log.hpp"
 #include "../network/server.hpp"
-#include "utility.hpp"
 #include "rpc.hpp"
 
 namespace Mushroom {
@@ -30,7 +29,7 @@ class RpcServer : public Server
 
 	private:
 
-		std::unordered_map<rpc_t, RPC> services_;
+		std::unordered_map<uint32_t, RPC> services_;
 
 		void HandleAccept();
 };
@@ -39,7 +38,7 @@ template<typename T1, typename T2, typename T3>
 void RpcServer::Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*))
 {
 	RPC service;
-	rpc_t id = service.Generate(str, obj);
+	uint32_t id = service.Generate(str, obj);
 	FatalIf(services_.find(id) != services_.end(), "service %u existed :(", id);
 	services_.insert({id, service});
 }

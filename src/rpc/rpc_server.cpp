@@ -27,7 +27,7 @@ void RpcServer::HandleAccept()
 	con->OnRead([=]() {
 		Marshaller marshaller(con->GetInput(), con->GetOutput());
 		for (; !marshaller.HasCompleteArgs();) {
-			rpc_t id;
+			uint32_t id;
 			marshaller >> id;
 			FatalIf(services_.find(id) == services_.end(), "rpc call %u not registered :(", id);
 			services_[id](marshaller);

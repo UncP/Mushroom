@@ -9,7 +9,6 @@
 #define _RPC_CONNECTION_HPP_
 
 #include "../network/connection.hpp"
-#include "utility.hpp"
 #include "rpc.hpp"
 #include "marshaller.hpp"
 
@@ -40,7 +39,7 @@ template<typename T1, typename T2>
 bool RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
 {
 	output_.Reset();
-	rpc_t id = RPC::Hash(str);
+	uint32_t id = RPC::Hash(str);
 	marshaller_.Marshal(id, args);
 	for (; connected_ && !output_.empty();) {
 		SendOutput();
