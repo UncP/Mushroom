@@ -10,8 +10,8 @@
 
 namespace Mushroom {
 
-Channel::Channel(int fd, uint32_t events, Poller *poller)
-:fd_(fd), events_(events), poller_(poller), readcb_(0), writecb_(0)
+Channel::Channel(int fd, Poller *poller)
+:fd_(fd), events_(ReadEvent), poller_(poller), readcb_(0), writecb_(0)
 {
 	poller_->AddChannel(this);
 }
@@ -29,6 +29,36 @@ int Channel::fd() const
 uint32_t Channel::events() const
 {
 	return events_;
+}
+
+bool Channel::CanRead() const
+{
+	return events_ & ReadEvent;
+}
+
+bool Channel::CanWrite() const
+{
+	return events_ & WriteEvent;
+}
+
+void Channel::EnableRead(bool flag)
+{
+	if (flag)
+		events_ |= ReadEvent;
+	else
+		events_ &= ~ReadEvent;
+
+	poller_->UpdateChannel(this);
+}
+
+void Channel::EnableWrite(bool flag)
+{
+	if (flag)
+		events_ |= WriteEvent;
+	else
+		events_ &= ~WriteEvent;
+
+	poller_->UpdateChannel(this);
 }
 
 void Channel::OnRead(const ReadCallBack &readcb)

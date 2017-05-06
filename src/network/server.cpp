@@ -34,7 +34,7 @@ bool Server::Start()
 	FatalIf(!socket_.SetResuseAddress(), "socket option set failed :(", strerror(errno));
 	FatalIf(!socket_.Bind(), "socket bind failed, %s :(", strerror(errno));
 	FatalIf(!socket_.Listen(), "socket listen failed, %s :(", strerror(errno));
-	listen_ = new Channel(socket_.fd(), ReadEvent, poller_);
+	listen_ = new Channel(socket_.fd(), poller_);
 	listen_->OnRead([this]() { HandleAccept(); });
 	running_ = true;
 	return true;
@@ -66,7 +66,7 @@ void Server::HandleAccept()
 		Error("socket accept failed, %s :(", strerror(errno));
 		return ;
 	}
-	Connection *con = new Connection(Socket(fd), ReadEvent | WriteEvent, poller_);
+	Connection *con = new Connection(Socket(fd), poller_);
 	if (connectcb_)
 		connectcb_(con);
 	connections_.push_back(con);

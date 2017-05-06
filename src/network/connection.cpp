@@ -25,10 +25,10 @@ Connection::Connection(const EndPoint &server)
 	connected_ = true;
 }
 
-Connection::Connection(const Socket &socket, uint32_t events, Poller *poller)
+Connection::Connection(const Socket &socket, Poller *poller)
 :socket_(socket), readcb_(0), writecb_(0)
 {
-	channel_ = new Channel(socket.fd(), events, poller);
+	channel_ = new Channel(socket.fd(), poller);
 	channel_->OnRead([this]() { this->HandleRead(); });
 	channel_->OnWrite([this]() { this->HandleWrite(); });
 	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));

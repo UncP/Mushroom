@@ -8,6 +8,7 @@
 #ifndef _THREAD_POOL_HPP_
 #define _THREAD_POOL_HPP_
 
+#include "../utility/utility.hpp"
 #include "utility.hpp"
 
 namespace Mushroom {
@@ -17,7 +18,7 @@ class KeySlice;
 class Queue;
 template<typename T> class Thread;
 
-class ThreadPool
+class ThreadPool : private NoCopy
 {
 	public:
 		ThreadPool(Queue *queue);
@@ -29,9 +30,6 @@ class ThreadPool
 		void Clear();
 
 		~ThreadPool();
-
-		ThreadPool(const ThreadPool &) = delete;
-		ThreadPool& operator=(const ThreadPool &) = delete;
 
 	private:
 		static const int thread_num = 4;

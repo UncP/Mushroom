@@ -10,6 +10,7 @@
 
 #include <vector>
 
+#include "../utility/utility.hpp"
 #include "function.hpp"
 #include "socket.hpp"
 
@@ -18,7 +19,7 @@ namespace Mushroom {
 class Channel;
 class Poller;
 
-class Server
+class Server : private NoCopy
 {
 	public:
 		Server();

@@ -10,6 +10,7 @@
 
 #include <string>
 
+#include "../utility/utility.hpp"
 #include "utility.hpp"
 #include "slice.hpp"
 
@@ -19,7 +20,7 @@ typedef enum { InsertOk, ExistedKey, MoveRight } InsertStatus;
 
 class KeySlice;
 
-class Page
+class Page : private NoCopy
 {
 	friend class BLinkTree;
 	public:

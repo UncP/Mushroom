@@ -10,6 +10,8 @@
 
 #include <sys/epoll.h>
 
+#include "../utility/utility.hpp"
+
 const uint32_t ReadEvent  = EPOLLIN;
 const uint32_t WriteEvent = EPOLLOUT;
 const uint32_t MaxEvents  = 1024;
@@ -18,7 +20,7 @@ namespace Mushroom {
 
 class Channel;
 
-class Poller
+class Poller : private NoCopy
 {
 	public:
 		Poller();
@@ -26,6 +28,8 @@ class Poller
 		~Poller();
 
 		void AddChannel(Channel *channel);
+
+		void UpdateChannel(Channel *channel);
 
 		void RemoveChannel(Channel *channel);
 

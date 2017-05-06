@@ -8,6 +8,7 @@
 #ifndef _B_LINK_TREE_HPP_
 #define _B_LINK_TREE_HPP_
 
+#include "../utility/utility.hpp"
 #include "utility.hpp"
 #include "../utility/atomic.hpp"
 
@@ -19,7 +20,7 @@ class PoolManager;
 class Latch;
 class LatchManager;
 
-class BLinkTree
+class BLinkTree : private NoCopy
 {
 	public:
 		class Iterator
@@ -53,9 +54,6 @@ class BLinkTree
 		bool Put(KeySlice *key);
 
 		bool Get(KeySlice *key);
-
-		BLinkTree(const BLinkTree &) = delete;
-		BLinkTree& operator=(const BLinkTree &) = delete;
 
 	private:
 		void Initialize();

@@ -8,6 +8,7 @@
 #ifndef _QUEUE_HPP_
 #define _QUEUE_HPP_
 
+#include "../utility/utility.hpp"
 #include "utility.hpp"
 #include "../utility/mutex.hpp"
 #include "../utility/cond.hpp"
@@ -18,7 +19,7 @@ class MushroomDB;
 class KeySlice;
 class Task;
 
-class Queue
+class Queue : private NoCopy
 {
 	public:
 		Queue(int capacity, uint8_t key_len);

@@ -8,6 +8,7 @@
 #ifndef _POOL_MANAGER_HPP_
 #define _POOL_MANAGER_HPP_
 
+#include "../utility/utility.hpp"
 #include "utility.hpp"
 #include "../utility/atomic.hpp"
 
@@ -17,7 +18,7 @@ class Page;
 class HashEntry;
 class PagePool;
 
-class PoolManager
+class PoolManager : private NoCopy
 {
 	public:
 		static void SetManagerInfo(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits,
@@ -38,9 +39,6 @@ class PoolManager
 		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		bool Free();
-
-		PoolManager(const PoolManager &) = delete;
-		PoolManager& operator=(const PoolManager &) = delete;
 
 	private:
 		static uint32_t HashMask;

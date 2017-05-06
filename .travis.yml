@@ -8,7 +8,7 @@ matrix:
 
 script:
   - g++ -std=c++11 -O3 test_data.cpp -o test_data
-  - cd src && make -j8 lsmtree_with_queue
+  - cd src && make -j4 all
 
 notifications:
   email: never

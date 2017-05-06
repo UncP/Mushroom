@@ -10,9 +10,11 @@
 
 #include <cstdint>
 
+#include "../utility/utility.hpp"
+
 namespace Mushroom {
 
-class Buffer
+class Buffer : private NoCopy
 {
 	public:
 		static const uint32_t BufferSize = 4096;

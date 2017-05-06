@@ -20,9 +20,6 @@ int main()
 		return 0;
 	}
 
-	con->OnSend([]() {
-		printf("send\n");
-	});
 	con->OnRead([=]() {
 		printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
 	});

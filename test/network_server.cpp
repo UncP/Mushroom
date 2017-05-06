@@ -17,9 +17,6 @@ int main()
 	Signal::Register(SIGINT, [&] { server.Close(); exit(0); });
 	server.Start();
 	server.OnConnect([](Connection *con) {
-		con->OnSend([con]() {
-			printf("send\n");
-		});
 		con->OnRead([con]() {
 			printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
 			con->Send(con->GetInput());

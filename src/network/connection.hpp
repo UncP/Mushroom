@@ -8,6 +8,7 @@
 #ifndef _CONNECTION_HPP_
 #define _CONNECTION_HPP_
 
+#include "../utility/utility.hpp"
 #include "function.hpp"
 #include "socket.hpp"
 #include "endpoint.hpp"
@@ -18,10 +19,10 @@ namespace Mushroom {
 class Channel;
 class Poller;
 
-class Connection
+class Connection : private NoCopy
 {
 	public:
-		Connection(const Socket &socket, uint32_t events, Poller *poller);
+		Connection(const Socket &socket, Poller *poller);
 
 		Connection(const EndPoint &server);
 

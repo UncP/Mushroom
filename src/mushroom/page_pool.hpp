@@ -8,6 +8,7 @@
 #ifndef _PAGE_POOL_HPP_
 #define _PAGE_POOL_HPP_
 
+#include "../utility/utility.hpp"
 #include "utility.hpp"
 #include "page.hpp"
 
@@ -15,7 +16,7 @@ namespace Mushroom {
 
 class PoolManager;
 
-class PagePool
+class PagePool : private NoCopy
 {
 	friend class PoolManager;
 
@@ -42,9 +43,6 @@ class PagePool
 		inline Page* GetPage(page_t page_no) {
 			return (Page *)(mem_ + Page::PageSize * (page_no & SegMask));
 		}
-
-		PagePool(const PagePool &) = delete;
-		PagePool& operator=(const PagePool &) = delete;
 
 		static uint32_t SegSize;
 

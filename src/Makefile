@@ -21,6 +21,8 @@ QUEUE = ../test/mushroom_with_queue.cpp
 
 THREAD = ../test/mushroom_multi_thread.cpp
 
+all: blinktree_with_queue_test blinktree_multi_thread_test
+
 raft_test: $(UOBJ) $(RaftOBJ)
 
 network: client_test server_test

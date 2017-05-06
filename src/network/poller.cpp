@@ -6,7 +6,6 @@
 **/
 
 #include <unistd.h>
-#include <cassert>
 #include <cstring>
 
 #include "../log/log.hpp"
@@ -19,7 +18,6 @@ Poller::Poller()
 {
 	FatalIf((fd_ = epoll_create1(EPOLL_CLOEXEC)) < 0,
 		"epoll create failed, %s :(", strerror(errno));
-	assert(fd_ >= 0);
 }
 
 Poller::~Poller()
@@ -35,6 +33,16 @@ void Poller::AddChannel(Channel *channel)
 	event.data.ptr = channel;
 	FatalIf(epoll_ctl(fd_, EPOLL_CTL_ADD, channel->fd(), &event),
 		"epoll add event failed, %s :(", strerror(errno));
+}
+
+void Poller::UpdateChannel(Channel *channel)
+{
+	struct epoll_event event;
+	memset(&event, 0, sizeof(event));
+	event.events = channel->events();
+	event.data.ptr = channel;
+	FatalIf(epoll_ctl(fd_, EPOLL_CTL_MOD, channel->fd(), &event),
+		"epoll update event failed, %s :(", strerror(errno));
 }
 
 void Poller::RemoveChannel(Channel *channel)

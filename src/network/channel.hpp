@@ -8,24 +8,33 @@
 #ifndef _CHANNEL_HPP_
 #define _CHANNEL_HPP_
 
+#include "../utility/utility.hpp"
 #include "function.hpp"
 
 namespace Mushroom {
 
 class Poller;
 
-class Channel
+class Channel : private NoCopy
 {
 	public:
 		friend class Connection;
 
-		Channel(int fd, uint32_t events, Poller *poller);
+		Channel(int fd, Poller *poller);
 
 		~Channel();
 
 		int fd() const;
 
 		uint32_t events() const;
+
+		bool CanRead() const;
+
+		bool CanWrite() const;
+
+		void EnableRead(bool flag);
+
+		void EnableWrite(bool flag);
 
 		void OnRead(const ReadCallBack &readcb);
 

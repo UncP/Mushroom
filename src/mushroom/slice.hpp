@@ -11,11 +11,12 @@
 #include <cstring>
 #include <string>
 
+#include "../utility/utility.hpp"
 #include "utility.hpp"
 
 namespace Mushroom {
 
-class KeySlice
+class KeySlice : private NoCopy
 {
 	public:
 		std::string ToString(uint8_t len) const {

@@ -8,6 +8,7 @@
 #ifndef _MUSHROOM_DB_HPP_
 #define _MUSHROOM_DB_HPP_
 
+#include "../utility/utility.hpp"
 #include "utility.hpp"
 
 namespace Mushroom {
@@ -16,7 +17,7 @@ class KeySlice;
 class BLinkTree;
 class LSMTree;
 
-class MushroomDB
+class MushroomDB : private NoCopy
 {
 	public:
 		MushroomDB(uint32_t key_len, uint32_t page_size, uint32_t pool_size,
