@@ -58,7 +58,7 @@ Latch* LatchManager::GetLatch(page_t page_no)
 		latch = latches_ + slot;
 		if (page_no == latch->id_)
 			break;
-		if (!latch->pin_ && !avail)
+		if (!latch->pin_.get() && !avail)
 			avail = slot;
 	}
 
@@ -90,7 +90,7 @@ Latch* LatchManager::GetLatch(page_t page_no)
 		else
 			continue;
 
-		if (latch->pin_ || !latch->busy_.TryLock())
+		if (latch->pin_.get() || !latch->busy_.TryLock())
 			continue;
 
 		uint16_t idx = latch->hash_;
@@ -100,7 +100,7 @@ Latch* LatchManager::GetLatch(page_t page_no)
 			continue;
 		}
 
-		if (latch->pin_) {
+		if (latch->pin_.get()) {
 			entries_[idx].Unlock();
 			latch->busy_.Unlock();
 			continue;

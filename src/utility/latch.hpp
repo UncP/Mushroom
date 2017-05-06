@@ -10,6 +10,7 @@
 
 #include "../mushroom/utility.hpp"
 #include "spin_lock.hpp"
+#include "atomic.hpp"
 
 namespace Mushroom {
 
@@ -30,7 +31,9 @@ class Latch
 			id_   = ~page_t(0);
 		}
 
-		inline void Pin() { __sync_fetch_and_add(&pin_, 1); }
+		inline void Pin() {
+			++pin_;
+		}
 
 		inline void LockShared() {
 			pthread_rwlock_rdlock(lock_);
@@ -64,9 +67,11 @@ class Latch
 		}
 
 	private:
-		void Unpin() { __sync_fetch_and_add(&pin_, -1); }
+		inline void Unpin() {
+			--pin_;
+		}
 
-		volatile uint16_t pin_;
+		atomic_16_t       pin_;
 		uint16_t          hash_;
 		uint16_t          prev_;
 		uint16_t          next_;

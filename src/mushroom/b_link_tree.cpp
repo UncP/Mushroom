@@ -43,8 +43,8 @@ void BLinkTree::Reset()
 	latch_manager_->Reset();
 	pool_manager_->Reset();
 
-	assert(root_);
-	Latch *root = latch_manager_->GetLatch(root_);
+	assert(root_.get());
+	Latch *root = latch_manager_->GetLatch(root_.get());
 	Latch *leaf = latch_manager_->GetLatch(0);
 	root->Lock();
 	leaf->Lock();
@@ -66,9 +66,9 @@ bool BLinkTree::Free()
 	return true;
 }
 
-void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set) const
+void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set)
 {
-	set.page_no_ = root_;
+	set.page_no_ = root_.get();
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	set.page_ = pool_manager_->GetPage(set.page_no_);
 	set.latch_->LockShared();
@@ -162,10 +162,10 @@ void BLinkTree::SplitRoot(Set &set)
 
 	page_t page_no = 0;
 	assert(new_root->Insert(slice, page_no) == InsertOk);
-	__sync_val_compare_and_swap(&root_, root_, new_root->page_no_);
+	root_ = new_root->page_no_;
 }
 
-bool BLinkTree::Get(KeySlice *key) const
+bool BLinkTree::Get(KeySlice *key)
 {
 	Set set;
 
@@ -188,9 +188,9 @@ bool BLinkTree::Get(KeySlice *key) const
 	return true;
 }
 
-bool BLinkTree::First(Page **page, int32_t level) const
+bool BLinkTree::First(Page **page, int32_t level)
 {
-	*page = pool_manager_->GetPage(root_);
+	*page = pool_manager_->GetPage(root_.get());
 	if (level > (*page)->level_)
 		return false;
 	if (level == -1)
@@ -202,7 +202,7 @@ bool BLinkTree::First(Page **page, int32_t level) const
 	return true;
 }
 
-bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index) const
+bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index)
 {
 	page_t page_no;
 	if ((*page)->Ascend(key, &page_no, index))
@@ -214,7 +214,7 @@ bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index) const
 	return false;
 }
 
-BLinkTree::Iterator::Iterator(const BLinkTree *b_link_tree, int32_t level)
+BLinkTree::Iterator::Iterator(BLinkTree *b_link_tree, int32_t level)
 :b_link_tree_(b_link_tree), level_(level), index_(0) {
 	char *buf = new char[b_link_tree->KeyLength() + sizeof(valptr)];
 	key_ = (KeySlice *)buf;

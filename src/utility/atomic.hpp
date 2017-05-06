@@ -20,6 +20,10 @@ class Atomic
 
 		Atomic(T val):val_(val) { }
 
+		inline T get() {
+			return __sync_val_compare_and_swap(&val_, 0, 0);
+		}
+
 		inline T operator++() {
 			return __sync_add_and_fetch(&val_, 1);
 		}
@@ -42,11 +46,11 @@ class Atomic
 		}
 
 	private:
-		T val_;
+		volatile T val_;
 };
 
-typedef Atomic<uint32_t> atomic_32_t;
 typedef Atomic<uint16_t> atomic_16_t;
+typedef Atomic<uint32_t> atomic_32_t;
 
 } // namespace Mushroom
 

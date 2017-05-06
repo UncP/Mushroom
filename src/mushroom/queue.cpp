@@ -80,6 +80,7 @@ void Queue::Clear()
 	mutex_.Lock();
 	while (front_ != avail_back_ || front_ != work_back_)
 		empty_.Wait(mutex_);
+
 	clear_ = true;
 	mutex_.Unlock();
 
@@ -96,6 +97,7 @@ Queue::~Queue()
 
 	for (int i = capacity_; i;)
 		delete queue_[--i];
+
 	delete [] queue_;
 }
 

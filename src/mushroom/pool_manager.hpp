@@ -9,6 +9,7 @@
 #define _POOL_MANAGER_HPP_
 
 #include "utility.hpp"
+#include "../utility/atomic.hpp"
 
 namespace Mushroom {
 
@@ -24,11 +25,12 @@ class PoolManager
 
 		void Reset();
 
-		page_t TotalPage() const { return cur_; }
+		page_t TotalPage() { return cur_.get(); }
 
-		inline bool ReachMaxPool() { return tot_ >= (PoolSize - 1); }
+		inline bool ReachMaxPool() { return tot_.get() >= (PoolSize - 1); }
 
 		Page* GetPage(page_t page_no);
+
 		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		bool Free();
@@ -42,10 +44,10 @@ class PoolManager
 
 		void Link(uint16_t hash, uint16_t victim);
 
-		page_t     cur_;
-		uint16_t   tot_;
-		HashEntry *entries_;
-		PagePool  *pool_;
+		Atomic<page_t> cur_;
+		atomic_16_t    tot_;
+		HashEntry     *entries_;
+		PagePool      *pool_;
 };
 
 } // namespace Mushroom

@@ -80,7 +80,7 @@ Page* PoolManager::GetPage(page_t page_no)
 		}
 	}
 
-	uint16_t victim = __sync_fetch_and_add(&tot_, 1) + 1;
+	uint16_t victim = ++tot_;
 
 	assert(victim < PoolSize);
 	pool_[victim].Initialize(page_no);
@@ -92,14 +92,14 @@ Page* PoolManager::GetPage(page_t page_no)
 
 Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
-	page_t page_no = __sync_fetch_and_add(&cur_, 1);
+	page_t page_no = cur_++;
 	Page *page = GetPage(page_no);
 	return new (page) Page(page_no, type, key_len, level, degree);
 }
 
 bool PoolManager::Free()
 {
-	for (uint16_t i = 0; i != tot_; ++i)
+	for (uint16_t i = 0, end = tot_.get(); i != end; ++i)
 		delete [] pool_[i].mem_;
 	return true;
 }

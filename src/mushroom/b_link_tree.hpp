@@ -22,7 +22,7 @@ class BLinkTree
 		class Iterator
 		{
 			public:
-				Iterator(const BLinkTree *b_link_tree, int32_t level = 0);
+				Iterator(BLinkTree *b_link_tree, int32_t level = 0);
 
 				~Iterator();
 
@@ -31,10 +31,10 @@ class BLinkTree
 				KeySlice *key_;
 
 			private:
-				const BLinkTree *b_link_tree_;
-				Page            *curr_;
-				int32_t          level_;
-				uint16_t         index_;
+				BLinkTree *b_link_tree_;
+				Page      *curr_;
+				int32_t    level_;
+				uint16_t   index_;
 		};
 
 		static const uint32_t MAX_KEY_LENGTH = 255;
@@ -49,7 +49,7 @@ class BLinkTree
 
 		bool Put(KeySlice *key);
 
-		bool Get(KeySlice *key) const;
+		bool Get(KeySlice *key);
 
 		void Initialize();
 
@@ -68,9 +68,9 @@ class BLinkTree
 
 	private:
 
-		bool First(Page **page, int32_t level) const;
+		bool First(Page **page, int32_t level);
 
-		bool Next(KeySlice *key, Page **page, uint16_t *index) const;
+		bool Next(KeySlice *key, Page **page, uint16_t *index);
 
 		struct Set {
 			Set():depth_(0) { }
@@ -81,7 +81,7 @@ class BLinkTree
 			uint32_t depth_;
 		};
 
-		void DescendToLeaf(const KeySlice *key, Set &set) const;
+		void DescendToLeaf(const KeySlice *key, Set &set);
 
 		void SplitRoot(Set &set);
 
@@ -92,8 +92,8 @@ class BLinkTree
 		atomic_32_t   ref_;
 		#endif
 
-		PoolManager *pool_manager_;
-		page_t       root_;
+		PoolManager    *pool_manager_;
+		Atomic<page_t>  root_;
 
 		uint8_t      key_len_;
 		uint16_t     degree_;

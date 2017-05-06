@@ -24,7 +24,7 @@ class Task
 		inline void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
 			fun_ = fun;
 			db_  = db;
-			CopyKey(key_, key, 0, key_len_);
+			CopyKey(key_, key, 0, key_len_ + sizeof(valptr));
 		}
 
 		bool operator()() { return (db_->*fun_)(key_); }
