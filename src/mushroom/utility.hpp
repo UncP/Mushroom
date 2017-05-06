@@ -5,8 +5,8 @@
  *    > Created Time:  2016-10-15 10:37:54
 **/
 
-#ifndef _UTILITY_HPP_
-#define _UTILITY_HPP_
+#ifndef _MUSHROOM_UTILITY_HPP_
+#define _MUSHROOM_UTILITY_HPP_
 
 #include <cstdint>
 
@@ -19,4 +19,4 @@ typedef uint32_t block_t;
 
 } // namespace Mushroom
 
-#endif /* _UTILITY_HPP_ */
+#endif /* _MUSHROOM_UTILITY_HPP_ */

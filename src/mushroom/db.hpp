@@ -34,11 +34,7 @@ class MushroomDB
 		~MushroomDB();
 
 	private:
-		#ifndef NOLSM
-		LSMTree   *tree_;
-		#else
 		BLinkTree *tree_;
-		#endif
 };
 
 } // namespace Mushroom

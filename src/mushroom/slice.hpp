@@ -15,42 +15,6 @@
 
 namespace Mushroom {
 
-class Key
-{
-	public:
-		Key():size_(0), data_(0) { }
-
-		Key(uint32_t size):size_(size), data_(new char[size_]) { memset(data_, 0, size_); }
-
-		Key(const Key &key):size_(key.size_) {
-			data_ = new char[size_];
-			memcpy(data_, key.data_, size_);
-		}
-		Key& operator=(const Key &key) {
-			if (size_ != key.size_) {
-				delete [] data_;
-				size_ = key.size_;
-				data_ = new char[size_];
-			}
-			memcpy(data_, key.data_, size_);
-			return *this;
-		}
-
-		bool operator<(const Key &key) const {
-			return memcmp(data_, key.data_, size_) < 0;
-		}
-		bool operator>(const Key &key) const {
-			return memcmp(data_, key.data_, size_) > 0;
-		}
-
-		std::string ToString() const { return std::string(data_, size_) + "\n"; }
-
-		~Key() { delete [] data_; }
-
-		uint32_t size_;
-		char    *data_;
-};
-
 class KeySlice
 {
 	public:
@@ -91,9 +55,9 @@ inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
 	}
 };
 
-#define TempSlice(name, length) \
-	char buf_##name[sizeof(valptr) + length]; \
-	memset(buf_##name, 0, sizeof(valptr)+length);            \
+#define TempSlice(name, length)                  \
+	char buf_##name[sizeof(valptr) + length];      \
+	memset(buf_##name, 0, sizeof(valptr)+length);  \
 	KeySlice *name = (KeySlice *)buf_##name;
 
 } // namespace Mushroom

@@ -45,12 +45,6 @@ blinktree_with_queue_test: $(UOBJ) $(MOBJ) $(QUEUE)
 blinktree_multi_thread_test: $(UOBJ) $(MOBJ) $(THREAD)
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
 
-lsmtree_with_queue_test: $(UOBJ) $(MOBJ) $(QUEUE)
-	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
-
-lsmtree_multi_thread_test: $(UOBJ) $(MOBJ) $(THREAD)
-	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
-
 .cpp.o:
 		$(CPP) $(CPPFLAGS) -c $< -o $@ $(DFLAGS) $(LDFLAGS)
 

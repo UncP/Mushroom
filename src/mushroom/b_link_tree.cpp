@@ -5,9 +5,7 @@
  *    > Created Time:  2016-10-07 20:12:13
 **/
 
-#include <cstring>
 #include <cassert>
-#include <sched.h>
 
 #include "b_link_tree.hpp"
 #include "page.hpp"
@@ -20,9 +18,6 @@ namespace Mushroom {
 BLinkTree::BLinkTree(uint32_t key_len):key_len_((uint8_t)key_len)
 {
 	latch_manager_ = new LatchManager();
-	#ifndef NOLSM
-	ref_ = 0;
-	#endif
 
 	pool_manager_ = new PoolManager();
 
@@ -38,21 +33,6 @@ void BLinkTree::Initialize()
 	Set set;
 	set.page_ = pool_manager_->NewPage(Page::ROOT, key_len_, 0, degree_);
 	set.page_->InsertInfiniteKey();
-}
-
-void BLinkTree::Reset()
-{
-	latch_manager_->Reset();
-	pool_manager_->Reset();
-
-	assert(root_.get());
-	Latch *root = latch_manager_->GetLatch(root_.get());
-	Latch *leaf = latch_manager_->GetLatch(0);
-	root->Lock();
-	leaf->Lock();
-	Initialize();
-	leaf->Unlock();
-	root->Unlock();
 }
 
 BLinkTree::~BLinkTree()
@@ -112,10 +92,6 @@ bool BLinkTree::Put(KeySlice *key)
 {
 	Set set;
 
-	#ifndef NOLSM
-	++ref_;
-	#endif
-
 	DescendToLeaf(key, set);
 
 	set.latch_->Upgrade();
@@ -141,9 +117,6 @@ bool BLinkTree::Put(KeySlice *key)
 		}
 	}
 	set.latch_->Unlock();
-	#ifndef NOLSM
-	--ref_;
-	#endif
 	return true;
 }
 
@@ -216,16 +189,8 @@ bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index)
 	return false;
 }
 
-bool BLinkTree::ReachThreshold()
-{
-	return pool_manager_->ReachMaxPool();
-}
-
-void BLinkTree::Clear() {
-	#ifndef NOLSM
-	while (ref_.get()) sched_yield();
-	assert(!ref_.get());
-	#endif
+uint32_t BLinkTree::KeyLength() {
+	return key_len_;
 }
 
 BLinkTree::Iterator::Iterator(BLinkTree *b_link_tree, int32_t level)
@@ -236,6 +201,12 @@ BLinkTree::Iterator::Iterator(BLinkTree *b_link_tree, int32_t level)
 	assert(Next());
 }
 
-BLinkTree::Iterator::~Iterator() { delete [] key_; }
+bool BLinkTree::Iterator::Next() {
+	return b_link_tree_->Next(key_, &curr_, &index_);
+}
+
+BLinkTree::Iterator::~Iterator() {
+	delete [] key_;
+}
 
 } // namespace Mushroom

@@ -29,7 +29,7 @@ class BLinkTree
 
 				~Iterator();
 
-				inline bool Next() { return b_link_tree_->Next(key_, &curr_, &index_); }
+				bool Next();
 
 				KeySlice *key_;
 
@@ -46,7 +46,7 @@ class BLinkTree
 
 		~BLinkTree();
 
-		inline uint32_t KeyLength() { return key_len_; }
+		uint32_t KeyLength();
 
 		bool Free();
 
@@ -54,18 +54,11 @@ class BLinkTree
 
 		bool Get(KeySlice *key);
 
-		void Initialize();
-
-		void Reset();
-
-		bool ReachThreshold();
-
-		void Clear();
-
 		BLinkTree(const BLinkTree &) = delete;
 		BLinkTree& operator=(const BLinkTree &) = delete;
 
 	private:
+		void Initialize();
 
 		bool First(Page **page, int32_t level);
 
@@ -87,11 +80,8 @@ class BLinkTree
 		void Insert(Set &set, KeySlice *key);
 
 		LatchManager *latch_manager_;
-		#ifndef NOLSM
-		atomic_32_t   ref_;
-		#endif
+		PoolManager  *pool_manager_;
 
-		PoolManager    *pool_manager_;
 		Atomic<page_t>  root_;
 
 		uint8_t      key_len_;

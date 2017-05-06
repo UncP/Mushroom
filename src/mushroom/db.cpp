@@ -6,14 +6,8 @@
 **/
 
 #include "db.hpp"
-#ifndef NOLSM
-#include "lsm_tree.hpp"
-#else
-#include "b_link_tree.hpp"
-#endif
 #include "pool_manager.hpp"
-
-#include "latch_manager.hpp"
+#include "b_link_tree.hpp"
 
 namespace Mushroom {
 
@@ -21,11 +15,7 @@ MushroomDB::MushroomDB(uint32_t key_len, uint32_t page_size,
 	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits)
 {
 	PoolManager::SetManagerInfo(page_size, pool_size, hash_bits, seg_bits);
-	#ifndef NOLSM
-	tree_ = new LSMTree(key_len);
-	#else
 	tree_ = new BLinkTree(key_len);
-	#endif
 }
 
 MushroomDB::~MushroomDB()
