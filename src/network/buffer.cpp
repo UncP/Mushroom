@@ -55,6 +55,11 @@ void Buffer::Reset()
 	if (empty()) beg_  = 0, end_  = 0, size_ = 0;
 }
 
+void Buffer::Clear()
+{
+	beg_  = 0, end_  = 0, size_ = 0;
+}
+
 void Buffer::AdvanceHead(uint32_t len)
 {
 	assert(beg_ + len <= end_);

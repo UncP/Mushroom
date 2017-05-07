@@ -13,7 +13,7 @@
 
 namespace Mushroom {
 
-Connection::Connection(const EndPoint &server)
+Connection::Connection(const EndPoint &server, Poller *poller)
 :connected_(false), channel_(0), readcb_(0), writecb_(0)
 {
 	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
@@ -22,31 +22,32 @@ Connection::Connection(const EndPoint &server)
 		return ;
 	}
 	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));
+	channel_ = new Channel(socket_.fd(), poller,
+		[this]() { this->HandleRead(); }, [this]() { this->HandleWrite(); });
 	connected_ = true;
 }
 
 Connection::Connection(const Socket &socket, Poller *poller)
 :socket_(socket), readcb_(0), writecb_(0)
 {
-	channel_ = new Channel(socket.fd(), poller);
-	channel_->OnRead([this]() { this->HandleRead(); });
-	channel_->OnWrite([this]() { this->HandleWrite(); });
 	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));
+	channel_ = new Channel(socket_.fd(), poller,
+		[this]() { this->HandleRead(); }, [this]() { this->HandleWrite(); });
 	connected_ = true;
 }
 
 Connection::~Connection()
 {
-	if (socket_.Valid())
-		socket_.Close();
+	socket_.Close();
 }
 
 bool Connection::Close()
 {
 	if (socket_.Valid()) {
-		Info("close connection ;)");
+		Info("closing connection ;)");
 		connected_ = false;
 		delete channel_;
+		channel_ = 0;
 		return socket_.Close();
 	}
 	return true;
@@ -102,8 +103,10 @@ void Connection::HandleWrite()
 		return ;
 	}
 	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
-	if (writecb_ && output_.empty())
+	if (writecb_ && output_.empty()) {
 		writecb_();
+		output_.Reset();
+	}
 }
 
 void Connection::Send(const char *str)
@@ -114,18 +117,24 @@ void Connection::Send(const char *str)
 void Connection::Send(Buffer &buffer)
 {
 	output_.Read(buffer.begin(), buffer.size());
-	HandleWrite();
+	buffer.Clear();
+	SendOutput();
 }
 
 void Connection::Send(const char *str, uint32_t len)
 {
 	output_.Read(str, len);
-	HandleWrite();
+	SendOutput();
 }
 
 void Connection::SendOutput()
 {
-	HandleWrite();
+	if (!connected_) {
+		Error("connection has closed :(");
+		return ;
+	}
+	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
+	output_.Reset();
 }
 
 } // namespace Mushroom

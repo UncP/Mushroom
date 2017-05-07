@@ -6,6 +6,7 @@
 **/
 
 #include "../src/network/signal.hpp"
+#include "../src/network/eventbase.hpp"
 #include "../src/network/connection.hpp"
 #include "../src/network/server.hpp"
 
@@ -13,8 +14,9 @@ using namespace Mushroom;
 
 int main()
 {
-	Server server;
-	Signal::Register(SIGINT, [&] { server.Close(); exit(0); });
+	EventBase base;
+	Signal::Register(SIGINT, [&] { base.Exit(); exit(0); });
+	Server server(&base);
 	server.Start();
 	server.OnConnect([](Connection *con) {
 		con->OnRead([con]() {
@@ -22,7 +24,6 @@ int main()
 			con->Send(con->GetInput());
 		});
 	});
-	server.Run();
-	server.Close();
+	base.Loop();
 	return 0;
 }

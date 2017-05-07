@@ -8,29 +8,31 @@
 #include <unistd.h>
 #include <string>
 
+#include "../src/network/signal.hpp"
+#include "../src/network/eventbase.hpp"
 #include "../src/network/connection.hpp"
 
 using namespace Mushroom;
 
 int main()
 {
-	Connection *con = new Connection(EndPoint("127.0.0.1"));
+	EventBase base;
+	Connection *con = new Connection(EndPoint("127.0.0.1"), base.GetPoller());
+	Signal::Register(SIGINT, [&base, con] { base.Exit(); delete con; exit(0); });
 	if (!con->Success()) {
 		delete con;
 		return 0;
 	}
 
-	con->OnRead([=]() {
+	con->OnRead([con]() {
 		printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
+		usleep(200000);
+		con->Send(con->GetInput());
 	});
-	for (int i = 0; i < 10; ++i) {
-		std::string msg = "hello world " + std::to_string(i);
-		con->Send(msg.c_str(), msg.size());
-	}
-	sleep(2);
-	con->HandleRead();
-	con->Close();
+	con->Send("hello world");
+	base.Loop();
 
+	con->Close();
 	delete con;
 	return 0;
 }

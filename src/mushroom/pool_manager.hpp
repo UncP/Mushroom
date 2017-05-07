@@ -28,11 +28,7 @@ class PoolManager : private NoCopy
 
 		~PoolManager();
 
-		void Reset();
-
 		page_t TotalPage() { return cur_.get(); }
-
-		inline bool ReachMaxPool() { return tot_.get() >= (PoolSize - 1); }
 
 		Page* GetPage(page_t page_no);
 

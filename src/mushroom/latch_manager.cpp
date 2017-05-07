@@ -22,17 +22,6 @@ LatchManager::~LatchManager()
 	delete [] entries_;
 }
 
-void LatchManager::Reset()
-{
-	deployed_ = 0;
-	victim_   = 0;
-
-	for (uint16_t i = 0; i != total; ++i) {
-		entries_[i].SetSlot(0);
-		latches_[i].Reset();
-	}
-}
-
 void LatchManager::Link(uint16_t hashidx, uint16_t victim, page_t page_no)
 {
 	Latch *latch = latches_ + victim;

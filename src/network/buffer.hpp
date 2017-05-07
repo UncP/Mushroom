@@ -45,6 +45,8 @@ class Buffer : private NoCopy
 
 		void Reset();
 
+		void Clear();
+
 		void Unget(uint32_t len);
 
 	private:

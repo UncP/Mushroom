@@ -17,34 +17,28 @@
 namespace Mushroom {
 
 class Channel;
-class Poller;
+class EventBase;
 
 class Server : private NoCopy
 {
 	public:
-		Server();
+		Server(EventBase *event_base);
 
 		virtual ~Server();
 
 		bool Start();
 
-		bool Close();
-
-		void Run();
-
 		void OnConnect(const ConnectCallBack &connectcb);
 
 	protected:
-		Socket   socket_;
-		Channel *listen_;
-		Poller  *poller_;
+		EventBase *event_base_;
+		Socket     socket_;
+		Channel   *listen_;
 
 		std::vector<Connection *> connections_;
-
-	private:
-		bool                      running_;
 		ConnectCallBack           connectcb_;
 
+	private:
 		void HandleAccept();
 };
 

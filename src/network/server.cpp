@@ -6,26 +6,25 @@
 **/
 
 #include "../log/log.hpp"
+#include "eventbase.hpp"
 #include "server.hpp"
 #include "channel.hpp"
 #include "connection.hpp"
-#include "poller.hpp"
 
 namespace Mushroom {
 
-Server::Server():listen_(0), poller_(new Poller()), running_(false), connectcb_(0) { }
+Server::Server(EventBase *event_base)
+:event_base_(event_base), listen_(0), connectcb_(0) { }
 
 Server::~Server()
 {
-	delete listen_;
-
 	if (socket_.Valid())
 		socket_.Close();
 
+	delete listen_;
+
 	for (auto e : connections_)
 		delete e;
-
-	delete poller_;
 }
 
 bool Server::Start()
@@ -34,24 +33,8 @@ bool Server::Start()
 	FatalIf(!socket_.SetResuseAddress(), "socket option set failed :(", strerror(errno));
 	FatalIf(!socket_.Bind(), "socket bind failed, %s :(", strerror(errno));
 	FatalIf(!socket_.Listen(), "socket listen failed, %s :(", strerror(errno));
-	listen_ = new Channel(socket_.fd(), poller_);
-	listen_->OnRead([this]() { HandleAccept(); });
-	running_ = true;
+	listen_ = new Channel(socket_.fd(), event_base_->GetPoller(), [this]() { HandleAccept(); }, 0);
 	return true;
-}
-
-bool Server::Close()
-{
-	Info("server closed ;)");
-	running_ = false;
-	return socket_.Close();
-}
-
-void Server::Run()
-{
-	for (; running_;) {
-		poller_->LoopOnce();
-	}
 }
 
 void Server::OnConnect(const ConnectCallBack &connectcb)
@@ -66,7 +49,7 @@ void Server::HandleAccept()
 		Error("socket accept failed, %s :(", strerror(errno));
 		return ;
 	}
-	Connection *con = new Connection(Socket(fd), poller_);
+	Connection *con = new Connection(Socket(fd), event_base_->GetPoller());
 	if (connectcb_)
 		connectcb_(con);
 	connections_.push_back(con);

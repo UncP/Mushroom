@@ -20,7 +20,7 @@ class Channel : private NoCopy
 	public:
 		friend class Connection;
 
-		Channel(int fd, Poller *poller);
+		Channel(int fd, Poller *poller, const ReadCallBack &readcb, const WriteCallBack &writecb);
 
 		~Channel();
 
@@ -35,10 +35,6 @@ class Channel : private NoCopy
 		void EnableRead(bool flag);
 
 		void EnableWrite(bool flag);
-
-		void OnRead(const ReadCallBack &readcb);
-
-		void OnWrite(const WriteCallBack &writecb);
 
 		void HandleRead();
 

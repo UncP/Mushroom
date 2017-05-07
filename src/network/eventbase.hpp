@@ -1,0 +1,37 @@
+/**
+ *    > Author:            UncP
+ *    > Mail:         770778010@qq.com
+ *    > Github:    https://www.github.com/UncP/Mushroom
+ *    > Created Time:  2017-05-06 23:45:21
+**/
+
+#ifndef _EVENT_BASE_HPP_
+#define _EVENT_BASE_HPP_
+
+#include "../utility/utility.hpp"
+
+namespace Mushroom {
+
+class Poller;
+
+class EventBase : private NoCopy
+{
+	public:
+		EventBase();
+
+		~EventBase();
+
+		void Loop();
+
+		void Exit();
+
+		Poller* GetPoller();
+
+	private:
+		bool    running_;
+		Poller *poller_;
+};
+
+} // namespace Mushroom
+
+#endif /* _EVENT_BASE_HPP_ */

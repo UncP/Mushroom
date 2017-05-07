@@ -24,8 +24,6 @@ class LatchManager : private NoCopy
 
 		~LatchManager();
 
-		void Reset();
-
 		Latch* GetLatch(page_t page_no);
 
 	private:

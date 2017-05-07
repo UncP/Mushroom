@@ -24,7 +24,7 @@ class Connection : private NoCopy
 	public:
 		Connection(const Socket &socket, Poller *poller);
 
-		Connection(const EndPoint &server);
+		Connection(const EndPoint &server, Poller *poller);
 
 		virtual ~Connection();
 
@@ -53,6 +53,7 @@ class Connection : private NoCopy
 		void SendOutput();
 
 	protected:
+
 		Socket   socket_;
 		bool     connected_;
 		Channel *channel_;

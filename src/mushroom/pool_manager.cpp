@@ -36,17 +36,6 @@ PoolManager::~PoolManager()
 	delete [] entries_;
 }
 
-void PoolManager::Reset()
-{
-	cur_ = 0;
-	tot_ = 0;
-
-	for (uint32_t i = 0; i != (HashMask+1); ++i)
-		entries_[i].SetSlot(0);
-	for (uint32_t i = 0; i != PoolSize; ++i)
-		pool_[i].Reset();
-}
-
 void PoolManager::Link(uint16_t hash, uint16_t victim)
 {
 	PagePool *pool = pool_ + victim;
