@@ -8,7 +8,7 @@
 #ifndef _EVENT_BASE_HPP_
 #define _EVENT_BASE_HPP_
 
-#include "../utility/utility.hpp"
+#include "../include/utility.hpp"
 
 namespace Mushroom {
 

@@ -8,8 +8,8 @@
 #ifndef _CHANNEL_HPP_
 #define _CHANNEL_HPP_
 
-#include "../utility/utility.hpp"
-#include "function.hpp"
+#include "../include/utility.hpp"
+#include "callback.hpp"
 
 namespace Mushroom {
 

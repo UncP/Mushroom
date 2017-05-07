@@ -11,8 +11,7 @@
 #include <cstring>
 #include <string>
 
-#include "../utility/utility.hpp"
-#include "utility.hpp"
+#include "../include/utility.hpp"
 
 namespace Mushroom {
 

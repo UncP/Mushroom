@@ -8,8 +8,8 @@
 #ifndef _THREAD_POOL_HPP_
 #define _THREAD_POOL_HPP_
 
-#include "../utility/bounded_queue.hpp"
-#include "../utility/thread.hpp"
+#include "bounded_queue.hpp"
+#include "thread.hpp"
 
 namespace Mushroom {
 

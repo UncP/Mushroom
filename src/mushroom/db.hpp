@@ -8,8 +8,7 @@
 #ifndef _MUSHROOM_DB_HPP_
 #define _MUSHROOM_DB_HPP_
 
-#include "../utility/utility.hpp"
-#include "utility.hpp"
+#include "../include/utility.hpp"
 
 namespace Mushroom {
 

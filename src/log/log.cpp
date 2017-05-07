@@ -5,22 +5,21 @@
  *    > Created Time:  2017-04-29 09:37:28
 **/
 
-#include <cstdio>
 #include <cstdarg>
+#include <cstdio>
 
 #include "log.hpp"
 
 namespace Mushroom {
 
-Log::Log() { }
+Logv::Logv() { }
 
-Log& Log::GetLogger()
-{
-	static Log lg;
-	return lg;
+Logv& Logv::GetLogger() {
+	static Logv log;
+	return log;
 }
 
-void Log::logv(const char *fmt ...)
+void Logv::logv(const char *fmt ...)
 {
 	char buf[1024];
 	char *p = buf;

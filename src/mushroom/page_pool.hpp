@@ -8,8 +8,7 @@
 #ifndef _PAGE_POOL_HPP_
 #define _PAGE_POOL_HPP_
 
-#include "../utility/utility.hpp"
-#include "utility.hpp"
+#include "../include/utility.hpp"
 #include "page.hpp"
 
 namespace Mushroom {

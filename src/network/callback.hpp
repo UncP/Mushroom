@@ -5,8 +5,8 @@
  *    > Created Time:  2017-04-30 17:25:03
 **/
 
-#ifndef _FUNCTIONAL_HPP_
-#define _FUNCTIONAL_HPP_
+#ifndef _CALLBACK_HPP_
+#define _CALLBACK_HPP_
 
 #include <functional>
 
@@ -21,4 +21,4 @@ typedef std::function<void(Connection *)> ConnectCallBack;
 
 } // namespace Mushroom
 
-#endif /* _FUNCTIONAL_HPP_ */
+#endif /* _CALLBACK_HPP_ */

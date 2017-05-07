@@ -10,7 +10,7 @@
 
 #include <sys/epoll.h>
 
-#include "../utility/utility.hpp"
+#include "../include/utility.hpp"
 
 const uint32_t ReadEvent  = EPOLLIN;
 const uint32_t WriteEvent = EPOLLOUT;

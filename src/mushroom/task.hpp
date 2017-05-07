@@ -8,8 +8,7 @@
 #ifndef _MUSHROOM_TASK_HPP_
 #define _MUSHROOM_TASK_HPP_
 
-#include "../utility/utility.hpp"
-#include "utility.hpp"
+#include "../include/utility.hpp"
 #include "slice.hpp"
 
 namespace Mushroom {

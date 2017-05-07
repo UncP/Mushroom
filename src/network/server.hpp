@@ -10,8 +10,8 @@
 
 #include <vector>
 
-#include "../utility/utility.hpp"
-#include "function.hpp"
+#include "../include/utility.hpp"
+#include "callback.hpp"
 #include "socket.hpp"
 
 namespace Mushroom {

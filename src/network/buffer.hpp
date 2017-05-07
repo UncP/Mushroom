@@ -8,9 +8,7 @@
 #ifndef _BUFFER_HPP_
 #define _BUFFER_HPP_
 
-#include <cstdint>
-
-#include "../utility/utility.hpp"
+#include "../include/utility.hpp"
 
 namespace Mushroom {
 

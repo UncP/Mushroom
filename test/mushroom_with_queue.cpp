@@ -13,8 +13,8 @@
 #include "../src/mushroom/slice.hpp"
 #include "../src/mushroom/db.hpp"
 #include "../src/mushroom/task.hpp"
-#include "../src/utility/bounded_queue.hpp"
-#include "../src/utility/thread_pool.hpp"
+#include "../src/include/bounded_queue.hpp"
+#include "../src/include/thread_pool.hpp"
 
 using namespace Mushroom;
 
@@ -85,13 +85,14 @@ int main(int argc, char **argv)
 
 	double t1 = Do(file, db, &MushroomDB::Put);
 
-	double t2 = Do(file, db, &MushroomDB::Get);
+	// double t2 = Do(file, db, &MushroomDB::Get);
 
 	db->Close();
+
 	delete db;
 
 	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", total, t1);
-	printf("\033[34mget time: %f  s\033[0m\n", t2);
+	// printf("\033[34mget time: %f  s\033[0m\n", t2);
 
 	return 0;
 }

@@ -8,9 +8,8 @@
 #ifndef _B_LINK_TREE_HPP_
 #define _B_LINK_TREE_HPP_
 
-#include "../utility/utility.hpp"
-#include "utility.hpp"
-#include "../utility/atomic.hpp"
+#include "../include/utility.hpp"
+#include "../include/atomic.hpp"
 
 namespace Mushroom {
 

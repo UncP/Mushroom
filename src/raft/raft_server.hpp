@@ -8,16 +8,18 @@
 #ifndef _RAFT_SERVER_HPP_
 #define _RAFT_SERVER_HPP_
 
-#include "../utility/latch.hpp"
+#include "../utility/mutex.hpp"
+#include "../utility/cond.hpp"
 
 namespace Mushroom {
 
-template<typename T> class Thread;
+class Log;
+class Thread;
 
 class RaftServer
 {
 	public:
-		enum State { Follower, Candidate, Leader };
+		enum State { Follower = 0x0, Candidate = 0x1, Leader = 0x2 };
 
 		static uint32_t ElectionTimeoutBase;
 		static uint32_t ElectionTimeoutLimit;
@@ -27,29 +29,30 @@ class RaftServer
 
 		~RaftServer();
 
-		void Run();
-
-		void Elect();
-
 	private:
-		int32_t  id_;
+		void Background();
 
-		bool     running_;
-		State    state_;
+		void RunElection();
 
-		std::vector<RpcConnection *> peers_;
+		uint32_t  id_;
+		uint8_t  running_;
+
+		Mutex    mutex_;
+		uint8_t  state_;
 
 		uint32_t term_;
 		int32_t  vote_for_;
 		int32_t  commit_;
 		int32_t  applied_;
 
-		Mutex    mutex_;
+		std::vector<Log *> logs_;
 
-		bool                election_time_out_;
-		bool                reset_timer_;
-		Thread<RaftServer> *election_thread_;
-		ConditionVariable   election_cond_;
+		uint8_t  election_time_out_;
+		uint8_t  reset_timer_;
+		Thread  *election_thread_;
+		Cond     election_cond_;
+
+		std::vector<RpcConnection *> peers_;
 };
 
 } // namespace Mushroom

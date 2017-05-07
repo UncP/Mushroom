@@ -8,13 +8,15 @@
 #ifndef _LATCH_HPP_
 #define _LATCH_HPP_
 
-#include "../mushroom/utility.hpp"
+#include "utility.hpp"
 #include "spin_lock.hpp"
 #include "atomic.hpp"
 
 namespace Mushroom {
 
-class Latch
+class LatchManager;
+
+class Latch : private NoCopy
 {
 	friend class LatchManager;
 	public:

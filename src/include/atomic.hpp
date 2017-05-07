@@ -49,6 +49,7 @@ class Atomic
 		volatile T val_;
 };
 
+typedef Atomic<uint8_t>  atomic_8_t;
 typedef Atomic<uint16_t> atomic_16_t;
 typedef Atomic<uint32_t> atomic_32_t;
 

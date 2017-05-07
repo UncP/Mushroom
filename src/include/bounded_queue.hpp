@@ -93,14 +93,12 @@ void BoundedQueue<T>::Clear()
 		return ;
 
 	mutex_.Lock();
-
 	while (front_ != avail_back_ || front_ != work_back_)
 		empty_.Wait(mutex_);
 
 	clear_ = true;
 
 	mutex_.Unlock();
-
 	ready_.Broadcast();
 }
 

@@ -5,8 +5,8 @@
  *    > Created Time:  2017-05-06 22:38:46
 **/
 
-#ifndef _UTILITY_UTILITY_HPP_
-#define _UTILITY_UTILITY_HPP_
+#ifndef _UTILITY_HPP_
+#define _UTILITY_HPP_
 
 #include <functional>
 
@@ -20,9 +20,14 @@ class NoCopy {
 		NoCopy& operator=(const NoCopy &) = delete;
 };
 
+typedef uint32_t valptr;
+typedef uint32_t page_t;
+typedef uint32_t table_t;
+typedef uint32_t block_t;
+
 typedef std::function<void()> Task;
 typedef std::function<void()> Func;
 
 } // namespace Mushroom
 
-#endif /* _UTILITY_UTILITY_HPP_ */
+#endif /* _UTILITY_HPP_ */

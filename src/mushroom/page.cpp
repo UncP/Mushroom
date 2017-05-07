@@ -6,7 +6,6 @@
 **/
 
 #include <cassert>
-#include <sstream>
 
 #include "page.hpp"
 
@@ -232,36 +231,6 @@ bool Page::NeedSplit()
 	key_len_ -= pre_len;
 	degree_  = degree;
 	return false;
-}
-
-std::string Page::ToString() const
-{
-	std::ostringstream os;
-	os << "type: ";
-	if (type_ == LEAF)   os << "leaf  ";
-	if (type_ == BRANCH) os << "branch  ";
-	if (type_ == ROOT)   os << "root  ";
-	os << "page_no: " << page_no_ << " ";
-	os << "first: " << first_ << " ";
-	os << "tot_key: " << total_key_ << " ";
-	os << "level: " << (int)level_ << " ";
-	os << "key_len: " << (int)key_len_ << " ";
-
-	if (pre_len_) {
-		os << "pre_len: " << (int)pre_len_ << " ";
-		os << "prefix: " << std::string(data_, pre_len_) << "\n";
-	}
-
-	uint16_t *index = Index();
-	for (uint16_t i = 0; i != total_key_; ++i)
-		os << index[i] << " ";
-	os << "\n";
-	for (uint16_t i = 0; i != total_key_; ++i) {
-		KeySlice *key = Key(index, i);
-		os << key->ToString(key_len_);
-	}
-	os << "\nnext: " << Key(index, total_key_-1)->page_no_ << "\n";
-	return os.str();
 }
 
 } // namespace Mushroom

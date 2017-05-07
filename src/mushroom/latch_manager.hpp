@@ -8,9 +8,8 @@
 #ifndef _LATCH_MANAGER_HPP_
 #define _LATCH_MANAGER_HPP_
 
-#include "../utility/utility.hpp"
-#include "utility.hpp"
-#include "../utility/atomic.hpp"
+#include "../include/utility.hpp"
+#include "../include/atomic.hpp"
 
 namespace Mushroom {
 

@@ -8,10 +8,7 @@
 #ifndef _BTREE_PAGE_HPP_
 #define _BTREE_PAGE_HPP_
 
-#include <string>
-
-#include "../utility/utility.hpp"
-#include "utility.hpp"
+#include "../include/utility.hpp"
 #include "slice.hpp"
 
 namespace Mushroom {
@@ -19,12 +16,12 @@ namespace Mushroom {
 typedef enum { InsertOk, ExistedKey, MoveRight } InsertStatus;
 
 class KeySlice;
+class BLinkTree;
 
 class Page : private NoCopy
 {
 	friend class BLinkTree;
 	public:
-
 		static uint32_t PageSize;
 
 		static enum { ROOT = 1, BRANCH = 2, LEAF = 4 } Type;
@@ -60,8 +57,6 @@ class Page : private NoCopy
 		void Split(Page *that, KeySlice *slice);
 
 		bool NeedSplit();
-
-		std::string ToString() const;
 
 	private:
 

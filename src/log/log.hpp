@@ -14,21 +14,21 @@
 
 namespace Mushroom {
 
-#define Info(...)  Log::GetLogger().logv(__VA_ARGS__)
-#define Warn(...)  Log::GetLogger().logv(__VA_ARGS__)
-#define Error(...) Log::GetLogger().logv(__VA_ARGS__)
-#define Fatal(...) Log::GetLogger().logv(__VA_ARGS__)
-#define FatalIf(b, ...) do { if (b) {Log::GetLogger().logv(__VA_ARGS__); assert(0);} } while (0)
+#define Info(...)  Logv::GetLogger().logv(__VA_ARGS__)
+#define Warn(...)  Logv::GetLogger().logv(__VA_ARGS__)
+#define Error(...) Logv::GetLogger().logv(__VA_ARGS__)
+#define Fatal(...) Logv::GetLogger().logv(__VA_ARGS__)
+#define FatalIf(b, ...) do { if (b) {Logv::GetLogger().logv(__VA_ARGS__); assert(0);} } while (0)
 
-class Log
+class Logv
 {
 	public:
-		static Log& GetLogger();
+		static Logv& GetLogger();
 
 		void logv(const char *fmt ...);
 
 	private:
-		Log();
+		Logv();
 };
 
 } // namespace Mushroom

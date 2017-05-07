@@ -8,8 +8,8 @@
 #ifndef _CONNECTION_HPP_
 #define _CONNECTION_HPP_
 
-#include "../utility/utility.hpp"
-#include "function.hpp"
+#include "../include/utility.hpp"
+#include "callback.hpp"
 #include "socket.hpp"
 #include "endpoint.hpp"
 #include "buffer.hpp"
