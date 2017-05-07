@@ -8,6 +8,8 @@
 #ifndef _UTILITY_UTILITY_HPP_
 #define _UTILITY_UTILITY_HPP_
 
+#include <functional>
+
 namespace Mushroom {
 
 class NoCopy {
@@ -17,6 +19,8 @@ class NoCopy {
 		NoCopy(const NoCopy &) = delete;
 		NoCopy& operator=(const NoCopy &) = delete;
 };
+
+typedef std::function<void()> Task;
 
 } // namespace Mushroom
 

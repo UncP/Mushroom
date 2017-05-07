@@ -9,11 +9,11 @@
 
 namespace Mushroom {
 
-RpcConnection::RpcConnection(const EndPoint &server)
-:Connection(server), marshaller_(input_, output_) { }
+RpcConnection::RpcConnection(const EndPoint &server, Poller *poller)
+:Connection(server, poller), marshaller_(input_, output_) { }
 
-RpcConnection::RpcConnection(const Socket &socket, uint32_t events, Poller *poller)
-:Connection(socket, events, poller), marshaller_(input_, output_) { }
+RpcConnection::RpcConnection(const Socket &socket, Poller *poller)
+:Connection(socket, poller), marshaller_(input_, output_) { }
 
 RpcConnection::~RpcConnection() { }
 

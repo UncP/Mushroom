@@ -10,6 +10,7 @@
 
 #include "mutex.hpp"
 #include "cond.hpp"
+#include "utility.hpp"
 
 namespace Mushroom {
 
@@ -17,7 +18,7 @@ template<typename T>
 class BoundedQueue
 {
 	public:
-		BoundedQueue(int capacity);
+		BoundedQueue(int capacity, const Task &constructor);
 
 		~BoundedQueue();
 
@@ -25,11 +26,14 @@ class BoundedQueue
 
 		inline void Push();
 
-		inline T* Pull(int *pos);
+		inline T* Pop(int *pos);
 
 		inline void Put(int pos);
 
 		void Clear();
+
+		BoundedQueue(const BoundedQueue &) = delete;
+		BoundedQueue& operator=(const BoundedQueue &) = delete;
 
 	private:
 		bool   clear_;
@@ -46,17 +50,17 @@ class BoundedQueue
 };
 
 template<typename T>
-BoundedQueue<T>::BoundedQueue(int capacity)
+BoundedQueue<T>::BoundedQueue(int capacity, const Task &constructor)
 :clear_(false), capacity_(capacity), front_(0), avail_back_(0), work_back_(0)
 {
 	if (capacity_ < 64)
 		capacity_ = 64;
-	if (capacity_ > 4096)
-		capacity_ = 4096;
+	if (capacity_ > 1024)
+		capacity_ = 1024;
 
 	queue_ = new T*[capacity_];
 	for (int i = 0; i != capacity_; ++i)
-		queue_[i] = new T;
+		queue_[i] = constructor();
 
 	avail_ = new int[capacity_];
 	for (int i = 0; i != capacity_; ++i)
@@ -76,8 +80,7 @@ BoundedQueue<T>::~BoundedQueue()
 	delete [] avail_;
 	delete [] work_;
 
-	for (int i = capacity_; i;)
-		delete queue_[--i];
+	while (capacity_) delete queue_[--capacity_];
 
 	delete [] queue_;
 }
@@ -115,7 +118,7 @@ inline void BoundedQueue<T>::Push()
 }
 
 template<typename T>
-inline T* BoundedQueue<T>::Pull(int *pos)
+inline T* BoundedQueue<T>::Pop(int *pos)
 {
 	mutex_.Lock();
 	while (work_[work_back_] < 0 && !clear_)

@@ -1,4 +1,4 @@
-## Mushroom（蘑菇）：并发B<sup>link</sup>树索引
+## Mushroom（蘑菇）：分布式内存索引
 [English Version of README](./README.en.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](https://github.com/UncP)
@@ -9,10 +9,8 @@
 ### Behold, the power of Mushroom!
 
 ### Feature
-+ B<sup>link</sup>树索引（前缀压缩）
-+ 日志结构合并树（LSM Tree）
-+ 二次哈希页面管理器
-+ 多线程（锁管理器、线程池、二次映射有界队列）
++ 并发B<sup>link</sup>树索引（前缀压缩，二次哈希页面管理器）
++ 多线程（线程池、二次映射有界队列，锁管理器）
 + TCP通信库
 + RPC框架
 
@@ -51,4 +49,4 @@
 
 ### 其他
 + 版本0.6.0是第一个稳定版本
-+ 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到Mushroom相关的介绍
++ 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到Mushroom的介绍

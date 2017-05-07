@@ -1,4 +1,4 @@
-## Mushroom: Concurrent B<sup>link</sup> Tree Index
+## Mushroom: Distributed In-Memory Index
 [中文版 README](./README.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](./LICENSE)
@@ -9,10 +9,8 @@
 ### Behold, the power of Mushroom!
 
 ### Feature
-+ B<sup>link</sup> Tree Index (with Prefix Compression)
-+ Log-Structured Merge Tree
-+ Two-Phase Hashing Page Manager
-+ Mulit-Thread (Latch Manager, Thread Pool, Bounded Thread-Safe Queue)
++ B<sup>link</sup> Tree Index (Prefix Compression, Two-Phase Hashing Page Manager)
++ Mulit-Thread (Thread Pool, Bounded Thread-Safe Queue, Latch Manager)
 + TCP Communication Library
 + RPC Framework
 

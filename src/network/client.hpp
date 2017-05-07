@@ -15,13 +15,12 @@ class EventBase;
 class Client
 {
 	public:
-		Client();
+		Client(EventBase *base);
 
 		~Client();
 
 	private:
 		EventBase *base_;
-
 };
 
 } // namespace Mushroom

@@ -103,10 +103,8 @@ void Connection::HandleWrite()
 		return ;
 	}
 	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
-	if (writecb_ && output_.empty()) {
+	if (writecb_ && output_.empty())
 		writecb_();
-		output_.Reset();
-	}
 }
 
 void Connection::Send(const char *str)
@@ -134,7 +132,6 @@ void Connection::SendOutput()
 		return ;
 	}
 	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
-	output_.Reset();
 }
 
 } // namespace Mushroom
