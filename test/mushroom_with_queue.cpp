@@ -12,8 +12,9 @@
 
 #include "../src/mushroom/slice.hpp"
 #include "../src/mushroom/db.hpp"
-#include "../src/mushroom/queue.hpp"
-#include "../src/mushroom/thread_pool.hpp"
+#include "../src/mushroom/task.hpp"
+#include "../src/utility/bounded_queue.hpp"
+#include "../src/utility/thread_pool.hpp"
 
 using namespace Mushroom;
 
@@ -22,7 +23,11 @@ static int total;
 
 double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *))
 {
-	ThreadPool *pool = new ThreadPool(new Queue(1024, key_len));
+	BoundedQueue<MushroomTask> *queue = new BoundedQueue<MushroomTask>(1024, []() {
+		return new MushroomTask(key_len);
+	});
+
+	ThreadPool<MushroomTask> pool(queue, 4);
 
 	TempSlice(key, sizeof(valptr) + key_len);
 	int fd = open(file, O_RDONLY);
@@ -42,7 +47,11 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
 			memcpy(key->key_, tmp, key_len);
-			pool->AddTask(fun, db, key);
+
+			MushroomTask *task = queue->Get();
+			task->Assign(fun, db, key);
+			queue->Push();
+
 			if (++count == total) {
 				flag = false;
 				break;
@@ -51,10 +60,11 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 		}
 	}
 	close(fd);
-	pool->Clear();
-	auto end = std::chrono::high_resolution_clock::now();
 
-	delete pool;
+	pool.Clear();
+	delete queue;
+
+	auto end = std::chrono::high_resolution_clock::now();
 	auto t = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 	return t;
 }

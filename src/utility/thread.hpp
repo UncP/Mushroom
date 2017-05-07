@@ -8,31 +8,29 @@
 #ifndef _THREAD_HPP_
 #define _THREAD_HPP_
 
-#include <pthread.h>
+#include <thread>
+
+#include "utility.hpp"
 
 namespace Mushroom {
 
-template<typename T>
-class Thread
+class Thread : private NoCopy
 {
 	public:
-		Thread(void* (*func)(void *), T *args):func_(func), args_(args) { }
+		Thread(const Func &func):func_(func) { }
 
-		inline bool Start() {
-			return !pthread_create(&id_, 0, func_, args_);
+		inline void Start() {
+			std::thread tmp(func_);
+			thread_.swap(tmp);
 		}
 
-		inline bool Stop() {
-			return !pthread_join(id_, 0);
+		inline void Stop() {
+			thread_.join();
 		}
-
-		Thread(const Thread &) = delete;
-		Thread& operator=(const Thread &) = delete;
 
 	private:
-		void*   (*func_)(void *);
-		T        *args_;
-		pthread_t id_;
+		Func        func_;
+		std::thread thread_;
 };
 
 } // namespace Mushroom

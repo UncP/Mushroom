@@ -5,8 +5,8 @@
  *    > Created Time: 2016-10-18 15:30:39
 **/
 
-#ifndef _TASK_HPP_
-#define _TASK_HPP_
+#ifndef _MUSHROOM_TASK_HPP_
+#define _MUSHROOM_TASK_HPP_
 
 #include "../utility/utility.hpp"
 #include "utility.hpp"
@@ -16,13 +16,15 @@ namespace Mushroom {
 
 class MushroomDB;
 
-class Task : private NoCopy
+class MushroomTask : private NoCopy
 {
 	public:
-		Task(uint8_t key_len):fun_(0), db_(0), key_len_(key_len) {
+		MushroomTask(uint8_t key_len):fun_(0), db_(0), key_len_(key_len) {
 			char *buf = new char[sizeof(valptr) + key_len_];
 			key_ = (KeySlice *)buf;
 		}
+
+		~MushroomTask() { delete [] key_; }
 
 		inline void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
 			fun_ = fun;
@@ -31,8 +33,6 @@ class Task : private NoCopy
 		}
 
 		bool operator()() { return (db_->*fun_)(key_); }
-
-		~Task() { delete [] key_; }
 
 	private:
 		bool         (MushroomDB::*(fun_))(KeySlice *);
@@ -43,4 +43,4 @@ class Task : private NoCopy
 
 } // namespace Mushroom
 
-#endif /* _TASK_HPP_ */
+#endif /* _MUSHROOM_TASK_HPP_ */

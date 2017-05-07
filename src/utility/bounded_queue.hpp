@@ -8,6 +8,8 @@
 #ifndef _BOUNDED_QUEUE_HPP_
 #define _BOUNDED_QUEUE_HPP_
 
+#include <functional>
+
 #include "mutex.hpp"
 #include "cond.hpp"
 #include "utility.hpp"
@@ -18,7 +20,7 @@ template<typename T>
 class BoundedQueue
 {
 	public:
-		BoundedQueue(int capacity, const Task &constructor);
+		BoundedQueue(int capacity, const std::function<T*()> &constructor);
 
 		~BoundedQueue();
 
@@ -50,7 +52,7 @@ class BoundedQueue
 };
 
 template<typename T>
-BoundedQueue<T>::BoundedQueue(int capacity, const Task &constructor)
+BoundedQueue<T>::BoundedQueue(int capacity, const std::function<T*()> &constructor)
 :clear_(false), capacity_(capacity), front_(0), avail_back_(0), work_back_(0)
 {
 	if (capacity_ < 64)
@@ -74,8 +76,7 @@ BoundedQueue<T>::BoundedQueue(int capacity, const Task &constructor)
 template<typename T>
 BoundedQueue<T>::~BoundedQueue()
 {
-	if (!clear_)
-		Clear();
+	Clear();
 
 	delete [] avail_;
 	delete [] work_;
@@ -88,11 +89,16 @@ BoundedQueue<T>::~BoundedQueue()
 template<typename T>
 void BoundedQueue<T>::Clear()
 {
+	if (clear_)
+		return ;
+
 	mutex_.Lock();
+
 	while (front_ != avail_back_ || front_ != work_back_)
 		empty_.Wait(mutex_);
 
 	clear_ = true;
+
 	mutex_.Unlock();
 
 	ready_.Broadcast();
@@ -111,8 +117,8 @@ template<typename T>
 inline void BoundedQueue<T>::Push()
 {
 	work_[front_] = avail_[front_];
-	avail_[front_++] = -1;
-	if (front_ == capacity_) front_ = 0;
+	avail_[front_] = -1;
+	if (++front_ == capacity_) front_ = 0;
 	mutex_.Unlock();
 	ready_.Signal();
 }
@@ -126,13 +132,14 @@ inline T* BoundedQueue<T>::Pop(int *pos)
 
 	if (clear_) {
 		mutex_.Unlock();
+		*pos = -1;
 		return 0;
 	}
 
 	*pos = work_[work_back_];
 	T *ret = queue_[*pos];
-	work_[work_back_++] = -1;
-	if (work_back_ == capacity_) work_back_ = 0;
+	work_[work_back_] = -1;
+	if (++work_back_ == capacity_) work_back_ = 0;
 	mutex_.Unlock();
 	return ret;
 }
@@ -141,8 +148,8 @@ template<typename T>
 inline void BoundedQueue<T>::Put(int pos)
 {
 	mutex_.Lock();
-	avail_[avail_back_++] = pos;
-	if (avail_back_ == capacity_) avail_back_ = 0;
+	avail_[avail_back_] = pos;
+	if (++avail_back_ == capacity_) avail_back_ = 0;
 	mutex_.Unlock();
 	empty_.Signal();
 }

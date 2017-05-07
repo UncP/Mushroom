@@ -21,6 +21,7 @@ class NoCopy {
 };
 
 typedef std::function<void()> Task;
+typedef std::function<void()> Func;
 
 } // namespace Mushroom
 
