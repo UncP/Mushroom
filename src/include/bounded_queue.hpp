@@ -115,8 +115,10 @@ template<typename T>
 inline void BoundedQueue<T>::Push()
 {
 	work_[front_] = avail_[front_];
+
 	avail_[front_] = -1;
 	if (++front_ == capacity_) front_ = 0;
+
 	mutex_.Unlock();
 	ready_.Signal();
 }
@@ -136,8 +138,10 @@ inline T* BoundedQueue<T>::Pop(int *pos)
 
 	*pos = work_[work_back_];
 	T *ret = queue_[*pos];
+
 	work_[work_back_] = -1;
 	if (++work_back_ == capacity_) work_back_ = 0;
+
 	mutex_.Unlock();
 	return ret;
 }
@@ -146,8 +150,10 @@ template<typename T>
 inline void BoundedQueue<T>::Put(int pos)
 {
 	mutex_.Lock();
+
 	avail_[avail_back_] = pos;
 	if (++avail_back_ == capacity_) avail_back_ = 0;
+
 	mutex_.Unlock();
 	empty_.Signal();
 }

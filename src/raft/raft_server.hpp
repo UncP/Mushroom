@@ -8,13 +8,20 @@
 #ifndef _RAFT_SERVER_HPP_
 #define _RAFT_SERVER_HPP_
 
-#include "../utility/mutex.hpp"
-#include "../utility/cond.hpp"
+#include <vector>
+
+#include "../include/mutex.hpp"
+#include "../include/cond.hpp"
 
 namespace Mushroom {
 
 class Log;
 class Thread;
+class RpcConnection;
+class RequestVoteArgs;
+class RequestVoteReply;
+class AppendEntryArgs;
+class AppendEntryReply;
 
 class RaftServer
 {
@@ -25,30 +32,44 @@ class RaftServer
 		static uint32_t ElectionTimeoutLimit;
 		static uint32_t HeartbeatInterval;
 
-		RaftServer();
+		RaftServer(uint32_t id, const std::vector<RpcConnection *> &peers);
 
 		~RaftServer();
+
+		void Close();
 
 	private:
 		void Background();
 
 		void RunElection();
 
-		uint32_t  id_;
-		uint8_t  running_;
+		void Vote(const RequestVoteArgs *args, RequestVoteReply *reply);
 
-		Mutex    mutex_;
+		void RequestVote();
+
+		void AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply);
+
+		void SendAppendEntry();
+
+		uint32_t id_;
+
 		uint8_t  state_;
+		uint8_t  running_;
+		uint8_t  in_election_;
+		uint8_t  election_time_out_;
+		uint8_t  reset_timer_;
 
 		uint32_t term_;
 		int32_t  vote_for_;
 		int32_t  commit_;
 		int32_t  applied_;
 
-		std::vector<Log *> logs_;
+		std::vector<Log> logs_;
 
-		uint8_t  election_time_out_;
-		uint8_t  reset_timer_;
+		Mutex    mutex_;
+
+		Thread  *background_thread_;
+		Cond     background_cond_;
 		Thread  *election_thread_;
 		Cond     election_cond_;
 

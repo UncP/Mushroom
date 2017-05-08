@@ -8,28 +8,33 @@
 #ifndef _RAFT_LOG_HPP_
 #define _RAFT_LOG_HPP_
 
-#include <cstdint>
+#include "../rpc/marshaller.hpp"
 
 namespace Mushroom {
 
-class RaftServer;
-
-class Log
+struct Log
 {
-	friend class RaftServer;
-	public:
-		Log();
+		Log() { }
 
-		Log(uint32_t term, uint32_t number);
+		Log(uint32_t term, uint32_t number):term_(term), number_(number) { }
 
-		uint32_t Term();
-
-		uint32_t Number();
-
-	private:
 		uint32_t term_;
 		uint32_t number_;
 };
+
+inline Marshaller& operator<<(Marshaller &marshaller, const Log &log)
+{
+	marshaller << log.term_;
+	marshaller << log.number_;
+	return marshaller;
+}
+
+inline Marshaller& operator>>(Marshaller &marshaller, Log &log)
+{
+	marshaller >> log.term_;
+	marshaller >> log.number_;
+	return marshaller;
+}
 
 } // namespace Mushroom
 
