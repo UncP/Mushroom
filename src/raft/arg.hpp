@@ -16,15 +16,16 @@ namespace Mushroom {
 struct RequestVoteArgs
 {
 	RequestVoteArgs(uint32_t term, uint32_t id, uint32_t last_index, uint32_t last_term)
-	:term_(term), id_(id), last_index_(last_index), last_term_(last_term)
+	:term_(term), id_(id), last_index_(last_index), last_term_(last_term) { }
 	uint32_t  term_;
-	uint32_t  id_;
+	int32_t   id_;
 	int32_t   last_index_;
 	uint32_t  last_term_;
 };
 
 struct RequestVoteReply
 {
+	RequestVoteReply(uint32_t term, uint32_t granted):term_(term), granted_(granted) { }
 	uint32_t term_;
 	uint32_t granted_;
 };
@@ -32,7 +33,7 @@ struct RequestVoteReply
 struct AppendEntryArgs
 {
 	uint32_t         term_;
-	uint32_t         id_;
+	int32_t          id_;
 	uint32_t         prev_term_;
 	int32_t          prev_index_;
 	int32_t          leader_commit_;
@@ -41,8 +42,9 @@ struct AppendEntryArgs
 
 struct AppendEntryReply
 {
+	AppendEntryReply(uint32_t term, int32_t success):term_(term), success_(success) { }
 	uint32_t term_;
-	uint32_t success_;
+	int32_t  success_;
 };
 
 inline Marshaller& operator<<(Marshaller &marshaller, const RequestVoteArgs &args)

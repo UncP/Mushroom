@@ -1,7 +1,6 @@
 CPP = $(CXX)
 CPPFLAGS = -std=c++11 -Wall -Wextra -O3
 LDFLAGS = -pthread
-DFLAGS =
 
 MushroomFile = $(shell find mushroom -name '*.cpp')
 NetworkFile = $(shell find network -name '*.cpp')
@@ -15,13 +14,10 @@ LOBJ = $(LogFile:.cpp=.o)
 RaftOBJ = $(RaftFile:.cpp=.o)
 RpcOBJ = $(RpcFile:.cpp=.o)
 
-QUEUE = ../test/mushroom_with_queue.cpp
-
-THREAD = ../test/mushroom_multi_thread.cpp
-
 all: blinktree_with_queue_test blinktree_multi_thread_test
 
-raft_test: $(RaftOBJ)
+raft: $(RaftOBJ) ../test/raft.cpp
+	$(CPP) $(CPPFLAGS) -o raft_test $^ $(LDFLAGS)
 
 network: client_test server_test
 
@@ -39,11 +35,11 @@ client_test: $(LOBJ) $(NOBJ) ../test/network_client.cpp
 server_test: $(LOBJ) $(NOBJ) ../test/network_server.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^
 
-blinktree_with_queue_test: $(MOBJ) $(QUEUE)
-	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
+blinktree_with_queue_test: $(MOBJ) ../test/mushroom_with_queue.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
-blinktree_multi_thread_test: $(MOBJ) $(THREAD)
-	$(CPP) $(CPPFLAGS) -o $@ $^ $(DFLAGS) $(LDFLAGS)
+blinktree_multi_thread_test: $(MOBJ) ../test/mushroom_multi_thread.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 .cpp.o:
 		$(CPP) $(CPPFLAGS) -c $< -o $@ $(DFLAGS) $(LDFLAGS)

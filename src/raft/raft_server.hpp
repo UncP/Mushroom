@@ -9,6 +9,7 @@
 #define _RAFT_SERVER_HPP_
 
 #include <vector>
+#include <cstdint>
 
 #include "../include/mutex.hpp"
 #include "../include/cond.hpp"
@@ -32,9 +33,15 @@ class RaftServer
 		static uint32_t ElectionTimeoutLimit;
 		static uint32_t HeartbeatInterval;
 
-		RaftServer(uint32_t id, const std::vector<RpcConnection *> &peers);
+		RaftServer(int32_t id, const std::vector<RpcConnection *> &peers);
 
 		~RaftServer();
+
+		bool Put(const Log &log);
+
+		void Vote(const RequestVoteArgs *args, RequestVoteReply *reply);
+
+		void AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply);
 
 		void Close();
 
@@ -43,21 +50,17 @@ class RaftServer
 
 		void RunElection();
 
-		void Vote(const RequestVoteArgs *args, RequestVoteReply *reply);
-
 		void RequestVote();
-
-		void AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply);
 
 		void SendAppendEntry();
 
-		uint32_t id_;
+		int32_t  id_;
 
 		uint8_t  state_;
-		uint8_t  running_;
-		uint8_t  in_election_;
-		uint8_t  election_time_out_;
-		uint8_t  reset_timer_;
+		bool     running_;
+		bool     in_election_;
+		bool     election_time_out_;
+		bool     reset_timer_;
 
 		uint32_t term_;
 		int32_t  vote_for_;
@@ -74,6 +77,9 @@ class RaftServer
 		Cond     election_cond_;
 
 		std::vector<RpcConnection *> peers_;
+
+		std::vector<int32_t> next_;
+		std::vector<int32_t> match_;
 };
 
 } // namespace Mushroom
