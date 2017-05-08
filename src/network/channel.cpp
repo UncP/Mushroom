@@ -15,8 +15,6 @@ Channel::Channel(int fd, Poller *poller, const ReadCallBack &readcb,
 :fd_(fd), poller_(poller), readcb_(readcb), writecb_(writecb)
 {
 	events_ = ReadEvent;
-	if (writecb_)
-		events_ |= WriteEvent;
 	poller_->AddChannel(this);
 }
 

@@ -17,22 +17,22 @@ using namespace Mushroom;
 int main()
 {
 	EventBase base;
-	Connection *con = new Connection(EndPoint("127.0.0.1"), base.GetPoller());
-	Signal::Register(SIGINT, [&base, con] { base.Exit(); delete con; exit(0); });
-	if (!con->Success()) {
-		delete con;
+	Connection *con1 = new Connection(EndPoint("127.0.0.1"), base.GetPoller());
+	Signal::Register(SIGINT, [&base, con1]() {
+		base.Exit(); delete con1; exit(0);
+	});
+	if (!con1->Success()) {
+		delete con1;
 		return 0;
 	}
 
-	con->OnRead([con]() {
-		printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
-		usleep(200000);
-		con->Send(con->GetInput());
+	con1->OnRead([con1]() {
+		printf("read %u : %s\n", con1->GetInput().size(), con1->GetInput().data());
+		usleep(500000);
+		con1->Send(con1->GetInput());
 	});
-	con->Send("hello world");
 	base.Loop();
 
-	con->Close();
-	delete con;
+	delete con1;
 	return 0;
 }

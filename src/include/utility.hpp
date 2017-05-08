@@ -20,6 +20,16 @@ class NoCopy {
 		NoCopy& operator=(const NoCopy &) = delete;
 };
 
+template<typename T>
+class NoCopyTemplate
+{
+	public:
+		NoCopyTemplate() = default;
+	private:
+		NoCopyTemplate(const NoCopyTemplate &) = delete;
+		NoCopyTemplate& operator=(const NoCopyTemplate &) = delete;
+};
+
 typedef uint32_t valptr;
 typedef uint32_t page_t;
 typedef uint32_t table_t;

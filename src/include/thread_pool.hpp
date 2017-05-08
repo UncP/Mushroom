@@ -14,7 +14,7 @@
 namespace Mushroom {
 
 template<typename T>
-class ThreadPool
+class ThreadPool : private NoCopyTemplate<T>
 {
 	public:
 		ThreadPool(BoundedQueue<T> *queue, int thread_num);
@@ -52,7 +52,7 @@ ThreadPool<T>::ThreadPool(BoundedQueue<T> *queue, int thread_num)
 template<typename T>
 void ThreadPool<T>::Run()
 {
-	while (1) {
+	for (;;) {
 		int pos;
 		T* task = queue_->Pop(&pos);
 

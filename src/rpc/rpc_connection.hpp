@@ -32,6 +32,7 @@ class RpcConnection : private Connection
 		inline bool Call(const char *str, const T *args);
 
 	private:
+		using Connection::channel_;
 		Marshaller marshaller_;
 };
 
@@ -40,7 +41,8 @@ inline bool RpcConnection::Call(const char *str, const T *args)
 {
 	uint32_t id = RPC::Hash(str);
 	marshaller_.Marshal(id, args);
-	SendOutput();
+	if (!channel_->CanWrite())
+		channel_->EnableWrite(true);
 	return true;
 }
 

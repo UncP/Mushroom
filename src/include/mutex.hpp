@@ -43,7 +43,6 @@ class Mutex
 		pthread_mutex_t mutex_[1];
 };
 
-
 } // namespace Mushroom
 
 #endif /* _MUTEX_HPP_ */

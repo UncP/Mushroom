@@ -38,7 +38,7 @@ Connection::Connection(const Socket &socket, Poller *poller)
 
 Connection::~Connection()
 {
-	socket_.Close();
+	Close();
 }
 
 bool Connection::Close()
@@ -103,8 +103,10 @@ void Connection::HandleWrite()
 		return ;
 	}
 	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
-	if (writecb_ && output_.empty())
+	if (writecb_ && output_.empty()) {
 		writecb_();
+		channel_->EnableWrite(false);
+	}
 }
 
 void Connection::Send(const char *str)

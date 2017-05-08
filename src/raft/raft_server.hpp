@@ -45,6 +45,8 @@ class RaftServer
 
 		void Close();
 
+		void Print() const;
+
 	private:
 		void Background();
 

@@ -65,8 +65,9 @@ bool RaftServer::Put(const Log &log)
 		mutex_.Unlock();
 		return false;
 	}
-
+	logs_.push_back(log);
 	mutex_.Unlock();
+	return true;
 }
 
 void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
@@ -131,6 +132,7 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		commit_ = std::min(args->leader_commit_, int32_t(logs_.size()) - 1);
 	reset_timer_ = true;
 	background_cond_.Signal();
+
 end:
 	mutex_.Unlock();
 }
@@ -196,6 +198,11 @@ void RaftServer::Background()
 			SendAppendEntry();
 		}
 	}
+}
+
+void RaftServer::Print() const
+{
+
 }
 
 } // namespace Mushroom

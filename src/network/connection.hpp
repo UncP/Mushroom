@@ -53,7 +53,6 @@ class Connection : private NoCopy
 		void SendOutput();
 
 	protected:
-
 		Socket   socket_;
 		bool     connected_;
 		Channel *channel_;

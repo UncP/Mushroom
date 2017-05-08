@@ -17,7 +17,7 @@
 namespace Mushroom {
 
 template<typename T>
-class BoundedQueue
+class BoundedQueue : private NoCopyTemplate<T>
 {
 	public:
 		BoundedQueue(int capacity, const std::function<T*()> &constructor);
@@ -33,9 +33,6 @@ class BoundedQueue
 		inline void Put(int pos);
 
 		void Clear();
-
-		BoundedQueue(const BoundedQueue &) = delete;
-		BoundedQueue& operator=(const BoundedQueue &) = delete;
 
 	private:
 		bool   clear_;
