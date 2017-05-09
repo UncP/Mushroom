@@ -17,24 +17,24 @@ namespace Mushroom {
 class Marshaller
 {
 	public:
-		Marshaller(Buffer &input, Buffer &output);
+		Marshaller():input_(0), output_(0) { }
 
-		~Marshaller();
+		Marshaller(Buffer *input, Buffer *output):input_(input), output_(output) { }
 
 		template<typename T>
 		inline uint32_t Marshal(uint32_t id, const T *args);
 
-		void Read(const void *str, uint32_t len);
+		inline void Read(const void *str, uint32_t len);
 
-		void Write(void *str, uint32_t len);
+		inline void Write(void *str, uint32_t len);
 
-		bool HasCompleteArgs();
+		inline bool HasCompleteArgs();
 
 	private:
-		void Unget(uint32_t size);
+		inline void Unget(uint32_t size);
 
-		Buffer &input_;
-		Buffer &output_;
+		Buffer *input_;
+		Buffer *output_;
 };
 
 inline Marshaller& operator<<(Marshaller &marshaller, const int32_t &v) {
@@ -82,14 +82,43 @@ inline Marshaller& operator>>(Marshaller &marshaller, std::vector<T> &v) {
 template<typename T>
 inline uint32_t Marshaller::Marshal(uint32_t id, const T *args)
 {
-	output_.Reset();
-	uint32_t *len = (uint32_t *)output_.begin();
-	output_.AdvanceTail(4);
-	uint32_t before = output_.size();
+	output_->Reset();
+	uint32_t *len = (uint32_t *)output_->begin();
+	output_->AdvanceTail(4);
+	uint32_t before = output_->size();
 	*this <<  id;
 	*this << *args;
-	*len = output_.size() - before;
+	*len = output_->size() - before;
 	return *len;
+}
+
+inline void Marshaller::Read(const void *str, uint32_t len)
+{
+	output_->Read((const char *)str, len);
+}
+
+inline void Marshaller::Write(void *str, uint32_t len)
+{
+	input_->Write((char *)str, len);
+}
+
+inline void Marshaller::Unget(uint32_t size)
+{
+	input_->Unget(size);
+}
+
+inline bool Marshaller::HasCompleteArgs()
+{
+	if (input_->size() < 4)
+		return false;
+	uint32_t packet_size;
+	*this >> packet_size;
+	if (input_->size() >= packet_size) {
+		return true;
+	} else {
+		Unget(4);
+		return false;
+	}
 }
 
 } // namespace Mushroom

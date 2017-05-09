@@ -11,16 +11,21 @@
 #include <cassert>
 #include <unordered_map>
 
+#include "../include/utility.hpp"
 #include "../log/log.hpp"
 #include "../network/server.hpp"
 #include "rpc.hpp"
 
 namespace Mushroom {
 
+class EventBase;
+template<typename T> class BoundedQueue;
+template<typename T> class ThreadPool;
+
 class RpcServer : public Server
 {
 	public:
-		RpcServer();
+		RpcServer(EventBase *event_base);
 
 		~RpcServer();
 
@@ -28,8 +33,10 @@ class RpcServer : public Server
 		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
 	private:
+		std::unordered_map<uint32_t, Func> services_;
 
-		std::unordered_map<uint32_t, RPC> services_;
+		BoundedQueue<RPC> *queue_;
+		ThreadPool<RPC>   *thread_pool_;
 
 		void HandleAccept();
 };
@@ -37,10 +44,10 @@ class RpcServer : public Server
 template<typename T1, typename T2, typename T3>
 void RpcServer::Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*))
 {
-	RPC service;
-	uint32_t id = service.Generate(str, obj);
+	RPC rpc;
+	uint32_t id = rpc.Generate(str, obj);
 	FatalIf(services_.find(id) != services_.end(), "service %u existed :(", id);
-	services_.insert({id, service});
+	services_.insert({id, rpc.Service()});
 }
 
 } // namespace Mushroom

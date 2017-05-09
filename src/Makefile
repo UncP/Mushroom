@@ -24,16 +24,16 @@ network: client_test server_test
 rpc: rpc_client_test rpc_server_test
 
 rpc_client_test: $(LOBJ) $(NOBJ) $(RpcOBJ) ../test/rpc_client.cpp
-	$(CPP) $(CPPFLAGS) -o $@ $^
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 rpc_server_test: $(LOBJ) $(NOBJ) $(RpcOBJ) ../test/rpc_server.cpp
-	$(CPP) $(CPPFLAGS) -o $@ $^
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 client_test: $(LOBJ) $(NOBJ) ../test/network_client.cpp
-	$(CPP) $(CPPFLAGS) -o $@ $^
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 server_test: $(LOBJ) $(NOBJ) ../test/network_server.cpp
-	$(CPP) $(CPPFLAGS) -o $@ $^
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 blinktree_with_queue_test: $(MOBJ) ../test/mushroom_with_queue.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)

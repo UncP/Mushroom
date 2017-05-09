@@ -8,8 +8,7 @@
 #ifndef _RPC_HPP_
 #define _RPC_HPP_
 
-#include <functional>
-
+#include "../include/utility.hpp"
 #include "marshaller.hpp"
 
 namespace Mushroom {
@@ -17,31 +16,43 @@ namespace Mushroom {
 class RPC
 {
 	public:
-		RPC();
+		RPC():service_(0) { }
 
-		~RPC();
+		RPC(const Marshaller &marshaller, const Func &service)
+		:marshaller_(marshaller), service_(service) { }
 
 		template<typename T1, typename T2, typename T3>
-		uint32_t Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
+		inline uint32_t Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
-		void operator()(Marshaller &marshaller);
+		inline Func Service() const { return service_; }
 
-		static uint32_t Hash(const char *str);
+		inline void operator()() { service_(); }
+
+		inline static uint32_t Hash(const char *str);
 
 	private:
-		std::function<void(Marshaller &)> service_;
+		Marshaller marshaller_;
+		Func       service_;
 };
 
 template<typename T1, typename T2, typename T3>
-uint32_t RPC::Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
-	service_ = [=](Marshaller &marshaller) {
+inline uint32_t RPC::Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
+	service_ = [=]() {
 		T2 args;
-		marshaller >> args;
+		marshaller_ >> args;
 		T3 reply;
 		(obj->*fun)(&args, &reply);
-		marshaller << reply;
+		marshaller_ << reply;
 	};
 	return Hash(str);
+}
+
+inline uint32_t RPC::Hash(const char *str) {
+	uint32_t ret = 0;
+	char *p = (char *)str;
+	while (p)
+		ret += uint32_t(*p++);
+	return ret;
 }
 
 } // namespace Mushroom

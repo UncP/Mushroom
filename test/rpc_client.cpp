@@ -7,12 +7,14 @@
 
 #include "rpc_call.hpp"
 #include "../src/rpc/rpc_connection.hpp"
+#include "../src/network/eventbase.hpp"
 
 using namespace Mushroom;
 
 int main()
 {
-	RpcConnection *con = new RpcConnection(EndPoint("127.0.0.1"));
+	EventBase base;
+	RpcConnection *con = new RpcConnection(EndPoint("127.0.0.1"), base.GetPoller());
 	if (!con->Success()) {
 		delete con;
 		return 0;

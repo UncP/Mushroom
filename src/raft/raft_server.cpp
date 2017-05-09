@@ -41,7 +41,6 @@ void RaftServer::Close()
 		return ;
 
 	mutex_.Lock();
-	in_election_ = false;
 	running_     = false;
 	mutex_.Unlock();
 
@@ -49,6 +48,9 @@ void RaftServer::Close()
 	background_thread_->Stop();
 	election_cond_.Signal();
 	election_thread_->Stop();
+
+	for (auto e : peers_)
+		e->Close();
 }
 
 RaftServer::~RaftServer()

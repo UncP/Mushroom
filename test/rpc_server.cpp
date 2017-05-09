@@ -8,15 +8,15 @@
 #include "rpc_call.hpp"
 #include "../src/network/signal.hpp"
 #include "../src/rpc/rpc_server.hpp"
+#include "../src/network/eventbase.hpp"
 
 using namespace Mushroom;
 
 int main()
 {
-	RpcServer server;
-	Signal::Register(SIGINT, [&] { server.Close(); exit(0); });
+	EventBase base;
+	RpcServer server(&base);
+	Signal::Register(SIGINT, [&] { base.Exit(); exit(0); });
 	server.Start();
-	server.Run();
-	server.Close();
 	return 0;
 }

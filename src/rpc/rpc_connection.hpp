@@ -11,6 +11,7 @@
 #include "../network/connection.hpp"
 #include "rpc.hpp"
 #include "marshaller.hpp"
+#include "../network/channel.hpp"
 
 namespace Mushroom {
 
@@ -30,6 +31,8 @@ class RpcConnection : private Connection
 
 		template<typename T>
 		inline bool Call(const char *str, const T *args);
+
+		Marshaller& Marshal();
 
 	private:
 		using Connection::channel_;

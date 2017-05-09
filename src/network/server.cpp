@@ -18,8 +18,7 @@ Server::Server(EventBase *event_base)
 
 Server::~Server()
 {
-	if (socket_.Valid())
-		socket_.Close();
+	socket_.Close();
 
 	delete listen_;
 

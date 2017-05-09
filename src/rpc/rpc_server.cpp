@@ -6,14 +6,24 @@
 **/
 
 #include "rpc_server.hpp"
-#include "../network/connection.hpp"
-#include "../network/poller.hpp"
+#include "../include/bounded_queue.hpp"
+#include "../include/thread_pool.hpp"
+#include "../network/eventbase.hpp"
+#include "rpc_connection.hpp"
 
 namespace Mushroom {
 
-RpcServer::RpcServer() { }
+RpcServer::RpcServer(EventBase *event_base):Server(event_base)
+{
+	queue_       = new BoundedQueue<RPC>(64, []() { return new RPC(); });
+	thread_pool_ = new ThreadPool<RPC>(queue_, 1);
+}
 
-RpcServer::~RpcServer() { }
+RpcServer::~RpcServer()
+{
+	delete queue_;
+	delete thread_pool_;
+}
 
 void RpcServer::HandleAccept()
 {
@@ -22,17 +32,19 @@ void RpcServer::HandleAccept()
 		Error("socket accept failed, %s :(", strerror(errno));
 		return ;
 	}
-	Connection *con = new Connection(Socket(fd), ReadEvent | WriteEvent, poller_);
-	connections_.push_back(con);
-	con->OnRead([=]() {
-		Marshaller marshaller(con->GetInput(), con->GetOutput());
-		for (; !marshaller.HasCompleteArgs();) {
+	RpcConnection *con = new RpcConnection(Socket(fd), event_base_->GetPoller());
+	connections_.push_back((Connection *)con);
+	con->OnRead([con, this]() {
+		Marshaller &marshaller = con->Marshal();
+		if (marshaller.HasCompleteArgs()) {
 			uint32_t id;
 			marshaller >> id;
-			FatalIf(services_.find(id) == services_.end(), "rpc call %u not registered :(", id);
-			services_[id](marshaller);
+			auto it = services_.find(id);
+			FatalIf(it == services_.end(), "rpc call %u not registered :(", id);
+			RPC *rpc = queue_->Get();
+			*rpc = RPC(marshaller, it->second);
+			queue_->Push();
 		}
-		con->HandleWrite();
 	});
 }
 

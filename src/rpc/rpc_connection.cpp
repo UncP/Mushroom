@@ -10,12 +10,16 @@
 namespace Mushroom {
 
 RpcConnection::RpcConnection(const EndPoint &server, Poller *poller)
-:Connection(server, poller), marshaller_(input_, output_) { }
+:Connection(server, poller), marshaller_(&input_, &output_) { }
 
 RpcConnection::RpcConnection(const Socket &socket, Poller *poller)
-:Connection(socket, poller), marshaller_(input_, output_) { }
+:Connection(socket, poller), marshaller_(&input_, &output_) { }
 
 RpcConnection::~RpcConnection() { }
 
+Marshaller& RpcConnection::Marshal()
+{
+	return marshaller_;
+}
 
 } // namespace Mushroom
