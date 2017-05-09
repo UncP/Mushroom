@@ -13,8 +13,8 @@
 #include "../src/mushroom/slice.hpp"
 #include "../src/mushroom/db.hpp"
 #include "../src/mushroom/task.hpp"
-#include "../src/include/bounded_queue.hpp"
-#include "../src/include/thread_pool.hpp"
+#include "../src/include/bounded_mapping_queue.hpp"
+#include "../src/include/thread_pool_mapping.hpp"
 
 using namespace Mushroom;
 
@@ -23,7 +23,7 @@ static int total;
 
 double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *))
 {
-	BoundedQueue<MushroomTask> *queue = new BoundedQueue<MushroomTask>(1024, []() {
+	BoundedMappingQueue<MushroomTask> *queue = new BoundedMappingQueue<MushroomTask>(1024, []() {
 		return new MushroomTask(key_len);
 	});
 

@@ -2,41 +2,41 @@
  *    > Author:            UncP
  *    > Mail:         770778010@qq.com
  *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2017-05-09 21:16:59
+ *    > Created Time:  2016-10-16 18:51:28
 **/
 
-#ifndef _THREAD_POOL_HPP_
-#define _THREAD_POOL_HPP_
+#ifndef _THREAD_POOL_MAPPING_HPP_
+#define _THREAD_POOL_MAPPING_HPP_
 
 #include <cassert>
 
 #include "utility.hpp"
-#include "bounded_queue.hpp"
+#include "bounded_mapping_queue.hpp"
 #include "thread.hpp"
 
 namespace Mushroom {
 
 template<typename T>
-class ThreadPool : private NoCopyTemplate<T>
+class ThreadPoolMapping : private NoCopyTemplate<T>
 {
 	public:
-		ThreadPool(BoundedQueue<T> *queue, int thread_num);
+		ThreadPoolMapping(BoundedMappingQueue<T> *queue, int thread_num);
 
-		~ThreadPool();
+		~ThreadPoolMapping();
 
 		void Run();
 
 		void Clear();
 
 	private:
-		bool              working_;
-		int               thread_num_;
-		BoundedQueue<T>  *queue_;
-		Thread          **threads_;
+		bool                     working_;
+		int                      thread_num_;
+		BoundedMappingQueue<T>  *queue_;
+		Thread                 **threads_;
 };
 
 template<typename T>
-ThreadPool<T>::ThreadPool(BoundedMappingQueue<T> *queue, int thread_num)
+ThreadPoolMapping<T>::ThreadPoolMapping(BoundedMappingQueue<T> *queue, int thread_num)
 :working_(false), thread_num_(thread_num), queue_(queue)
 {
 	assert(thread_num_ > 0 && thread_num_ <= 4);
@@ -52,20 +52,22 @@ ThreadPool<T>::ThreadPool(BoundedMappingQueue<T> *queue, int thread_num)
 }
 
 template<typename T>
-void ThreadPool<T>::Run()
+void ThreadPoolMapping<T>::Run()
 {
 	for (;;) {
-		T task = queue_->Pop();
+		int pos;
+		T* task = queue_->Pop(&pos);
 
-		task();
+		if (!task) break;
 
-		if (!working_)
-			break;
+		(*task)();
+
+		queue_->Put(pos);
 	}
 }
 
 template<typename T>
-void ThreadPool<T>::Clear()
+void ThreadPoolMapping<T>::Clear()
 {
 	if (!working_)
 		return ;
@@ -79,7 +81,7 @@ void ThreadPool<T>::Clear()
 }
 
 template<typename T>
-ThreadPool<T>::~ThreadPool()
+ThreadPoolMapping<T>::~ThreadPoolMapping()
 {
 	Clear();
 
@@ -91,4 +93,4 @@ ThreadPool<T>::~ThreadPool()
 
 } // namespace Mushroom
 
-#endif /* _THREAD_POOL_HPP_ */
+#endif /* _THREAD_POOL_MAPPING_HPP_ */

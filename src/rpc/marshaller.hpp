@@ -10,12 +10,13 @@
 
 #include <vector>
 
+#include "../include/utility.hpp"
 #include "../include/atomic.hpp"
 #include "../network/buffer.hpp"
 
 namespace Mushroom {
 
-class Marshaller
+class Marshaller : private NoCopy
 {
 	public:
 		static atomic_32_t RpcId;
@@ -39,49 +40,18 @@ class Marshaller
 	private:
 		inline void Unget(uint32_t size);
 
+		bool    own_buf_;
 		Buffer *input_;
 		Buffer *output_;
 };
-
-inline Marshaller& operator<<(Marshaller &marshaller, const int32_t &v) {
-	marshaller.Read(&v, 4);
-	return marshaller;
-}
 
 inline Marshaller& operator<<(Marshaller &marshaller, const uint32_t &v) {
 	marshaller.Read(&v, 4);
 	return marshaller;
 }
 
-template<typename T>
-inline Marshaller& operator<<(Marshaller &marshaller, const std::vector<T> &v) {
-	uint32_t e = v.size();
-	marshaller << e;
-	for (uint32_t i = 0; i < e; ++i)
-		marshaller << v[i];
-	return marshaller;
-}
-
-inline Marshaller& operator>>(Marshaller &marshaller, int32_t &v) {
-	marshaller.Write(&v, 4);
-	return marshaller;
-}
-
 inline Marshaller& operator>>(Marshaller &marshaller, uint32_t &v) {
 	marshaller.Write(&v, 4);
-	return marshaller;
-}
-
-template<typename T>
-inline Marshaller& operator>>(Marshaller &marshaller, std::vector<T> &v) {
-	uint32_t e;
-	marshaller >> e;
-	v.reserve(e);
-	for (uint32_t i = 0; i < e; ++i) {
-		T t;
-		marshaller >> t;
-		v.push_back(t);
-	}
 	return marshaller;
 }
 
@@ -126,17 +96,17 @@ inline void Marshaller::Unget(uint32_t size)
 	input_->Unget(size);
 }
 
-inline bool Marshaller::HasCompleteArgs()
+inline uint32_t Marshaller::HasCompleteArgs()
 {
 	if (input_->size() < 4)
 		return false;
 	uint32_t packet_size;
 	*this >> packet_size;
 	if (input_->size() >= packet_size) {
-		return true;
+		return packet_size;
 	} else {
 		Unget(4);
-		return false;
+		return 0;
 	}
 }
 

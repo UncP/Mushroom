@@ -11,6 +11,8 @@
 #include <pthread.h>
 #include <cassert>
 
+#include "utility.hpp"
+
 #ifdef __APPLE__
 
 #include <cerrno>
@@ -63,7 +65,7 @@ static inline int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
 
 namespace Mushroom {
 
-class SpinLock
+class SpinLock : private NoCopy
 {
 	public:
 		SpinLock() {

@@ -11,11 +11,12 @@
 #include <sys/time.h>
 #include <cerrno>
 
+#include "utility.hpp"
 #include "mutex.hpp"
 
 namespace Mushroom {
 
-class Cond
+class Cond : private NoCopy
 {
 	public:
 		Cond() {

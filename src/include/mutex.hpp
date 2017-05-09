@@ -11,11 +11,13 @@
 #include <pthread.h>
 #include <cassert>
 
+#include "utility.hpp"
+
 namespace Mushroom {
 
 class Cond;
 
-class Mutex
+class Mutex : private NoCopy
 {
 	friend class Cond;
 	public:

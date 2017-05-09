@@ -167,7 +167,6 @@ void RaftServer::RunElection()
 void RaftServer::SendAppendEntry()
 {
 	for (; state_ == Leader;) {
-
 		mutex_.Unlock();
 		usleep(HeartbeatInterval * 1000);
 		mutex_.Lock();
