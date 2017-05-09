@@ -24,7 +24,7 @@ class RPC
 		template<typename T1, typename T2, typename T3>
 		inline uint32_t Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
-		inline Func Service() const { return service_; }
+		inline const Func& Service() const { return service_; }
 
 		inline void operator()() { service_(); }
 
@@ -38,11 +38,13 @@ class RPC
 template<typename T1, typename T2, typename T3>
 inline uint32_t RPC::Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
 	service_ = [=]() {
+		uint32_t rid;
+		marshaller_ >> rid;
 		T2 args;
 		marshaller_ >> args;
 		T3 reply;
 		(obj->*fun)(&args, &reply);
-		marshaller_ << reply;
+		marshaller_.MarshalReply(rid, &reply);
 	};
 	return Hash(str);
 }
@@ -50,7 +52,7 @@ inline uint32_t RPC::Generate(const char *str, T1 *obj, void (T1::*(fun))(const 
 inline uint32_t RPC::Hash(const char *str) {
 	uint32_t ret = 0;
 	char *p = (char *)str;
-	while (p)
+	while (*p)
 		ret += uint32_t(*p++);
 	return ret;
 }

@@ -15,7 +15,7 @@
 
 namespace Mushroom {
 
-class RpcConnection : private Connection
+class RpcConnection : public Connection
 {
 	public:
 		RpcConnection(const EndPoint &server, Poller *poller);
@@ -24,18 +24,15 @@ class RpcConnection : private Connection
 
 		~RpcConnection();
 
-		using Connection::Success;
-		using Connection::OnRead;
-		using Connection::OnWrite;
-		using Connection::Close;
-
 		template<typename T>
 		inline bool Call(const char *str, const T *args);
 
 		Marshaller& Marshal();
 
 	private:
-		using Connection::channel_;
+		using Connection::Send;
+		using Connection::SendOutput;
+
 		Marshaller marshaller_;
 };
 
@@ -43,7 +40,7 @@ template<typename T>
 inline bool RpcConnection::Call(const char *str, const T *args)
 {
 	uint32_t id = RPC::Hash(str);
-	marshaller_.Marshal(id, args);
+	marshaller_.MarshalArgs(id, args);
 	if (!channel_->CanWrite())
 		channel_->EnableWrite(true);
 	return true;

@@ -35,14 +35,14 @@ void RpcServer::HandleAccept()
 	RpcConnection *con = new RpcConnection(Socket(fd), event_base_->GetPoller());
 	connections_.push_back((Connection *)con);
 	con->OnRead([con, this]() {
-		Marshaller &marshaller = con->Marshal();
-		if (marshaller.HasCompleteArgs()) {
+		Marshaller &mar = con->Marshal();
+		if (mar.HasCompleteArgs()) {
 			uint32_t id;
-			marshaller >> id;
+			mar >> id;
 			auto it = services_.find(id);
 			FatalIf(it == services_.end(), "rpc call %u not registered :(", id);
 			RPC *rpc = queue_->Get();
-			*rpc = RPC(marshaller, it->second);
+			*rpc = RPC(mar, it->second);
 			queue_->Push();
 		}
 	});

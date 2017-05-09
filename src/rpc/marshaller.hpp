@@ -10,6 +10,7 @@
 
 #include <vector>
 
+#include "../include/atomic.hpp"
 #include "../network/buffer.hpp"
 
 namespace Mushroom {
@@ -17,12 +18,17 @@ namespace Mushroom {
 class Marshaller
 {
 	public:
+		static atomic_32_t RpcId;
+
 		Marshaller():input_(0), output_(0) { }
 
 		Marshaller(Buffer *input, Buffer *output):input_(input), output_(output) { }
 
 		template<typename T>
-		inline uint32_t Marshal(uint32_t id, const T *args);
+		inline void MarshalArgs(uint32_t id, const T *args);
+
+		template<typename T>
+		inline void MarshalReply(uint32_t rid, const T *reply);
 
 		inline void Read(const void *str, uint32_t len);
 
@@ -80,16 +86,29 @@ inline Marshaller& operator>>(Marshaller &marshaller, std::vector<T> &v) {
 }
 
 template<typename T>
-inline uint32_t Marshaller::Marshal(uint32_t id, const T *args)
+inline void Marshaller::MarshalArgs(uint32_t id, const T *args)
 {
+	uint32_t rid = RpcId++;
 	output_->Reset();
 	uint32_t *len = (uint32_t *)output_->begin();
 	output_->AdvanceTail(4);
 	uint32_t before = output_->size();
 	*this <<  id;
+	*this << rid;
 	*this << *args;
 	*len = output_->size() - before;
-	return *len;
+}
+
+template<typename T>
+inline void Marshaller::MarshalReply(uint32_t rid, const T *reply)
+{
+	output_->Reset();
+	uint32_t *len = (uint32_t *)output_->begin();
+	output_->AdvanceTail(4);
+	uint32_t before = output_->size();
+	*this <<  rid;
+	*this << *reply;
+	*len = output_->size() - before;
 }
 
 inline void Marshaller::Read(const void *str, uint32_t len)
