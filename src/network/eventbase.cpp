@@ -19,13 +19,12 @@ EventBase::EventBase():running_(true), poller_(new Poller())
 {
 	int r = pipe(wake_up_);
 	FatalIf(r, "pipe failed, %s :(", strerror(errno));
-	Channel *ch = new Channel(wake_up_[0], poller_, 0, 0);
 	FatalIf(!Socket(wake_up_[0]).SetNonBlock(), "wake up fd set non-block failed :(");
+	Channel *ch = new Channel(wake_up_[0], poller_, 0, 0);
 	ch->OnRead([ch]() {
 		char buf[16];
-		ssize_t r = read(ch->fd(), buf, sizeof(buf));
+		ssize_t r = ch->fd() >= 0 ? read(ch->fd(), buf, sizeof(buf)) : 0;
 		if (r > 0) {
-		} else if (r == 0) {
 			delete ch;
 		} else if (errno == EINTR) {
 		} else {

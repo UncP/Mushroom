@@ -18,9 +18,9 @@ Server::Server(EventBase *event_base)
 
 Server::~Server()
 {
-	socket_.Close();
-
 	delete listen_;
+
+	socket_.Close();
 
 	for (auto e : connections_)
 		delete e;

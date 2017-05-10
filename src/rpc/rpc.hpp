@@ -18,13 +18,10 @@ class RPC
 	public:
 		RPC():service_(0) { }
 
-		RPC(const Marshaller &marshaller, const Func &service)
-		:marshaller_(marshaller), service_(service) { }
-
 		template<typename T1, typename T2, typename T3>
 		inline uint32_t Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
-		inline const Func& Service() const { return service_; }
+		inline void GetReady(Marshaller &marshaller) { marshaller_ = marshaller; }
 
 		inline void operator()() { service_(); }
 

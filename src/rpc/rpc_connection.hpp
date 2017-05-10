@@ -8,39 +8,56 @@
 #ifndef _RPC_CONNECTION_HPP_
 #define _RPC_CONNECTION_HPP_
 
+#include <map>
+
+#include "../include/atomic.hpp"
 #include "../network/connection.hpp"
 #include "rpc.hpp"
 #include "marshaller.hpp"
 #include "../network/channel.hpp"
+#include "future.hpp"
 
 namespace Mushroom {
 
 class RpcConnection : public Connection
 {
 	public:
+		static atomic_32_t RpcId;
+
 		RpcConnection(const EndPoint &server, Poller *poller);
 
 		RpcConnection(const Socket &socket, Poller *poller);
 
 		~RpcConnection();
 
-		template<typename T>
-		inline bool Call(const char *str, const T *args);
+		template<typename T1, typename T2>
+		inline bool Call(const char *str, const T1 *args, T2 *reply);
 
-		Marshaller& Marshal();
+		Marshaller& GetMarshaller();
+
+		Channel* GetChannel();
 
 	private:
 		using Connection::Send;
 		using Connection::SendOutput;
 
+		std::map<uint32_t, Future *> futures_;
+
 		Marshaller marshaller_;
 };
 
-template<typename T>
-inline bool RpcConnection::Call(const char *str, const T *args)
+template<typename T1, typename T2>
+inline bool RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
 {
-	uint32_t id = RPC::Hash(str);
-	marshaller_.MarshalArgs(id, args);
+	uint32_t id  = RPC::Hash(str);
+	uint32_t rid = RpcId++;
+	Future *future = new Future(rid, [reply, rid, this]() {
+		marshaller_ >> *reply;
+		auto it = futures_.find(rid);
+		delete it->second;
+		futures_.erase(it);
+	});
+	marshaller_.MarshalArgs(id, rid, args);
 	if (!channel_->CanWrite())
 		channel_->EnableWrite(true);
 	return true;

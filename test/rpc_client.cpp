@@ -8,6 +8,7 @@
 #include "rpc_call.hpp"
 #include "../src/rpc/rpc_connection.hpp"
 #include "../src/network/eventbase.hpp"
+#include "../src/include/atomic.hpp"
 
 using namespace Mushroom;
 

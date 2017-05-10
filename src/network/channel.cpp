@@ -21,10 +21,7 @@ Channel::Channel(int fd, Poller *poller, const ReadCallBack &readcb,
 Channel::~Channel()
 {
 	poller_->RemoveChannel(this);
-	fd_      = -1;
-	poller_  = 0;
-	readcb_  = 0;
-	writecb_ = 0;
+	fd_ = -1;
 }
 
 int Channel::fd() const

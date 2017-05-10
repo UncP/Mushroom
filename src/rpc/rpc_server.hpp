@@ -19,8 +19,6 @@
 namespace Mushroom {
 
 class EventBase;
-template<typename T> class BoundedQueue;
-template<typename T> class ThreadPool;
 
 class RpcServer : public Server
 {
@@ -33,10 +31,7 @@ class RpcServer : public Server
 		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
 	private:
-		std::unordered_map<uint32_t, Func> services_;
-
-		BoundedQueue<RPC> *queue_;
-		ThreadPool<RPC>   *thread_pool_;
+		std::unordered_map<uint32_t, RPC> services_;
 
 		void HandleAccept();
 };
@@ -47,7 +42,7 @@ void RpcServer::Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, 
 	RPC rpc;
 	uint32_t id = rpc.Generate(str, obj);
 	FatalIf(services_.find(id) != services_.end(), "service %u existed :(", id);
-	services_.insert({id, rpc.Service()});
+	services_.insert({id, rpc});
 }
 
 } // namespace Mushroom

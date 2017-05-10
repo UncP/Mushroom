@@ -8,12 +8,12 @@
 #ifndef _ATOMIC_HPP_
 #define _ATOMIC_HPP_
 
-#include "utility.hpp"
+#include <cstdint>
 
 namespace Mushroom {
 
 template<typename T>
-class Atomic : private NoCopyTemplate<T>
+class Atomic
 {
 	public:
 		Atomic() { }

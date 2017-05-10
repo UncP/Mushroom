@@ -6,24 +6,15 @@
 **/
 
 #include "rpc_server.hpp"
-#include "../include/bounded_queue.hpp"
-#include "../include/thread_pool.hpp"
 #include "../network/eventbase.hpp"
 #include "rpc_connection.hpp"
+#include "../network/channel.hpp"
 
 namespace Mushroom {
 
-RpcServer::RpcServer(EventBase *event_base):Server(event_base)
-{
-	queue_       = new BoundedQueue<RPC>(64, []() { return new RPC(); });
-	thread_pool_ = new ThreadPool<RPC>(queue_, 1);
-}
+RpcServer::RpcServer(EventBase *event_base):Server(event_base) { }
 
-RpcServer::~RpcServer()
-{
-	delete queue_;
-	delete thread_pool_;
-}
+RpcServer::~RpcServer() { }
 
 void RpcServer::HandleAccept()
 {
@@ -35,15 +26,18 @@ void RpcServer::HandleAccept()
 	RpcConnection *con = new RpcConnection(Socket(fd), event_base_->GetPoller());
 	connections_.push_back((Connection *)con);
 	con->OnRead([con, this]() {
-		Marshaller &mar = con->Marshal();
+		Marshaller &mar = con->GetMarshaller();
 		if (mar.HasCompleteArgs()) {
 			uint32_t id;
 			mar >> id;
 			auto it = services_.find(id);
 			FatalIf(it == services_.end(), "rpc call %u not registered :(", id);
-			RPC *rpc = queue_->Get();
-			*rpc = RPC(mar, it->second);
-			queue_->Push();
+			RPC &rpc = it->second;
+			rpc.GetReady(mar);
+			rpc();
+			Channel *ch = con->GetChannel();
+			if (!ch->CanWrite())
+				ch->EnableWrite(true);
 		}
 	});
 }
