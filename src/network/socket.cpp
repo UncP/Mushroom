@@ -147,14 +147,15 @@ uint32_t Socket::Write(const char *data, uint32_t len)
 		ssize_t r = write(fd_, data + written, len - written);
 		if (r > 0) {
 			written += r;
+			continue;
 		} else if (r == -1) {
 			if (errno == EINTR)
 				continue;
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				return 0;
-		} else {
-			Fatal("write error, %s", strerror(errno));
+				break;
 		}
+		Error("write error, %s :(", strerror(errno));
+		break;
 	}
 	return written;
 }
@@ -167,12 +168,12 @@ uint32_t Socket::Read(char *data, uint32_t len, bool *blocked)
 		if (r == -1) {
 			if (errno == EINTR)
 				continue;
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				*blocked = true;
-				break;
-			}
+			else
+				Error("read error, %s :(", strerror(errno));
+			break;
 		}
-		FatalIf(r == -1, "read error, %s", strerror(errno));
 		has_read += r;
 	}
 	return has_read;

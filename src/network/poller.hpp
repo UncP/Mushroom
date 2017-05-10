@@ -33,7 +33,7 @@ class Poller : private NoCopy
 
 		void RemoveChannel(Channel *channel);
 
-		void LoopOnce();
+		void LoopOnce(int ms);
 
 	private:
 		int                fd_;

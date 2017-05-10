@@ -27,7 +27,7 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 		return new MushroomTask(key_len);
 	});
 
-	ThreadPool<MushroomTask> pool(queue, 4);
+	ThreadPoolMapping<MushroomTask> pool(queue, 4);
 
 	TempSlice(key, sizeof(valptr) + key_len);
 	int fd = open(file, O_RDONLY);

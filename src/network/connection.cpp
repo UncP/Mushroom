@@ -47,7 +47,6 @@ bool Connection::Close()
 		Info("closing connection ;)");
 		connected_ = false;
 		delete channel_;
-		channel_ = 0;
 		return socket_.Close();
 	}
 	return true;
@@ -102,10 +101,17 @@ void Connection::HandleWrite()
 		Error("connection has closed :(");
 		return ;
 	}
-	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
-	if (writecb_ && output_.empty()) {
-		writecb_();
-		channel_->EnableWrite(false);
+	uint32_t write = socket_.Write(output_.begin(), output_.size());
+	if (!write) {
+		Close();
+		return ;
+	}
+	output_.AdvanceHead(write);
+	if (output_.empty()) {
+		if (writecb_)
+			writecb_();
+		if (channel_->CanWrite())
+			channel_->EnableWrite(false);
 	}
 }
 
@@ -133,7 +139,14 @@ void Connection::SendOutput()
 		Error("connection has closed :(");
 		return ;
 	}
-	output_.AdvanceHead(socket_.Write(output_.begin(), output_.size()));
+	uint32_t write = socket_.Write(output_.begin(), output_.size());
+	if (!write) {
+		Close();
+		return ;
+	}
+	output_.AdvanceHead(write);
+	if (output_.size() && !channel_->CanWrite())
+		channel_->EnableWrite(true);
 }
 
 } // namespace Mushroom

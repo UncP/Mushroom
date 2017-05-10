@@ -55,9 +55,9 @@ void Poller::RemoveChannel(Channel *channel)
 		"epoll remove event failed, %s :(", strerror(errno));
 }
 
-void Poller::LoopOnce()
+void Poller::LoopOnce(int ms)
 {
-	int ready = epoll_wait(fd_, events_, MaxEvents, 1000);
+	int ready = epoll_wait(fd_, events_, MaxEvents, ms);
 	for (; --ready >= 0; ) {
 		Channel *channel = (Channel *)events_[ready].data.ptr;
 		uint32_t event = events_[ready].events;

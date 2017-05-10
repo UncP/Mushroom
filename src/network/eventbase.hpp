@@ -28,8 +28,12 @@ class EventBase : private NoCopy
 		Poller* GetPoller();
 
 	private:
-		bool    running_;
-		Poller *poller_;
+
+		void WakeUp();
+
+		bool     running_;
+		int      wake_up_[2];
+		Poller  *poller_;
 };
 
 } // namespace Mushroom

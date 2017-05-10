@@ -19,7 +19,7 @@ int main()
 	EventBase base;
 	Connection *con1 = new Connection(EndPoint("127.0.0.1"), base.GetPoller());
 	Signal::Register(SIGINT, [&base, con1]() {
-		base.Exit(); delete con1; exit(0);
+		delete con1; base.Exit(); exit(0);
 	});
 	if (!con1->Success()) {
 		delete con1;
@@ -28,9 +28,10 @@ int main()
 
 	con1->OnRead([con1]() {
 		printf("read %u : %s\n", con1->GetInput().size(), con1->GetInput().data());
-		usleep(500000);
+		// usleep(500000);
 		con1->Send(con1->GetInput());
 	});
+	con1->Send("hello world :)");
 	base.Loop();
 
 	delete con1;

@@ -13,6 +13,7 @@
 + Mulit-Thread (Thread Pool, Bounded Thread-Safe Queue, Latch Manager)
 + TCP Communication Library
 + RPC Framework
++ Consensus Algorithm - Raft
 
 ******
 

@@ -37,6 +37,16 @@ uint32_t Channel::events() const
 	return events_;
 }
 
+void Channel::OnRead(const ReadCallBack &readcb)
+{
+	readcb_ = readcb;
+}
+
+void Channel::OnWrite(const WriteCallBack &writecb)
+{
+	writecb_ = writecb;
+}
+
 bool Channel::CanRead() const
 {
 	return events_ & ReadEvent;

@@ -32,6 +32,10 @@ class Channel : private NoCopy
 
 		bool CanWrite() const;
 
+		void OnRead(const ReadCallBack &readcb);
+
+		void OnWrite(const WriteCallBack &writecb);
+
 		void EnableRead(bool flag);
 
 		void EnableWrite(bool flag);
