@@ -49,7 +49,7 @@ Poller* EventBase::GetPoller()
 void EventBase::Loop()
 {
 	while (running_)
-		poller_->LoopOnce(1000);
+		poller_->LoopOnce(5000);
 	poller_->LoopOnce(0);
 }
 

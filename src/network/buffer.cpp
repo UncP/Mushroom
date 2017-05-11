@@ -65,7 +65,6 @@ void Buffer::AdvanceHead(uint32_t len)
 	assert(beg_ + len <= end_);
 	beg_  += len;
 	size_ -= len;
-	Reset();
 }
 
 void Buffer::AdvanceTail(uint32_t len)
@@ -96,7 +95,6 @@ void Buffer::Write(char *data, uint32_t len)
 	memcpy(data, begin(), len);
 	beg_  += len;
 	size_ -= len;
-	Reset();
 }
 
 } // namespace Mushroom

@@ -64,6 +64,7 @@ void Poller::LoopOnce(int ms)
 		if (event & ReadEvent) {
 			channel->HandleRead();
 		} else if (event & WriteEvent) {
+			assert(0);
 			channel->HandleWrite();
 		} else {
 			Fatal("unexpected epoll event :(");

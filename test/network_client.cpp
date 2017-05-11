@@ -6,7 +6,6 @@
 **/
 
 #include <unistd.h>
-#include <string>
 
 #include "../src/network/signal.hpp"
 #include "../src/network/eventbase.hpp"
@@ -17,18 +16,18 @@ using namespace Mushroom;
 int main()
 {
 	EventBase base;
-	Connection con1(EndPoint("127.0.0.1"), base.GetPoller());
+	Connection con(EndPoint("127.0.0.1"), base.GetPoller());
 	Signal::Register(SIGINT, [&base]() { base.Exit(); });
-	if (!con1->Success()) {
-		return 0;
-	}
 
-	con1->OnRead([con1]() {
-		printf("read %u : %s\n", con1->GetInput().size(), con1->GetInput().data());
+	ExifIf(!con.Success(), "");
+
+	con->OnRead([con]() {
+		printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
 		usleep(500000);
-		con1->Send(con1->GetInput());
+		con->Send(con->GetInput());
 	});
-	con1->Send("hello world :)");
+	con->Send("hello world :)");
+
 	base.Loop();
 	return 0;
 }

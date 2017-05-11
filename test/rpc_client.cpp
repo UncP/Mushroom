@@ -6,6 +6,7 @@
 **/
 
 #include <cassert>
+#include <vector>
 
 #include "rpc_call.hpp"
 #include "../src/log/log.hpp"
@@ -16,7 +17,7 @@
 
 using namespace Mushroom;
 
-int main()
+int main(int argc, char **argv)
 {
 	EventBase base;
 	RpcConnection con(EndPoint("127.0.0.1"), base.GetPoller());
@@ -30,35 +31,47 @@ int main()
 	loop.Start();
 
 	Test test;
-	Test::Pair args(3, 4);
+	Test::Pair args(1023, 2047);
 
-	int32_t reply1, reply2, reply3;
+	int total = (argc == 2) ? atoi(argv[1]) : 1;
+	std::vector<int32_t> reply(total);
+	std::vector<Future *> futures;
+	futures.reserve(total);
+	for (int i = 0; i < total; ++i)
+		futures.push_back(con.Call("Test::Add", &args, &reply[i]));
 
-	Future *fu1 = con.Call("Test::Add", &args, &reply1);
-	Future *fu2 = con.Call("Test::Minus", &args, &reply2);
-	Future *fu3 = con.Call("Test::Mult", &args, &reply3);
-
-	Signal::Register(SIGINT, [&base, fu1, fu2, fu3]() {
-		base.Exit(); fu1->Abandon(); fu2->Abandon(), fu3->Abandon();
+	Signal::Register(SIGINT, [&base, &futures]() {
+		base.Exit();
+		for (auto e : futures)
+			if (!e->ok())
+				e->Abandon();
 	});
 
-	fu1->Wait();
-	fu2->Wait();
-	fu3->Wait();
+	for (auto e : futures)
+		e->Wait();
 
-	base.Exit();
-	loop.Stop();
 	con.Close();
+	base.Exit();
 
-	int32_t reply4, reply5, reply6;
-	test.Add(&args, &reply4);
-	assert(reply1 == reply4);
+	int32_t reply2;
+	test.Add(&args, &reply2);
+	int success = 0, failure = 0, bad = 0;
+	for (int i = 0; i < total; ++i) {
+		if (futures[i]->ok()) {
+			if (reply2 == reply[i])
+				++success;
+			else
+				++failure;
+		} else {
+			++bad;
+		}
+	}
 
-	test.Minus(&args, &reply5);
-	assert(reply2 == reply5);
+	printf("\033[33mtotal  : %d\033[0m\n", total);
+	printf("\033[32msuccess: %d\033[0m\n", success);
+	printf("\033[31mfailure: %d\033[0m\n", failure);
+	printf("\033[34mbad    : %d\033[0m\n", bad);
 
-	test.Mult(&args, &reply6);
-	assert(reply3 == reply6);
-
+	loop.Stop();
 	return 0;
 }

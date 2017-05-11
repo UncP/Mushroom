@@ -33,7 +33,7 @@ class Marshaller
 
 		inline bool HasCompleteArgs();
 
-	// private:
+	private:
 		inline void Unget(uint32_t size);
 
 		Buffer *input_;
@@ -85,7 +85,7 @@ inline Marshaller& operator>>(Marshaller &marshaller, std::vector<T> &v) {
 template<typename T>
 inline void Marshaller::MarshalArgs(uint32_t id, uint32_t rid, const T *args)
 {
-	output_->Reset();
+	// output_->Reset();
 	uint32_t *len = (uint32_t *)output_->end();
 	output_->AdvanceTail(4);
 	uint32_t before = output_->size();
@@ -98,7 +98,7 @@ inline void Marshaller::MarshalArgs(uint32_t id, uint32_t rid, const T *args)
 template<typename T>
 inline void Marshaller::MarshalReply(uint32_t rid, const T *reply)
 {
-	output_->Reset();
+	// output_->Reset();
 	uint32_t *len = (uint32_t *)output_->end();
 	output_->AdvanceTail(4);
 	uint32_t before = output_->size();

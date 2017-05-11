@@ -37,6 +37,7 @@ inline uint32_t RPC::Generate(const char *str, T1 *obj, void (T1::*(fun))(const 
 	service_ = [this, obj, fun]() {
 		uint32_t rid;
 		marshaller_ >> rid;
+		// printf("do %u\n", rid);
 		T2 args;
 		marshaller_ >> args;
 		T3 reply;

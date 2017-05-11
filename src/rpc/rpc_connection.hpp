@@ -35,10 +35,11 @@ class RpcConnection : public Connection
 
 		Marshaller& GetMarshaller();
 
-		Channel* GetChannel();
+		using Connection::OnRead;
 
 	private:
 		using Connection::Send;
+		using Connection::OnWrite;
 
 		std::map<uint32_t, Future *> futures_;
 
@@ -50,13 +51,11 @@ inline Future* RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
 {
 	uint32_t id  = RPC::Hash(str);
 	uint32_t rid = RpcId++;
-	Future *fu = new Future(rid, [reply, rid, this]() {
+	// printf("calling %u\n", rid);
+	Future *fu = new Future(rid, [reply, this]() {
 		marshaller_ >> *reply;
-		auto it = futures_.find(rid);
-		delete it->second;
-		futures_.erase(it);
 	});
-	futures_[rid] = fu;
+	futures_.insert({rid, fu});
 	marshaller_.MarshalArgs(id, rid, args);
 	SendOutput();
 	return fu;

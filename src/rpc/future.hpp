@@ -27,7 +27,7 @@ class Future : private NoCopy
 			while (status_.get() == Pending && !time_out_.get())
 				sched_yield();
 			if (time_out_.get())
-				status_ = time_out_;
+				status_ = TimeOut;
 		}
 
 		inline bool ok() { return status_.get() == Ok; }

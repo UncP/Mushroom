@@ -7,6 +7,7 @@
 
 #include <cassert>
 
+#include "../log/log.hpp"
 #include "rpc_connection.hpp"
 
 namespace Mushroom {
@@ -17,13 +18,11 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller)
 :Connection(server, poller), marshaller_(&input_, &output_)
 {
 	readcb_ = [this]() {
-		printf("read %u\n", input_.size());
 		for (; marshaller_.HasCompleteArgs();) {
 			uint32_t rid;
 			marshaller_ >> rid;
-			printf("%u\n", rid);
 			auto it = futures_.find(rid);
-			assert(it != futures_.end());
+			FatalIf(it == futures_.end(), "rpc id %u not called :(", rid);
 			it->second->Notify();
 		}
 	};
@@ -34,20 +33,14 @@ RpcConnection::RpcConnection(const Socket &socket, Poller *poller)
 
 RpcConnection::~RpcConnection()
 {
-	for (auto e : futures_) {
-		printf("fuck\n");
+	for (auto e : futures_)
 		delete e.second;
-	}
+	assert(futures_.size() == RpcId.get());
 }
 
 Marshaller& RpcConnection::GetMarshaller()
 {
 	return marshaller_;
-}
-
-Channel* RpcConnection::GetChannel()
-{
-	return channel_;
 }
 
 } // namespace Mushroom
