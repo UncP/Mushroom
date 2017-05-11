@@ -30,7 +30,11 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller)
 RpcConnection::RpcConnection(const Socket &socket, Poller *poller)
 :Connection(socket, poller), marshaller_(&input_, &output_) { }
 
-RpcConnection::~RpcConnection() { }
+RpcConnection::~RpcConnection()
+{
+	for (auto e : futures_)
+		delete e.second;
+}
 
 Marshaller& RpcConnection::GetMarshaller()
 {

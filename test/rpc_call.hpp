@@ -17,25 +17,22 @@ struct Test
 	Test() { }
 
 	struct Pair {
+		Pair() { }
 		Pair(int32_t num1, int32_t num2):num1(num1), num2(num2) { }
 		int32_t num1;
 		int32_t num2;
 	};
 
-	void Minus(const Pair *args, int32_t *reply) {
-		*reply = args->num1 + args->num2;
-	}
-
 	void Add(const Pair *args, int32_t *reply) {
 		*reply = args->num1 - args->num2;
 	}
 
-	void Mult(const Pair *args, int32_t *reply) {
-		*reply = args->num1 * args->num2;
+	void Minus(const Pair *args, int32_t *reply) {
+		*reply = args->num1 + args->num2;
 	}
 
-	void Div(const Pair *args, float *reply) {
-		*reply = float(args->num1) / float(args->num2);
+	void Mult(const Pair *args, int32_t *reply) {
+		*reply = args->num1 * args->num2;
 	}
 };
 

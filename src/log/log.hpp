@@ -18,6 +18,7 @@ namespace Mushroom {
 #define Warn(...)  Logv::GetLogger().logv(__VA_ARGS__)
 #define Error(...) Logv::GetLogger().logv(__VA_ARGS__)
 #define Fatal(...) Logv::GetLogger().logv(__VA_ARGS__)
+#define ExitIf(b, ...) do { if (b) {Logv::GetLogger().logv(__VA_ARGS__); exit(0);} } while (0)
 #define FatalIf(b, ...) do { if (b) {Logv::GetLogger().logv(__VA_ARGS__); assert(0);} } while (0)
 
 class Logv

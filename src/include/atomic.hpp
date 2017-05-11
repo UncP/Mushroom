@@ -29,7 +29,7 @@ class Atomic
 		}
 
 		inline T operator--() {
-			return __sync_add_and_fetch(&val_, -1);
+			return __sync_sub_and_fetch(&val_, 1);
 		}
 
 		inline T operator++(int) {
@@ -37,7 +37,7 @@ class Atomic
 		}
 
 		inline T operator--(int) {
-			return __sync_fetch_and_add(&val_, -1);
+			return __sync_fetch_and_sub(&val_, 1);
 		}
 
 		inline Atomic& operator=(T new_val) {

@@ -31,7 +31,7 @@ class RpcConnection : public Connection
 		~RpcConnection();
 
 		template<typename T1, typename T2>
-		inline bool Call(const char *str, const T1 *args, T2 *reply);
+		inline Future* Call(const char *str, const T1 *args, T2 *reply);
 
 		Marshaller& GetMarshaller();
 
@@ -47,20 +47,21 @@ class RpcConnection : public Connection
 };
 
 template<typename T1, typename T2>
-inline bool RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
+inline Future* RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
 {
 	uint32_t id  = RPC::Hash(str);
 	uint32_t rid = RpcId++;
-	Future *future = new Future(rid, [reply, rid, this]() {
+	Future *fu = new Future(rid, [reply, rid, this]() {
 		marshaller_ >> *reply;
 		auto it = futures_.find(rid);
 		delete it->second;
 		futures_.erase(it);
 	});
+	futures_[rid] = fu;
 	marshaller_.MarshalArgs(id, rid, args);
 	if (!channel_->CanWrite())
 		channel_->EnableWrite(true);
-	return true;
+	return fu;
 }
 
 } // namespace Mushroom

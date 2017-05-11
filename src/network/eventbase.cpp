@@ -23,9 +23,10 @@ EventBase::EventBase():running_(true), poller_(new Poller())
 	Channel *ch = new Channel(wake_up_[0], poller_, 0, 0);
 	ch->OnRead([ch]() {
 		char buf[16];
-		ssize_t r = ch->fd() >= 0 ? read(ch->fd(), buf, sizeof(buf)) : 0;
+		ssize_t r = read(ch->fd(), buf, sizeof(buf));
 		if (r > 0) {
 			delete ch;
+		} else if (r == 0) {
 		} else if (errno == EINTR) {
 		} else {
 			Fatal("pipe read error, %s :(", strerror(errno));
@@ -48,7 +49,6 @@ void EventBase::Loop()
 {
 	while (running_)
 		poller_->LoopOnce(1000);
-	poller_->LoopOnce(0);
 }
 
 void EventBase::Exit()

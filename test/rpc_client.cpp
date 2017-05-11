@@ -5,59 +5,50 @@
  *    > Created Time:  2017-04-29 18:54:45
 **/
 
+#include <cassert>
+
 #include "rpc_call.hpp"
+#include "../src/log/log.hpp"
 #include "../src/rpc/rpc_connection.hpp"
 #include "../src/network/eventbase.hpp"
-#include "../src/include/atomic.hpp"
 
 using namespace Mushroom;
 
 int main()
 {
 	EventBase base;
-	RpcConnection *con = new RpcConnection(EndPoint("127.0.0.1"), base.GetPoller());
-	if (!con->Success()) {
-		delete con;
-		return 0;
-	}
-	delete con;
-	// client.OnConnect([](Connection *con) {
-	// 	con->OnSend([]() {
-	// 		printf("send\n");
-	// 	});
-	// 	con->OnRead([=]() {
-	// 		printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
-	// 	});
-	// });
+	RpcConnection con(EndPoint("127.0.0.1"), base.GetPoller());
+	ExitIf(!con.Success(), "");
+	con.OnRead([&con]() {
+		printf("read %u : %s\n", con.GetInput().size(), con.GetInput().data());
+	});
+	con.OnWrite([&con]() {
+		printf("rpc call success\n");
+	});
 
-	// if (!client.Connect(EndPoint("127.0.0.1")))
-	// 	return 0;
+	Test test;
+	Test::Pair args(1, 1);
 
-	// Test test;
-	// Test::Pair args(1, 1);
+	int32_t reply1, reply2, reply3;
 
-	// int32_t reply1, reply2;
-	// if (client.Call("Test.Add", &args, &reply1)) {
-	// 	test.Add(&args, &reply2);
-	// 	assert(reply1 == reply2);
-	// }
+	Future *fu1 = con.Call("Test.Add", &args, &reply1);
+	Future *fu2 = con.Call("Test.Minus", &args, &reply2);
+	Future *fu3 = con.Call("Test.Mult", &args, &reply3);
 
-	// if (client.Call("Test.Minus", &args, &reply1)) {
-	// 	test.Minus(&args, &reply2);
-	// 	assert(reply1 == reply2);
-	// }
+	fu1->Wait();
+	fu2->Wait();
+	fu3->Wait();
 
-	// if (client.Call("Test.Mult", &args, &reply1)) {
-	// 	test.Mult(&args, &reply2);
-	// 	assert(reply1 == reply2);
-	// }
+	int32_t reply4, reply5, reply6;
+	test.Add(&args, &reply4);
+	assert(reply1 == reply4);
 
-	// float reply3, reply4;
-	// if (client.Call("Test.Div", &args, &reply3)) {
-	// 	test.Div(&args, &reply4);
-	// 	assert(reply3 == reply4);
-	// }
+	test.Minus(&args, &reply5);
+	assert(reply2 == reply5);
 
-	// client.Close();
+	test.Mult(&args, &reply6);
+	assert(reply3 == reply6);
+
+	con.Close();
 	return 0;
 }

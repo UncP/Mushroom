@@ -40,7 +40,7 @@ template<typename T1, typename T2, typename T3>
 void RpcServer::Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*))
 {
 	RPC rpc;
-	uint32_t id = rpc.Generate(str, obj);
+	uint32_t id = rpc.Generate(str, obj, fun);
 	FatalIf(services_.find(id) != services_.end(), "service %u existed :(", id);
 	services_.insert({id, rpc});
 }

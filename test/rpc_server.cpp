@@ -16,7 +16,12 @@ int main()
 {
 	EventBase base;
 	RpcServer server(&base);
-	Signal::Register(SIGINT, [&] { base.Exit(); exit(0); });
+	Signal::Register(SIGINT, [&] { base.Exit(); });
+	Test test;
+	server.Register("Test::Add", &test, &Test::Add);
+	server.Register("Test::Minus", &test, &Test::Minus);
+	server.Register("Test::Mult", &test, &Test::Mult);
 	server.Start();
+	base.Loop();
 	return 0;
 }
