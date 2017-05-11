@@ -14,7 +14,17 @@ namespace Mushroom {
 
 RpcServer::RpcServer(EventBase *event_base):Server(event_base) { }
 
-RpcServer::~RpcServer() { }
+RpcServer::~RpcServer()
+{
+	for (auto e : services_)
+		delete e.second;
+}
+
+void RpcServer::Start()
+{
+	Server::Start();
+	listen_->OnRead([this]() { HandleAccept(); });
+}
 
 void RpcServer::HandleAccept()
 {
@@ -27,18 +37,19 @@ void RpcServer::HandleAccept()
 	connections_.push_back((Connection *)con);
 	con->OnRead([con, this]() {
 		Marshaller &mar = con->GetMarshaller();
-		if (mar.HasCompleteArgs()) {
+		bool has = false;
+		for (; mar.HasCompleteArgs();) {
 			uint32_t id;
 			mar >> id;
 			auto it = services_.find(id);
 			FatalIf(it == services_.end(), "rpc call %u not registered :(", id);
-			RPC &rpc = it->second;
-			rpc.GetReady(mar);
-			rpc();
-			Channel *ch = con->GetChannel();
-			if (!ch->CanWrite())
-				ch->EnableWrite(true);
+			RPC *rpc = it->second;
+			rpc->GetReady(mar);
+			(*rpc)();
+			has = true;
 		}
+		if (has)
+			con->SendOutput();
 	});
 }
 

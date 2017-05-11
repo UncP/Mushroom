@@ -17,9 +17,11 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller)
 :Connection(server, poller), marshaller_(&input_, &output_)
 {
 	readcb_ = [this]() {
-		if (marshaller_.HasCompleteArgs()) {
+		printf("read %u\n", input_.size());
+		for (; marshaller_.HasCompleteArgs();) {
 			uint32_t rid;
 			marshaller_ >> rid;
+			printf("%u\n", rid);
 			auto it = futures_.find(rid);
 			assert(it != futures_.end());
 			it->second->Notify();
@@ -32,8 +34,10 @@ RpcConnection::RpcConnection(const Socket &socket, Poller *poller)
 
 RpcConnection::~RpcConnection()
 {
-	for (auto e : futures_)
+	for (auto e : futures_) {
+		printf("fuck\n");
 		delete e.second;
+	}
 }
 
 Marshaller& RpcConnection::GetMarshaller()

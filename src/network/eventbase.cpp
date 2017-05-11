@@ -25,6 +25,7 @@ EventBase::EventBase():running_(true), poller_(new Poller())
 		char buf[16];
 		ssize_t r = read(ch->fd(), buf, sizeof(buf));
 		if (r > 0) {
+			Info("wake up");
 			delete ch;
 		} else if (r == 0) {
 		} else if (errno == EINTR) {
@@ -49,12 +50,15 @@ void EventBase::Loop()
 {
 	while (running_)
 		poller_->LoopOnce(1000);
+	poller_->LoopOnce(0);
 }
 
 void EventBase::Exit()
 {
-	running_ = false;
-	WakeUp();
+	if (running_) {
+		running_ = false;
+		WakeUp();
+	}
 }
 
 void EventBase::WakeUp()

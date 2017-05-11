@@ -33,7 +33,7 @@ class Marshaller
 
 		inline bool HasCompleteArgs();
 
-	private:
+	// private:
 		inline void Unget(uint32_t size);
 
 		Buffer *input_;

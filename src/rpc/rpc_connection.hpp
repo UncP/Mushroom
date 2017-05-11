@@ -39,7 +39,6 @@ class RpcConnection : public Connection
 
 	private:
 		using Connection::Send;
-		using Connection::SendOutput;
 
 		std::map<uint32_t, Future *> futures_;
 
@@ -59,8 +58,7 @@ inline Future* RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
 	});
 	futures_[rid] = fu;
 	marshaller_.MarshalArgs(id, rid, args);
-	if (!channel_->CanWrite())
-		channel_->EnableWrite(true);
+	SendOutput();
 	return fu;
 }
 

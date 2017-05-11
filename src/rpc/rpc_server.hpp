@@ -27,11 +27,13 @@ class RpcServer : public Server
 
 		~RpcServer();
 
+		void Start();
+
 		template<typename T1, typename T2, typename T3>
 		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
 	private:
-		std::unordered_map<uint32_t, RPC> services_;
+		std::unordered_map<uint32_t, RPC *> services_;
 
 		void HandleAccept();
 };
@@ -39,8 +41,8 @@ class RpcServer : public Server
 template<typename T1, typename T2, typename T3>
 void RpcServer::Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*))
 {
-	RPC rpc;
-	uint32_t id = rpc.Generate(str, obj, fun);
+	RPC *rpc = new RPC();
+	uint32_t id = rpc->Generate(str, obj, fun);
 	FatalIf(services_.find(id) != services_.end(), "service %u existed :(", id);
 	services_.insert({id, rpc});
 }

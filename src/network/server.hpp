@@ -26,7 +26,7 @@ class Server : private NoCopy
 
 		virtual ~Server();
 
-		bool Start();
+		virtual void Start();
 
 		void OnConnect(const ConnectCallBack &connectcb);
 

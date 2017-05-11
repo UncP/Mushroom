@@ -17,10 +17,9 @@ using namespace Mushroom;
 int main()
 {
 	EventBase base;
-	Connection *con1 = new Connection(EndPoint("127.0.0.1"), base.GetPoller());
-	Signal::Register(SIGINT, [&base, con1]() { base.Exit(); });
+	Connection con1(EndPoint("127.0.0.1"), base.GetPoller());
+	Signal::Register(SIGINT, [&base]() { base.Exit(); });
 	if (!con1->Success()) {
-		delete con1;
 		return 0;
 	}
 
@@ -31,7 +30,5 @@ int main()
 	});
 	con1->Send("hello world :)");
 	base.Loop();
-
-	delete con1;
 	return 0;
 }

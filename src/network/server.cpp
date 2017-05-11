@@ -26,14 +26,13 @@ Server::~Server()
 		delete e;
 }
 
-bool Server::Start()
+void Server::Start()
 {
 	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
 	FatalIf(!socket_.SetResuseAddress(), "socket option set failed :(", strerror(errno));
 	FatalIf(!socket_.Bind(), "socket bind failed, %s :(", strerror(errno));
 	FatalIf(!socket_.Listen(), "socket listen failed, %s :(", strerror(errno));
 	listen_ = new Channel(socket_.fd(), event_base_->GetPoller(), [this]() { HandleAccept(); }, 0);
-	return true;
 }
 
 void Server::OnConnect(const ConnectCallBack &connectcb)

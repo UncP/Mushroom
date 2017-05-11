@@ -26,17 +26,13 @@ class Future : private NoCopy
 		inline void Wait() {
 			while (status_.get() == Pending && !time_out_.get())
 				sched_yield();
-			if (!time_out_.get()) {
-				callback_();
-				status_ = Ok;
-			} else {
+			if (time_out_.get())
 				status_ = time_out_;
-			}
 		}
 
 		inline bool ok() { return status_.get() == Ok; }
 
-		inline void Notify() { status_ = Ok; }
+		inline void Notify() { callback_(); status_ = Ok; }
 
 		inline void Abandon() { time_out_ = 1; }
 
