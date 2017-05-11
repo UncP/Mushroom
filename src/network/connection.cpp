@@ -83,7 +83,7 @@ void Connection::HandleRead()
 		Error("connection has closed :(");
 		return ;
 	}
-	// input_.Reset();
+	input_.Reset();
 	bool blocked = false;
 	uint32_t read = socket_.Read(input_.end(), input_.space(), &blocked);
 	if (!read && !blocked) {
@@ -91,7 +91,7 @@ void Connection::HandleRead()
 		return ;
 	}
 	input_.AdvanceTail(read);
-	printf("read %u\n", input_.size());
+	// printf("read %u\n", input_.size());
 	if (readcb_ && read)
 		readcb_();
 }
@@ -145,10 +145,13 @@ void Connection::SendOutput()
 		Close();
 		return ;
 	}
-	printf("send %u\n", write);
+	// printf("send %u\n", write);
 	output_.AdvanceHead(write);
-	if (output_.size() && !channel_->CanWrite())
-		channel_->EnableWrite(true);
+	if (output_.size()) {
+		output_.Adjust();
+		if (!channel_->CanWrite())
+			channel_->EnableWrite(true);
+	}
 }
 
 } // namespace Mushroom

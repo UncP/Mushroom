@@ -48,6 +48,9 @@ void RpcServer::HandleAccept()
 			(*rpc)();
 			has = true;
 		}
+		Buffer &in = con->GetInput();
+		if (in.size())
+			in.Adjust();
 		if (has)
 			con->SendOutput();
 	});

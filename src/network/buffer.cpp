@@ -50,19 +50,33 @@ uint32_t Buffer::space() const
 	return BufferSize - end_;
 }
 
-void Buffer::Reset()
-{
-	if (empty()) beg_  = 0, end_  = 0, size_ = 0;
-}
-
 void Buffer::Clear()
 {
-	beg_  = 0, end_  = 0, size_ = 0;
+	beg_  = 0;
+	end_  = 0;
+	size_ = 0;
+}
+
+void Buffer::Reset()
+{
+	if (empty()) {
+		assert(beg_ == end_);
+		beg_  = 0;
+		end_  = 0;
+		size_ = 0;
+	}
+}
+
+void Buffer::Adjust()
+{
+	memmove(data_, begin(), size_);
+	beg_ = 0;
+	end_ = size_;
 }
 
 void Buffer::AdvanceHead(uint32_t len)
 {
-	assert(beg_ + len <= end_);
+	assert(size_ >= len);
 	beg_  += len;
 	size_ -= len;
 }
@@ -76,9 +90,9 @@ void Buffer::AdvanceTail(uint32_t len)
 
 void Buffer::Unget(uint32_t len)
 {
-	assert(size_ >= len);
+	assert(beg_ >= len);
 	beg_  -= len;
-	size_ -= len;
+	size_ += len;
 }
 
 void Buffer::Read(const char *data, uint32_t len)

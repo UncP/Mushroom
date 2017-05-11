@@ -11,6 +11,7 @@
 #include <map>
 
 #include "../include/atomic.hpp"
+#include "../include/spin_lock.hpp"
 #include "../network/connection.hpp"
 #include "rpc.hpp"
 #include "marshaller.hpp"
@@ -41,6 +42,7 @@ class RpcConnection : public Connection
 		using Connection::Send;
 		using Connection::OnWrite;
 
+		SpinLock                     spin_;
 		std::map<uint32_t, Future *> futures_;
 
 		Marshaller marshaller_;
@@ -51,11 +53,12 @@ inline Future* RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
 {
 	uint32_t id  = RPC::Hash(str);
 	uint32_t rid = RpcId++;
-	// printf("calling %u\n", rid);
 	Future *fu = new Future(rid, [reply, this]() {
 		marshaller_ >> *reply;
 	});
+	spin_.Lock();
 	futures_.insert({rid, fu});
+	spin_.Unlock();
 	marshaller_.MarshalArgs(id, rid, args);
 	SendOutput();
 	return fu;

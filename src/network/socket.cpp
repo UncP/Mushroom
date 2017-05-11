@@ -164,7 +164,7 @@ uint32_t Socket::Read(char *data, uint32_t len, bool *blocked)
 {
 	uint32_t has_read = 0;
 	ssize_t r;
-	for (; (r = read(fd_, data + has_read, len - has_read));) {
+	for (; has_read < len && (r = read(fd_, data + has_read, len - has_read));) {
 		if (r == -1) {
 			if (errno == EINTR)
 				continue;

@@ -58,13 +58,13 @@ void Poller::RemoveChannel(Channel *channel)
 void Poller::LoopOnce(int ms)
 {
 	int ready = epoll_wait(fd_, events_, MaxEvents, ms);
+	FatalIf(ready == -1 && errno != EINTR, "epoll wait failed, %s :(", strerror(errno));
 	for (; --ready >= 0; ) {
 		Channel *channel = (Channel *)events_[ready].data.ptr;
 		uint32_t event = events_[ready].events;
 		if (event & ReadEvent) {
 			channel->HandleRead();
 		} else if (event & WriteEvent) {
-			assert(0);
 			channel->HandleWrite();
 		} else {
 			Fatal("unexpected epoll event :(");

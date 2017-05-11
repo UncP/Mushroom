@@ -21,10 +21,15 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller)
 		for (; marshaller_.HasCompleteArgs();) {
 			uint32_t rid;
 			marshaller_ >> rid;
+			spin_.Lock();
 			auto it = futures_.find(rid);
 			FatalIf(it == futures_.end(), "rpc id %u not called :(", rid);
-			it->second->Notify();
+			Future *fu = it->second;
+			spin_.Unlock();
+			fu->Notify();
 		}
+		if (input_.size())
+			input_.Adjust();
 	};
 }
 

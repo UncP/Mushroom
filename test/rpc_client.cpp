@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 	loop.Start();
 
 	Test test;
-	Test::Pair args(1023, 2047);
+	Test::Pair args(2047, 65535);
 
 	int total = (argc == 2) ? atoi(argv[1]) : 1;
 	std::vector<int32_t> reply(total);
