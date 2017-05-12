@@ -32,6 +32,7 @@ struct RequestVoteReply
 
 struct AppendEntryArgs
 {
+	AppendEntryArgs() { }
 	uint32_t         term_;
 	int32_t          id_;
 	uint32_t         prev_term_;

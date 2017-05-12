@@ -58,11 +58,11 @@ class RaftServer
 
 		int32_t  id_;
 
-		uint8_t  state_;
-		bool     running_;
-		bool     in_election_;
-		bool     election_time_out_;
-		bool     reset_timer_;
+		uint8_t state_;
+		bool    running_;
+		bool    in_election_;
+		bool    election_time_out_;
+		bool    reset_timer_;
 
 		uint32_t term_;
 		int32_t  vote_for_;

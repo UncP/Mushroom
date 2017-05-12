@@ -149,11 +149,8 @@ void RaftServer::RunElection()
 			mutex_.Unlock();
 			break;
 		}
-		if (state_ != Follower) {
-			in_election_ = false;
-			mutex_.Unlock();
-			continue;
-		}
+		assert(state_ == Follower);
+		in_election_ = false;
 		state_ = Candidate;
 		++term_;
 		vote_for_ = id_;
@@ -166,12 +163,26 @@ void RaftServer::RunElection()
 
 void RaftServer::SendAppendEntry()
 {
-	for (; state_ == Leader;) {
-		mutex_.Unlock();
-		usleep(HeartbeatInterval * 1000);
-		mutex_.Lock();
+	Future *futures[peers_.size()];
+	AppendEntryArgs args[peers_.size()];
+	AppendEntryReply replys[peers_.size()];
+	uint32_t future_size = 0;
+	for (size_t i = 0;  && i < peers_.size(); ++i) {
+		do {
+			rf.mu.Lock();
+			if (state_ != Leader)
+			args[i].term_ = term_;
+			args[i].id_ = 0;
+			args[i].prev_index_ = next_[i] - 1;
+			args[i].prev_term_  = args[i].prev_index_ >= 0 ? logs_[prev].term_ : 0;
+			rf.mu.Unlock();
+
+			peers_[i].Call("Raft::AppendEntry", &args, &reply);
+		} while (state_.get() == Leader);
 	}
-	mutex_.Unlock();
+	if (state_.get())
+	for (uint32_t i = 0; i < future_size; ++i)
+		futures[i]->Abandon();
 }
 
 void RaftServer::Background()
@@ -185,19 +196,21 @@ void RaftServer::Background()
 		if (!running_)
 			break;
 		if (reset_timer_) {
-			reset_timer_       = false;
-			election_time_out_ = false;
+			reset_timer_ = false;
 			mutex_.Unlock();
 			continue;
+		}
+		if (in_election_) {
 		}
 		election_time_out_ = false;
 		if (state_ == Follower) {
 			in_election_ = true;
 			mutex_.Unlock();
 			election_cond_.Signal();
-		} else if (state_ == Leader) {
-			SendAppendEntry();
-		}
+		} else {
+			mutex_.Unlock();
+			while (SendAppendEntry())
+				usleep(50 * 1000);
 	}
 }
 

@@ -8,8 +8,6 @@
 #ifndef _BOUNDED_MAPPING_QUEUE_HPP_
 #define _BOUNDED_MAPPING_QUEUE_HPP_
 
-#include <functional>
-
 #include "utility.hpp"
 #include "mutex.hpp"
 #include "cond.hpp"
