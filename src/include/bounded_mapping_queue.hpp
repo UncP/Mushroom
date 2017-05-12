@@ -86,8 +86,7 @@ BoundedMappingQueue<T>::~BoundedMappingQueue()
 template<typename T>
 void BoundedMappingQueue<T>::Clear()
 {
-	if (clear_)
-		return ;
+	if (clear_) return ;
 
 	mutex_.Lock();
 	while (front_ != avail_back_ || front_ != work_back_)
@@ -157,4 +156,4 @@ inline void BoundedMappingQueue<T>::Put(int pos)
 
 } // namespace Mushroom
 
-#endif /* _BOUNDED__MAPPING_QUEUE_HPP_ */
+#endif /* _BOUNDED_MAPPING_QUEUE_HPP_ */
