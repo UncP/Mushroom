@@ -29,10 +29,6 @@ class Mutex : private NoCopy
 			pthread_mutex_lock(mutex_);
 		}
 
-		inline bool TryLock() {
-			return !pthread_mutex_trylock(mutex_);
-		}
-
 		inline void Unlock() {
 			pthread_mutex_unlock(mutex_);
 		}

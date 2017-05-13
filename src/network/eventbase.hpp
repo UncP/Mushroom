@@ -8,9 +8,13 @@
 #ifndef _EVENT_BASE_HPP_
 #define _EVENT_BASE_HPP_
 
+#include <map>
+
 #include "../include/utility.hpp"
 
 namespace Mushroom {
+
+typedef std::pair<int, int>
 
 class Poller;
 
@@ -28,7 +32,6 @@ class EventBase : private NoCopy
 		Poller* GetPoller();
 
 	private:
-
 		void WakeUp();
 
 		bool     running_;

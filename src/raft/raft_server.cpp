@@ -41,11 +41,11 @@ class TimeUtil
 
 	private:
 		static std::default_random_engine engine;
-		static std::uniform_int_distribution<int> distribution;
+		static std::uniform_int_distribution<int64_t> distribution;
 };
 
 std::default_random_engine TimeUtil::engine(time(0));
-std::uniform_int_distribution<int> TimeUtil::distribution(RaftServer::ElectionTimeoutBase,
+std::uniform_int_distribution<int64_t> TimeUtil::distribution(RaftServer::ElectionTimeoutBase,
 	RaftServer::ElectionTimeoutLimit);
 
 RaftServer::RaftServer(int32_t id, const std::vector<RpcConnection *> &peers,
@@ -123,23 +123,14 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 
 	reply->success_ = 0;
 	if (args->entries_.size()) {
-		int32_t start = 0, prev_index = args->prev_index_;
-		if (prev_index >= 0) {
-			// find index in entries that does not overlap with current raft server
-			for (int32_t i = int32_t(args->entries_.size()) - 1; i >= 0; --i) {
-				if (logs_[prev_index].number_ == args->entries_[i].number_) {
-					start = i + 1;
-					break;
-				}
-			}
-			// erase any entry that has same log but different term
-			for (int32_t i = start - 1; i >= 0 && prev_index >= 0; --i) {
-				if (logs_[prev_index].term_ != args->entries_[i].term_)
-					--prev_index;
+		for (uint32_t i = args->prev_index_, j = 0;
+			i < logs_.size() && j < args->entries_.size(); ++i, ++j) {
+			if (logs_[i].number_ == args->entries_[j].number_ &&
+				logs_[i].term_ != args->entries_[j].term_) {
+				logs_.erase(logs_.begin() + i, logs_.end());
+				break;
 			}
 		}
-		logs_.erase(logs_.begin() + prev_index + 1, logs_.end());
-		// prev_index should be exactly logs_.size()-1
 		if ((args->entries_.begin() + start) < args->entries_.end()) {
 			logs_.insert(logs_.end(), args->entries_.begin() + start, args->entries_.end());
 			reply->success_ = args->entries_.end() - (args->entries_.begin() + start);
@@ -148,6 +139,7 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 
 	if (args->leader_commit_ > commit_)
 		commit_ = std::min(args->leader_commit_, int32_t(logs_.size()) - 1);
+
 	reset_timer_ = true;
 	cond_.Signal();
 
@@ -237,8 +229,8 @@ void RaftServer::Background()
 				mutex_.Lock();
 			} else {
 				if (status == Success) {
-					while (SendAppendEntry())
-						TimeUtil::SleepFor(HeartbeatInterval);
+					// while (SendAppendEntry())
+						// TimeUtil::SleepFor(HeartbeatInterval);
 				}
 				mutex_.Lock();
 				state_    = Follower;

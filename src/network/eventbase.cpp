@@ -24,10 +24,9 @@ EventBase::EventBase():running_(true), poller_(new Poller())
 	ch->OnRead([ch]() {
 		char buf[16];
 		ssize_t r = read(ch->fd(), buf, sizeof(buf));
-		if (r > 0) {
+		if (r >= 0) {
 			Info("wake up");
 			delete ch;
-		} else if (r == 0) {
 		} else if (errno == EINTR) {
 		} else {
 			Fatal("pipe read error, %s :(", strerror(errno));
