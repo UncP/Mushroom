@@ -18,8 +18,7 @@ class Future : private NoCopy
 	public:
 		enum Status { Pending = 0x0, Ok = 0x1, TimeOut = 0x2, Bad = 0x3 };
 
-		Future(uint32_t id, const Func &callback)
-		:id_(id), status_(Pending), time_out_(0), callback_(callback) { }
+		Future(uint32_t id):id_(id), status_(Pending), time_out_(0) { }
 
 		uint32_t id() const { return id_; }
 
@@ -32,9 +31,13 @@ class Future : private NoCopy
 
 		inline bool ok() { return status_.get() == Ok; }
 
+		inline bool timeout() { return time_out_.get(); }
+
 		inline void Notify() { callback_(); status_ = Ok; }
 
 		inline void Abandon() { time_out_ = 1; }
+
+		inline void CallBack(const Func &callback) { callback_ = callback; }
 
 	private:
 		uint32_t   id_;

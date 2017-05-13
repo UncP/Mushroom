@@ -100,6 +100,7 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 
 	reply->granted_ = true;
 
+	term_     = args->term_;
 	state_    = Follower;
 	vote_for_ = args->id_;
 
@@ -113,38 +114,35 @@ end:
 void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply)
 {
 	mutex_.Lock();
-	*reply = AppendEntryReply(term_, -1);
-	if (args->term_ < term_)
+	*reply = {term_, -1};
+	AppendEntryArgs &arg = *args;
+	if (arg.term_ < term_)
 		goto end;
-	if (args->prev_index_ >= int32_t(logs_.size()))
+	int32_t  prev_i = arg.prev_index_;
+	uint32_t prev_t = arg.prev_term_;
+	if (prev_i >= int32_t(logs_.size()))
 		goto end;
-	if (args->prev_index_ >= 0 && logs_[args->prev_index_].term_ != args->prev_term_)
+	if (prev_i >= 0 && logs_[prev_i].term_ != prev_t)
 		goto end;
 
-	reply->success_ = 0;
-	if (args->entries_.size()) {
-		for (uint32_t i = args->prev_index_, j = 0;
-			i < logs_.size() && j < args->entries_.size(); ++i, ++j) {
-			if (logs_[i].number_ == args->entries_[j].number_ &&
-				logs_[i].term_ != args->entries_[j].term_) {
-				logs_.erase(logs_.begin() + i, logs_.end());
-				break;
-			}
-		}
-		if ((args->entries_.begin() + start) < args->entries_.end()) {
-			logs_.insert(logs_.end(), args->entries_.begin() + start, args->entries_.end());
-			reply->success_ = args->entries_.end() - (args->entries_.begin() + start);
+	uint32_t prev_j = 0;
+	for (++prev_i; prev_i < logs_.size() && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
+		if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
+			logs_.erase(logs_.begin() + prev_i, logs_.end());
+			break;
 		}
 	}
+	assert(prev_i == logs_.size());
+	logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
+	reply->success_ = arg.entries_.end() - (arg.entries_.begin() + prev_j);
 
 	if (args->leader_commit_ > commit_)
 		commit_ = std::min(args->leader_commit_, int32_t(logs_.size()) - 1);
 
-	reset_timer_ = true;
-	cond_.Signal();
-
 end:
+	reset_timer_ = true;
 	mutex_.Unlock();
+	cond_.Signal();
 }
 
 ElectionStatus RaftServer::Election(const RequestVoteArgs *args)
@@ -170,6 +168,8 @@ ElectionStatus RaftServer::Election(const RequestVoteArgs *args)
 				++vote;
 			else if (term_ < replys[i].term_)
 				return Fail;
+		} else {
+			futures[i].Abandon();
 		}
 	}
 	if (vote > ((size + 1) / 2))
@@ -179,27 +179,27 @@ ElectionStatus RaftServer::Election(const RequestVoteArgs *args)
 
 bool RaftServer::SendAppendEntry()
 {
-	uint32_t size = peers_.size();
-	Future *futures[size];
-	AppendEntryArgs args[size];
-	AppendEntryReply replys[size];
-	mutex_.Lock();
-	for (size_t i = 0; i < peers_.size(); ++i) {
-		int32_t prev = next_[i] - 1;
-		args[i] = AppendEntryArgs(term_, id_, prev, prev >= 0 ? logs_[prev].term_ : 0, commit_);
-		if (prev >= 0) {
-			args[i].entries_.reserve(logs_.size() - prev);
-			for (uint32_t j = prev; j < logs_.size(); ++j)
-				args[i].entries_.push_back(logs_[j]);
-		}
-		queue_->Push([this, i, &args, &replys]() {
-			peers_[i].Call("RaftServer::AppendEntry", &args[i], &replys[i]);
-		});
-	}
-	mutex_.Unlock();
-	if (state_.get())
-	for (uint32_t i = 0; i < future_size; ++i)
-		futures[i]->Abandon();
+	// uint32_t size = peers_.size();
+	// Future *futures[size];
+	// AppendEntryArgs args[size];
+	// AppendEntryReply replys[size];
+	// mutex_.Lock();
+	// for (size_t i = 0; i < peers_.size(); ++i) {
+	// 	int32_t prev = next_[i] - 1;
+	// 	args[i] = AppendEntryArgs(term_, id_, prev, prev >= 0 ? logs_[prev].term_ : 0, commit_);
+	// 	if (prev >= 0) {
+	// 		args[i].entries_.reserve(logs_.size() - prev);
+	// 		for (uint32_t j = prev; j < logs_.size(); ++j)
+	// 			args[i].entries_.push_back(logs_[j]);
+	// 	}
+	// 	queue_->Push([this, i, &args, &replys]() {
+	// 		peers_[i].Call("RaftServer::AppendEntry", &args[i], &replys[i]);
+	// 	});
+	// }
+	// mutex_.Unlock();
+	// if (state_.get())
+	// for (uint32_t i = 0; i < future_size; ++i)
+	// 	futures[i]->Abandon();
 }
 
 void RaftServer::Background()
@@ -229,8 +229,8 @@ void RaftServer::Background()
 				mutex_.Lock();
 			} else {
 				if (status == Success) {
-					// while (SendAppendEntry())
-						// TimeUtil::SleepFor(HeartbeatInterval);
+					while (SendAppendEntry())
+						TimeUtil::SleepFor(HeartbeatInterval);
 				}
 				mutex_.Lock();
 				state_    = Follower;
