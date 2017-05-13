@@ -32,7 +32,9 @@ struct RequestVoteReply
 
 struct AppendEntryArgs
 {
-	AppendEntryArgs() { }
+	AppendEntryArgs(uint32_t term, int32_t id, uint32_t prev_term, int32_t prev_index,
+		int32_t leader_commit):term_(term), id_(id), prev_term_(prev_term),
+	prev_index_(prev_index), leader_commit_(leader_commit) { }
 	uint32_t         term_;
 	int32_t          id_;
 	uint32_t         prev_term_;

@@ -11,6 +11,7 @@
 #include <vector>
 #include <cstdint>
 
+#include "../include/utility.hpp"
 #include "../include/mutex.hpp"
 #include "../include/cond.hpp"
 
@@ -23,21 +24,22 @@ class RequestVoteArgs;
 class RequestVoteReply;
 class AppendEntryArgs;
 class AppendEntryReply;
+template<typename T> Queue<T>;
+
+typedef enum { Success = 0x0, TimeOut, Fail } ElectionStatus;
 
 class RaftServer
 {
 	public:
-		enum State { Follower = 0x0, Candidate = 0x1, Leader = 0x2 };
+		enum State { Follower = 0x0, Candidate, Leader };
 
 		static uint32_t ElectionTimeoutBase;
 		static uint32_t ElectionTimeoutLimit;
 		static uint32_t HeartbeatInterval;
 
-		RaftServer(int32_t id, const std::vector<RpcConnection *> &peers);
+		RaftServer(int32_t id, const std::vector<RpcConnection *> &peers, Queue<Task> *queue);
 
 		~RaftServer();
-
-		bool Put(const Log &log);
 
 		void Vote(const RequestVoteArgs *args, RequestVoteReply *reply);
 
@@ -48,13 +50,13 @@ class RaftServer
 		void Print() const;
 
 	private:
-		void Background();
+		void Run();
 
-		void RunElection();
+		ElectionStatus Election(const RequestVoteArgs *args);
 
 		void RequestVote();
 
-		void SendAppendEntry();
+		bool SendAppendEntry();
 
 		int32_t  id_;
 
@@ -73,15 +75,15 @@ class RaftServer
 
 		Mutex    mutex_;
 
-		Thread  *background_thread_;
-		Cond     background_cond_;
-		Thread  *election_thread_;
-		Cond     election_cond_;
+		Thread  *thread_;
+		Cond     cond_;
 
 		std::vector<RpcConnection *> peers_;
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;
+
+		Queue<Task> *queue_;
 };
 
 } // namespace Mushroom

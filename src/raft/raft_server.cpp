@@ -12,6 +12,7 @@
 
 #include "raft_server.hpp"
 #include "../include/thread.hpp"
+#include "../include/bounded_queue.hpp"
 #include "log.hpp"
 #include "arg.hpp"
 
@@ -19,35 +20,60 @@ namespace Mushroom {
 
 uint32_t RaftServer::ElectionTimeoutBase  = 150;
 uint32_t RaftServer::ElectionTimeoutLimit = 300;
-uint32_t RaftServer::HeartbeatInterval    = 30;
+uint32_t RaftServer::HeartbeatInterval    = 15;
 
-RaftServer::RaftServer(int32_t id, const std::vector<RpcConnection *> &peers)
+class TimeUtil
+{
+	public:
+		static int64_t Now() const {
+			struct timeval tv;
+			gettimeofday(&tv, 0);
+			return int64_t(tv.tv_sec) * 1000000 + tv.tv_usec;
+		}
+
+		static SleepFor(int ms) const {
+			usleep(ms * 1000);
+		}
+
+		static int GetTimeOut() {
+			return distribution(engine);
+		}
+
+	private:
+		static std::default_random_engine engine;
+		static std::uniform_int_distribution<int> distribution;
+};
+
+std::default_random_engine TimeUtil::engine(time(0));
+std::uniform_int_distribution<int> TimeUtil::distribution(RaftServer::ElectionTimeoutBase,
+	RaftServer::ElectionTimeoutLimit);
+
+RaftServer::RaftServer(int32_t id, const std::vector<RpcConnection *> &peers,
+	Queue<Task> *queue)
 :id_(id), state_(Follower), running_(true), in_election_(false), election_time_out_(false),
-reset_timer_(false), term_(0), vote_for_(-1), commit_(-1), applied_(-1), peers_(peers)
+reset_timer_(false), term_(0), vote_for_(-1), commit_(-1), applied_(-1), peers_(peers),
+queue_(queue)
 {
 	next_ .resize(peers_.size());
 	match_.resize(peers_.size());
 
-	background_thread_ = new Thread([this]() { this->Background(); });
-	background_thread_->Start();
-
-	election_thread_   = new Thread([this]() { this->RunElection(); });
-	election_thread_->Start();
+	thread_ = new Thread([this]() { this->Run(); });
+	thread_->Start();
 }
 
 void RaftServer::Close()
 {
-	if (!running_)
-		return ;
-
 	mutex_.Lock();
-	running_     = false;
+	if (!running_) {
+		mutex_.Unlock();
+		return ;
+	}
+
+	running_ = false;
 	mutex_.Unlock();
 
-	background_cond_.Signal();
-	background_thread_->Stop();
-	election_cond_.Signal();
-	election_thread_->Stop();
+	cond_.Signal();
+	thread_->Stop();
 
 	for (auto e : peers_)
 		e->Close();
@@ -56,20 +82,7 @@ void RaftServer::Close()
 RaftServer::~RaftServer()
 {
 	Close();
-	delete background_thread_;
-	delete election_thread_;
-}
-
-bool RaftServer::Put(const Log &log)
-{
-	mutex_.Lock();
-	if (state_ != Leader) {
-		mutex_.Unlock();
-		return false;
-	}
-	logs_.push_back(log);
-	mutex_.Unlock();
-	return true;
+	delete thread_;
 }
 
 void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
@@ -85,10 +98,13 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	if (commit_ >= 0 && args->last_term_ < logs_[commit_].term_)
 		goto end;
 
-	state_ = Follower;
-	vote_for_ = args->id_;
-	reset_timer_ = true;
 	reply->granted_ = true;
+
+	state_    = Follower;
+	vote_for_ = args->id_;
+
+	reset_timer_ = true;
+	cond_.Signal();
 
 end:
 	mutex_.Unlock();
@@ -133,53 +149,62 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	if (args->leader_commit_ > commit_)
 		commit_ = std::min(args->leader_commit_, int32_t(logs_.size()) - 1);
 	reset_timer_ = true;
-	background_cond_.Signal();
+	cond_.Signal();
 
 end:
 	mutex_.Unlock();
 }
 
-void RaftServer::RunElection()
+ElectionStatus RaftServer::Election(const RequestVoteArgs *args)
 {
-	for (;;) {
-		mutex_.Lock();
-		while (!in_election_ && running_)
-			election_cond_.Wait(mutex_);
-		if (!running_) {
-			mutex_.Unlock();
-			break;
-		}
-		assert(state_ == Follower);
-		in_election_ = false;
-		state_ = Candidate;
-		++term_;
-		vote_for_ = id_;
-		RequestVoteArgs args(term_, id_, commit_, commit_ >= 0 ? logs_[commit_].term_ : 0);
-		for (auto e : peers_) {
-			// e->Call("RaftServer::Vote", args);
+	int time_out = TimeUtil::GetTimeOut();
+	int64_t before = TimeUtil::Now();
+	uint32_t size = peers.size();
+	RequestVoteReply replys[size];
+	Future *futures[size];
+	for (uint32_t i = 0; i < size; ++i) {
+		queue_->Push([this, i, futures, args, &replys]() {
+			peers_[i]->Call("RaftServer::Vote", args, &replys[i]);
+		});
+	}
+	int left = time_out - int((TimeUtil::Now() - before) / 1000);
+	if (left <= 0) return TimeOut;
+
+	TimeUtil::SleepFor(left);
+	uint32_t vote = 1;
+	for (uint32_t i = 0; i < size; ++i) {
+		if (futures[i]->ok()) {
+			if (replys[i].granted_)
+				++vote;
+			else if (term_ < replys[i].term_)
+				return Fail;
 		}
 	}
+	if (vote > ((size + 1) / 2))
+		return Success;
+	return TimeOut;
 }
 
-void RaftServer::SendAppendEntry()
+bool RaftServer::SendAppendEntry()
 {
-	Future *futures[peers_.size()];
-	AppendEntryArgs args[peers_.size()];
-	AppendEntryReply replys[peers_.size()];
-	uint32_t future_size = 0;
-	for (size_t i = 0;  && i < peers_.size(); ++i) {
-		do {
-			rf.mu.Lock();
-			if (state_ != Leader)
-			args[i].term_ = term_;
-			args[i].id_ = 0;
-			args[i].prev_index_ = next_[i] - 1;
-			args[i].prev_term_  = args[i].prev_index_ >= 0 ? logs_[prev].term_ : 0;
-			rf.mu.Unlock();
-
-			peers_[i].Call("Raft::AppendEntry", &args, &reply);
-		} while (state_.get() == Leader);
+	uint32_t size = peers_.size();
+	Future *futures[size];
+	AppendEntryArgs args[size];
+	AppendEntryReply replys[size];
+	mutex_.Lock();
+	for (size_t i = 0; i < peers_.size(); ++i) {
+		int32_t prev = next_[i] - 1;
+		args[i] = AppendEntryArgs(term_, id_, prev, prev >= 0 ? logs_[prev].term_ : 0, commit_);
+		if (prev >= 0) {
+			args[i].entries_.reserve(logs_.size() - prev);
+			for (uint32_t j = prev; j < logs_.size(); ++j)
+				args[i].entries_.push_back(logs_[j]);
+		}
+		queue_->Push([this, i, &args, &replys]() {
+			peers_[i].Call("RaftServer::AppendEntry", &args[i], &replys[i]);
+		});
 	}
+	mutex_.Unlock();
 	if (state_.get())
 	for (uint32_t i = 0; i < future_size; ++i)
 		futures[i]->Abandon();
@@ -187,36 +212,41 @@ void RaftServer::SendAppendEntry()
 
 void RaftServer::Background()
 {
-	std::default_random_engine engine(time(0));
-	std::uniform_int_distribution<int> dist(ElectionTimeoutBase, ElectionTimeoutLimit);
 	for (;;) {
 		mutex_.Lock();
-		while (!election_time_out_ && !reset_timer_ && running_)
-			election_time_out_ = background_cond_.TimedWait(mutex_, dist(engine));
-		if (!running_)
-			break;
+	sleep:
+		while (running_ && !reset_timer_)
+			cond_.TimedWait(mutex_, TimeUtil::GetTimeOut());
+		if (!running_) {
+			mutex_.Unlock();
+			return ;
+		}
 		if (reset_timer_) {
 			reset_timer_ = false;
 			mutex_.Unlock();
 			continue;
 		}
-		if (in_election_) {
+		for (;;) {
+			state_ = Candidate;
+			++term_;
+			vote_for_ = id_;
+			RequestVoteArgs args(term_, id_, commit_, commit_ >= 0 ? logs_[commit_].term_ : 0);
+			mutex_.Unlock();
+			ElectionStatus status = Election(&args);
+			if (status == TimeOut) {
+				mutex_.Lock();
+			} else {
+				if (status == Success) {
+					while (SendAppendEntry())
+						TimeUtil::SleepFor(HeartbeatInterval);
+				}
+				mutex_.Lock();
+				state_    = Follower;
+				vote_for_ = -1;
+				goto sleep;
+			}
 		}
-		election_time_out_ = false;
-		if (state_ == Follower) {
-			in_election_ = true;
-			mutex_.Unlock();
-			election_cond_.Signal();
-		} else {
-			mutex_.Unlock();
-			while (SendAppendEntry())
-				usleep(50 * 1000);
 	}
-}
-
-void RaftServer::Print() const
-{
-
 }
 
 } // namespace Mushroom
