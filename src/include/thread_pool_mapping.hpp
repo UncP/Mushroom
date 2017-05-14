@@ -8,8 +8,6 @@
 #ifndef _THREAD_POOL_MAPPING_HPP_
 #define _THREAD_POOL_MAPPING_HPP_
 
-#include <cassert>
-
 #include "utility.hpp"
 #include "bounded_mapping_queue.hpp"
 #include "thread.hpp"
@@ -39,7 +37,10 @@ template<typename T>
 ThreadPoolMapping<T>::ThreadPoolMapping(BoundedMappingQueue<T> *queue, int thread_num)
 :working_(false), thread_num_(thread_num), queue_(queue)
 {
-	assert(thread_num_ > 0 && thread_num_ <= 4);
+	if (thread_num_ <= 0)
+		thread_num_ = 1;
+	if (thread_num_ > 4)
+		thread_num_ = 4;
 
 	threads_ = new Thread*[thread_num_];
 
@@ -69,8 +70,7 @@ void ThreadPoolMapping<T>::Run()
 template<typename T>
 void ThreadPoolMapping<T>::Clear()
 {
-	if (!working_)
-		return ;
+	if (!working_) return ;
 
 	queue_->Clear();
 

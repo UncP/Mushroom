@@ -84,9 +84,13 @@ BoundedMappingQueue<T>::~BoundedMappingQueue()
 template<typename T>
 void BoundedMappingQueue<T>::Clear()
 {
-	if (clear_) return ;
-
 	mutex_.Lock();
+
+	if (clear_) {
+		mutex_.Unlock();
+		return ;
+	}
+
 	while (front_ != avail_back_ || front_ != work_back_)
 		empty_.Wait(mutex_);
 
