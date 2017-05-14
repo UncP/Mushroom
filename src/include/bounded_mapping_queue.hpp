@@ -50,8 +50,8 @@ template<typename T>
 BoundedMappingQueue<T>::BoundedMappingQueue(int capacity,const std::function<T*()> &constructor)
 :clear_(false), capacity_(capacity), front_(0), avail_back_(0), work_back_(0)
 {
-	if (capacity_ < 64)
-		capacity_ = 64;
+	if (capacity_ <= 0)
+		capacity_ = 8;
 	if (capacity_ > 1024)
 		capacity_ = 1024;
 

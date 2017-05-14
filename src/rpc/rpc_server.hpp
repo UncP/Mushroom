@@ -25,7 +25,7 @@ class RpcServer : public Server
 	public:
 		RpcServer(EventBase *event_base);
 
-		~RpcServer();
+		virtual ~RpcServer();
 
 		void Start();
 

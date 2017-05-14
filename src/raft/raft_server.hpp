@@ -14,6 +14,7 @@
 #include "../include/utility.hpp"
 #include "../include/mutex.hpp"
 #include "../include/cond.hpp"
+#include "../rpc/rpc_server.hpp"
 
 namespace Mushroom {
 
@@ -28,7 +29,7 @@ template<typename T> Queue<T>;
 
 typedef enum { Success = 0x0, TimeOut, Fail } ElectionStatus;
 
-class RaftServer
+class RaftServer : public RpcServer
 {
 	public:
 		enum State { Follower = 0x0, Candidate, Leader };
@@ -50,6 +51,8 @@ class RaftServer
 		void Print() const;
 
 	private:
+		using RpcServer::Register;
+
 		void Run();
 
 		ElectionStatus Election(const RequestVoteArgs *args);
@@ -57,6 +60,8 @@ class RaftServer
 		void RequestVote();
 
 		bool SendAppendEntry();
+
+		using RpcServer::event_base_;
 
 		int32_t  id_;
 

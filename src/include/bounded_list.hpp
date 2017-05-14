@@ -50,7 +50,7 @@ BoundedList<T>::BoundedList(int capacity, const std::function<T*()> &constructor
 :clear_(false), capacity_(capacity)
 {
 	if (capacity_ <= 0)
-		capacity_ = 4;
+		capacity_ = 8;
 	if (capacity_ > 1024)
 		capacity_ = 1024;
 

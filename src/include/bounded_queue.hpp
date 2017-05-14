@@ -22,7 +22,7 @@ class BoundedQueue : private NoCopyTemplate<T>
 
 		~BoundedQueue();
 
-		inline void Push(T &&);
+		inline void Push(const T &);
 
 		inline T* Pop();
 
@@ -43,7 +43,7 @@ template<typename T>
 BoundedQueue<T>::BoundedQueue(int capacity):clear_(false), beg_(0), end_(0),capacity_(capacity)
 {
 	if (capacity_ <= 0)
-		capacity_ = 64;
+		capacity_ = 8;
 	if (capacity_ > 1024)
 		capacity_ = 1024;
 
@@ -88,7 +88,7 @@ template<typename T>
 inline T BoundedQueue<T>::Pop()
 {
 	mutex_.Lock();
-	while (!clear_ && beg_ == end_)
+	while (beg_ == end_ && !clear_)
 		empty_.Wait(mutex_);
 	if (clear_) {
 		mutex_.Unlock();

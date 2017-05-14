@@ -6,7 +6,6 @@
 **/
 
 #include <cassert>
-#include <ctime>
 #include <random>
 #include <unistd.h>
 
