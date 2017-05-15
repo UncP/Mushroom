@@ -15,7 +15,7 @@ namespace Mushroom {
 class Time
 {
 	public:
-		static int64_t Now() const {
+		static int64_t Now() {
 			struct timeval tv;
 			gettimeofday(&tv, 0);
 			return (int64_t(tv.tv_sec) * 1000000 + tv.tv_usec) / 1000;

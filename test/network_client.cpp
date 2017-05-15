@@ -7,6 +7,7 @@
 
 #include <unistd.h>
 
+#include "../src/log/log.hpp"
 #include "../src/network/signal.hpp"
 #include "../src/network/eventbase.hpp"
 #include "../src/network/connection.hpp"
@@ -19,15 +20,22 @@ int main()
 	Connection con(EndPoint("127.0.0.1"), base.GetPoller());
 	Signal::Register(SIGINT, [&base]() { base.Exit(); });
 
-	ExifIf(!con.Success(), "");
+	ExitIf(!con.Success(), "");
 
-	con->OnRead([con]() {
-		printf("read %u : %s\n", con->GetInput().size(), con->GetInput().data());
-		usleep(500000);
-		con->Send(con->GetInput());
+	con.OnRead([&con]() {
+		printf("read %u : %s\n", con.GetInput().size(), con.GetInput().data());
+		con.GetInput().Clear();
 	});
-	con->Send("hello world :)");
 
+	base.RunAfter(5000, [&base]() {
+		base.Exit();
+	});
+	TimerId id = base.RunEvery(500, [&con]() {
+		con.Send("hello world :)");
+	});
+	base.RunAfter(1500, [&base, id]() {
+		base.Cancel(id);
+	});
 	base.Loop();
 	return 0;
 }

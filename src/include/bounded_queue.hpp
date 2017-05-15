@@ -24,7 +24,7 @@ class BoundedQueue : private NoCopyTemplate<T>
 
 		inline void Push(const T &);
 
-		inline T* Pop();
+		inline T Pop();
 
 		inline void Clear();
 

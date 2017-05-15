@@ -91,7 +91,6 @@ void Connection::HandleRead()
 		return ;
 	}
 	input_.AdvanceTail(read);
-	// printf("read %u\n", input_.size());
 	if (readcb_ && read)
 		readcb_();
 }
@@ -145,7 +144,6 @@ void Connection::SendOutput()
 		Close();
 		return ;
 	}
-	// printf("send %u\n", write);
 	output_.AdvanceHead(write);
 	if (output_.size()) {
 		output_.Adjust();

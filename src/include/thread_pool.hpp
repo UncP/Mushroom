@@ -36,7 +36,7 @@ class ThreadPool : private NoCopyTemplate<T>
 };
 
 template<typename T>
-ThreadPool<T>::ThreadPool(BoundedMappingQueue<T> *queue, int thread_num)
+ThreadPool<T>::ThreadPool(BoundedQueue<T> *queue, int thread_num)
 :working_(false), thread_num_(thread_num), queue_(queue)
 {
 	assert(thread_num_ > 0 && thread_num_ <= 4);
@@ -57,10 +57,10 @@ void ThreadPool<T>::Run()
 	for (;;) {
 		T task = queue_->Pop();
 
-		task();
-
 		if (!working_)
 			break;
+
+		task();
 	}
 }
 
@@ -70,9 +70,9 @@ void ThreadPool<T>::Clear()
 	if (!working_)
 		return ;
 
-	queue_->Clear();
-
 	working_ = false;
+
+	queue_->Clear();
 
 	for (int i = 0; i != thread_num_; ++i)
 		threads_[i]->Stop();

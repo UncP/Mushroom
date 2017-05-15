@@ -17,10 +17,12 @@
 namespace Mushroom {
 
 class Poller;
-template<typename T> class ThreadPool<T>;
-template<typename T> class BoundedQueue<T>;
+class Channel;
+template<typename T> class ThreadPool;
+template<typename T> class BoundedQueue;
 
 typedef std::pair<int64_t, uint32_t> TimerId;
+typedef std::pair<int64_t, int64_t>  TimeRep;
 
 class EventBase : private NoCopy
 {
@@ -44,24 +46,30 @@ class EventBase : private NoCopy
 		void Cancel(const TimerId &timer_id);
 
 	private:
+		void HandleTimeout();
+
 		void WakeUp();
 
 		void Repeat();
 
-		void Refresh(bool lock);
+		void Refresh();
 
 		bool     running_;
 		int      wake_up_[2];
+		Channel *channel_;
 		Poller  *poller_;
 
-		Atomic<int32_t> next_time_out_;
+		uint64_t pid_;
+		int      next_time_out_;
 
 		atomic_32_t seq_;
 
 		BoundedQueue<Task>     *queue_;
 		ThreadPool<Task>       *pool_;
 		Mutex                   mutex_;
-		std::map<TimerId, Task> pending_;
+
+		std::map<uint32_t, TimeRep> repeat_;
+		std::map<TimerId, Task>     pending_;
 };
 
 } // namespace Mushroom
