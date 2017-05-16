@@ -30,11 +30,17 @@ int main()
 	base.RunAfter(5000, [&base]() {
 		base.Exit();
 	});
-	TimerId id = base.RunEvery(500, [&con]() {
+	TimerId id1 = base.RunEvery(500, [&con]() {
 		con.Send("hello world :)");
 	});
-	base.RunAfter(1500, [&base, id]() {
-		base.Cancel(id);
+	TimerId id2 = base.RunEvery(700, [&con]() {
+		con.Send("hello world ;)");
+	});
+	base.RunAfter(1500, [&base, id1]() {
+		base.Cancel(id1);
+	});
+	base.RunAfter(3500, [&base, id2]() {
+		base.Cancel(id2);
 	});
 	base.Loop();
 	return 0;

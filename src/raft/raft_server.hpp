@@ -9,7 +9,6 @@
 #define _RAFT_SERVER_HPP_
 
 #include <vector>
-#include <cstdint>
 
 #include "../include/utility.hpp"
 #include "../include/mutex.hpp"
@@ -25,20 +24,17 @@ class RequestVoteArgs;
 class RequestVoteReply;
 class AppendEntryArgs;
 class AppendEntryReply;
-template<typename T> Queue<T>;
-
-typedef enum { Success = 0x0, TimeOut, Fail } ElectionStatus;
+template<typename T> class BoundedQueue;
 
 class RaftServer : public RpcServer
 {
 	public:
 		enum State { Follower = 0x0, Candidate, Leader };
 
-		static uint32_t ElectionTimeoutBase;
-		static uint32_t ElectionTimeoutLimit;
+		static uint32_t ElectionTimeout;
 		static uint32_t HeartbeatInterval;
 
-		RaftServer(int32_t id, const std::vector<RpcConnection *> &peers, Queue<Task> *queue);
+		RaftServer(int32_t id, const std::vector<RpcConnection *> &peers);
 
 		~RaftServer();
 
@@ -55,11 +51,15 @@ class RaftServer : public RpcServer
 
 		void Run();
 
-		ElectionStatus Election(const RequestVoteArgs *args);
+		void Election();
 
 		void RequestVote();
 
 		bool SendAppendEntry();
+
+		void BecomeFollower();
+
+		void BecomeCandidate();
 
 		using RpcServer::event_base_;
 
@@ -80,15 +80,12 @@ class RaftServer : public RpcServer
 
 		Mutex    mutex_;
 
-		Thread  *thread_;
-		Cond     cond_;
-
 		std::vector<RpcConnection *> peers_;
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;
 
-		Queue<Task> *queue_;
+		BoundedQueue<Task> *queue_;
 };
 
 } // namespace Mushroom

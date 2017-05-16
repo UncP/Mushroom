@@ -64,10 +64,10 @@ class EventBase : private NoCopy
 
 		atomic_32_t seq_;
 
-		BoundedQueue<Task>     *queue_;
-		ThreadPool<Task>       *pool_;
-		Mutex                   mutex_;
+		BoundedQueue<Task> *queue_;
+		ThreadPool<Task>   *pool_;
 
+		Mutex                       mutex_;
 		std::map<uint32_t, TimeRep> repeat_;
 		std::map<TimerId, Task>     pending_;
 };
