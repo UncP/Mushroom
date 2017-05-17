@@ -35,13 +35,13 @@ class Cond : private NoCopy
 			pthread_cond_broadcast(cond_);
 		}
 
-		inline void TimedWait(Mutex &mutex, int64_t millisecond) {
+		inline bool TimedWait(Mutex &mutex, int64_t millisecond) {
 			struct timeval tv;
 			gettimeofday(&tv, 0);
 			timespec abstime;
 			abstime.tv_sec  = tv.tv_sec;
 			abstime.tv_nsec = tv.tv_usec * 1000 + millisecond * 1000000;
-			pthread_cond_timedwait(cond_, mutex.mutex_, &abstime);
+			return pthread_cond_timedwait(cond_, mutex.mutex_, &abstime) == ETIMEDOUT;
 		}
 
 		~Cond() {

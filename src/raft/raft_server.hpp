@@ -19,6 +19,7 @@ namespace Mushroom {
 
 class Log;
 class Thread;
+class TimerId;
 class RpcConnection;
 class RequestVoteArgs;
 class RequestVoteReply;
@@ -61,13 +62,15 @@ class RaftServer : public RpcServer
 
 		void BecomeCandidate();
 
+		void BecomeLeader();
+
 		using RpcServer::event_base_;
 
 		int32_t  id_;
 
 		uint8_t state_;
 		bool    running_;
-		bool    in_election_;
+		bool    time_out_;
 		bool    election_time_out_;
 		bool    reset_timer_;
 
@@ -76,9 +79,14 @@ class RaftServer : public RpcServer
 		int32_t  commit_;
 		int32_t  applied_;
 
+		TimerId  *heartbeat_id_;
+
 		std::vector<Log> logs_;
 
-		Mutex    mutex_;
+		Mutex mutex_;
+
+		Cond  back_cond_;
+		Cond  election_cond_;
 
 		std::vector<RpcConnection *> peers_;
 

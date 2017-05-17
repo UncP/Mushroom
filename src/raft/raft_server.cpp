@@ -8,6 +8,7 @@
 #include <cassert>
 #include <random>
 #include <unistd.h>
+#include <cassert>
 
 #include "raft_server.hpp"
 #include "../include/bounded_queue.hpp"
@@ -21,13 +22,15 @@ uint32_t RaftServer::ElectionTimeout   = 1000;
 uint32_t RaftServer::HeartbeatInterval = 15;
 
 RaftServer::RaftServer(int32_t id, const std::vector<RpcConnection *> &peers)
-:id_(id), state_(Follower), running_(true), in_election_(false), election_time_out_(false),
+:id_(id), state_(Follower), running_(true), time_out_(false), election_time_out_(false),
 reset_timer_(false), term_(0), vote_for_(-1), commit_(-1), applied_(-1), peers_(peers)
 {
 	next_ .resize(peers_.size());
 	match_.resize(peers_.size());
 
-	queue_.
+	queue_ = new BoundedQueue<Task>(8);
+
+	heartbeat_id_ = new TimerId();
 }
 
 void RaftServer::Close()
@@ -51,11 +54,14 @@ void RaftServer::Close()
 RaftServer::~RaftServer()
 {
 	Close();
-	delete thread_;
+	delete queue_;
+	delete heartbeat_id_;
 }
 
 void RaftServer::BecomeFollower()
 {
+	if (state_ == Leader)
+		event_base_->Cancel(*heartbeat_id_);
 	state_    = Follower;
 	vote_for_ = -1;
 }
@@ -65,6 +71,16 @@ void RaftServer::BecomeCandidate()
 	++term_;
 	state_    = Candidate;
 	vote_for_ = id_;
+}
+
+void RaftServer::BecomeLeader()
+{
+	state_    = Leader;
+	vote_for_ = -1;
+	for (auto &e : next_)
+		e = commit_ + 1;
+	for (auto &e : match_)
+		e = -1;
 }
 
 void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
@@ -96,7 +112,7 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 end:
 	mutex_.Unlock();
 	if (reply->granted_)
-		cond_.Signal();
+		back_cond_.Signal();
 }
 
 void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply)
@@ -138,13 +154,18 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 end:
 	reset_timer_ = true;
 	mutex_.Unlock();
-	cond_.Signal();
+	back_cond_.Signal();
 }
 
 void RaftServer::Election()
 {
 	mutex_.Lock();
-	BecomeCandidate();
+	if (state_ == Follower) {
+		BecomeCandidate();
+	} else {
+		mutex_.Unlock()
+		return ;
+	}
 	RequestVoteArgs args(term_, id_, commit_, commit_ >= 0 ? logs_[commit_].term_ : 0);
 	mutex_.Unlock();
 
@@ -213,12 +234,16 @@ void RaftServer::Background()
 {
 	for (;;) {
 		mutex_.Lock();
-	sleep:
-		while (running_ && !reset_timer_)
-			cond_.TimedWait(mutex_, TimeUtil::GetTimeOut());
+		while (running_ && !reset_timer_ && !time_out_ && state_ != Leader)
+			time_out_ = back_cond_.TimedWait(mutex_, GetTimeOut());
 		if (!running_) {
 			mutex_.Unlock();
-			return ;
+			break;
+		}
+		time_out_ = false;
+		if (state_ == Leader) {
+			mutex_.Unlock();
+			continue;
 		}
 		if (reset_timer_) {
 			reset_timer_ = false;
@@ -226,23 +251,27 @@ void RaftServer::Background()
 			continue;
 		}
 		for (;;) {
-			state_ = Candidate;
-			++term_;
-			vote_for_ = id_;
-			RequestVoteArgs args(term_, id_, commit_, commit_ >= 0 ? logs_[commit_].term_ : 0);
 			mutex_.Unlock();
-			Election(&args);
-			if (status == TimeOut) {
-				mutex_.Lock();
+			event_base_->RunNow([this]() { Election(); })
+			mutex_.Lock();
+			while (running_ && !election_time_out_)
+				election_time_out_ = election_cond_.TimedWait(mutex_, ElectionTimeout);
+			if (!running_) {
+				mutex_.Unlock();
+				break;
+			}
+			if (state_ == Candidate && election_time_out_) {
+				election_time_out_ = false;
+				continue;
+			} else if (state_ == Candidate) {
+				BecomeLeader();
+				mutex_.Unlock();
+				event_base_->RunEvery(HeartbeatInterval, [this] {
+					SendAppendEntry();
+				});
+				break;
 			} else {
-				if (status == Success) {
-					while (SendAppendEntry())
-						TimeUtil::SleepFor(HeartbeatInterval);
-				}
-				mutex_.Lock();
-				state_    = Follower;
-				vote_for_ = -1;
-				goto sleep;
+
 			}
 		}
 	}
