@@ -18,18 +18,22 @@
 
 namespace Mushroom {
 
+uint32_t RaftServer::TimeoutBase   = 150;
+uint32_t RaftServer::TimeoutTop    = 300;
 uint32_t RaftServer::ElectionTimeout   = 1000;
 uint32_t RaftServer::HeartbeatInterval = 15;
 
 RaftServer::RaftServer(int32_t id, const std::vector<RpcConnection *> &peers)
 :id_(id), state_(Follower), running_(true), time_out_(false), election_time_out_(false),
-reset_timer_(false), term_(0), vote_for_(-1), commit_(-1), applied_(-1), peers_(peers)
+reset_timer_(false), in_election_(false), term_(0), vote_for_(-1), commit_(-1), applied_(-1),
+peers_(peers)
 {
-	next_ .resize(peers_.size());
+	next_.resize(peers_.size());
 	match_.resize(peers_.size());
 
 	queue_ = new BoundedQueue<Task>(8);
 
+	election_id_ = new TimerId();
 	heartbeat_id_ = new TimerId();
 }
 
@@ -55,13 +59,29 @@ RaftServer::~RaftServer()
 {
 	Close();
 	delete queue_;
+	delete election_id_;
 	delete heartbeat_id_;
+}
+
+int64_t RaftServer::GetTimeOut()
+{
+	static std::default_random_engine engine(time(0));
+	static std::uniform_int_distribution<int64_t> distribution(TimeoutBase, TimeoutTop);
+	return distribution(engine);
 }
 
 void RaftServer::BecomeFollower()
 {
-	if (state_ == Leader)
-		event_base_->Cancel(*heartbeat_id_);
+	if (in_election_) {
+		event_base_->Cancel(*election_id_);
+		in_election_ = false;
+		election_cond_.Signal();
+	} else {
+		if (state_ == Leader)
+			event_base_->Cancel(*heartbeat_id_);
+		reset_timer_ = true;
+		back_cond_.Signal();
+	}
 	state_    = Follower;
 	vote_for_ = -1;
 }
@@ -86,7 +106,7 @@ void RaftServer::BecomeLeader()
 void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 {
 	mutex_.Lock();
-	*reply = {term_, false};
+	reply->granted_ = false;
 	const RequestVoteArgs &arg = *args;
 	if (arg.term_ < term_)
 		goto end;
@@ -110,15 +130,14 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	reset_timer_ = true;
 
 end:
+	reply->term_ = term_;
 	mutex_.Unlock();
-	if (reply->granted_)
-		back_cond_.Signal();
 }
 
 void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply)
 {
 	mutex_.Lock();
-	*reply = {term_, -1};
+	reply->success_ = -1;
 	const AppendEntryArgs &arg = *args;
 	if (arg.term_ < term_)
 		goto end;
@@ -152,32 +171,15 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		commit_ = std::min(args->leader_commit_, int32_t(logs_.size()) - 1);
 
 end:
+	reply->term_ = term_;
 	reset_timer_ = true;
 	mutex_.Unlock();
-	back_cond_.Signal();
 }
 
 void RaftServer::Election()
 {
-	mutex_.Lock();
-	if (state_ == Follower) {
-		BecomeCandidate();
-	} else {
-		mutex_.Unlock()
-		return ;
-	}
 	RequestVoteArgs args(term_, id_, commit_, commit_ >= 0 ? logs_[commit_].term_ : 0);
 	mutex_.Unlock();
-
-	TimerId id = event_base_->RunAfter(ElectionTimeout, [this]() {
-		mutex_.Lock();
-		if (state_ == Candidate) {
-			mutex_.Unlock();
-			Election();
-		} else {
-			mutex_.Unlock();
-		}
-	});
 
 	uint32_t size = peers.size();
 	RequestVoteReply replys[size];
@@ -188,7 +190,6 @@ void RaftServer::Election()
 		});
 	}
 
-	TimeUtil::SleepFor(left);
 	uint32_t vote = 1;
 	for (uint32_t i = 0; i < size; ++i) {
 		if (futures[i]->ok()) {
@@ -202,7 +203,6 @@ void RaftServer::Election()
 	}
 	if (vote > ((size + 1) / 2))
 		return Success;
-	return TimeOut;
 }
 
 bool RaftServer::SendAppendEntry()
@@ -251,27 +251,31 @@ void RaftServer::Background()
 			continue;
 		}
 		for (;;) {
-			mutex_.Unlock();
-			event_base_->RunNow([this]() { Election(); })
+			// in_election_ = true;
+			Election();
 			mutex_.Lock();
-			while (running_ && !election_time_out_)
+			while (running_ && !election_time_out_ && state_ == Candidate)
 				election_time_out_ = election_cond_.TimedWait(mutex_, ElectionTimeout);
 			if (!running_) {
 				mutex_.Unlock();
 				break;
 			}
-			if (state_ == Candidate && election_time_out_) {
-				election_time_out_ = false;
-				continue;
-			} else if (state_ == Candidate) {
-				BecomeLeader();
-				mutex_.Unlock();
-				event_base_->RunEvery(HeartbeatInterval, [this] {
-					SendAppendEntry();
-				});
-				break;
+			if (state_ == Candidate) {
+				if (election_time_out_) {
+					election_time_out_ = false;
+					event_base_->Cancel(*election_id_);
+					continue;
+				} else {
+					BecomeLeader();
+					mutex_.Unlock();
+					*heartbeat_id_ = event_base_->RunEvery(HeartbeatInterval, [this] {
+						SendAppendEntry();
+					});
+					break;
+				}
 			} else {
-
+				assert(state_ == Follower);
+				break;
 			}
 		}
 	}

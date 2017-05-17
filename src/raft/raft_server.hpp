@@ -32,6 +32,8 @@ class RaftServer : public RpcServer
 	public:
 		enum State { Follower = 0x0, Candidate, Leader };
 
+		static uint32_t TimeoutBase;
+		static uint32_t TimeoutTop;
 		static uint32_t ElectionTimeout;
 		static uint32_t HeartbeatInterval;
 
@@ -48,6 +50,8 @@ class RaftServer : public RpcServer
 		void Print() const;
 
 	private:
+		static int64_t GetTimeOut();
+
 		using RpcServer::Register;
 
 		void Run();
@@ -73,12 +77,14 @@ class RaftServer : public RpcServer
 		bool    time_out_;
 		bool    election_time_out_;
 		bool    reset_timer_;
+		bool    in_election_;
 
 		uint32_t term_;
 		int32_t  vote_for_;
 		int32_t  commit_;
 		int32_t  applied_;
 
+		TimerId  *election_id_;
 		TimerId  *heartbeat_id_;
 
 		std::vector<Log> logs_;
