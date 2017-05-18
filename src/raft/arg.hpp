@@ -25,6 +25,8 @@ struct RequestVoteArgs
 
 struct RequestVoteReply
 {
+	RequestVoteReply() { }
+
 	RequestVoteReply(uint32_t term, uint32_t granted):term_(term), granted_(granted) { }
 	uint32_t term_;
 	uint32_t granted_;
@@ -32,6 +34,8 @@ struct RequestVoteReply
 
 struct AppendEntryArgs
 {
+	AppendEntryArgs() { }
+
 	AppendEntryArgs(uint32_t term, int32_t id, uint32_t prev_term, int32_t prev_index,
 		int32_t leader_commit):term_(term), id_(id), prev_term_(prev_term),
 	prev_index_(prev_index), leader_commit_(leader_commit) { }
@@ -45,6 +49,8 @@ struct AppendEntryArgs
 
 struct AppendEntryReply
 {
+	AppendEntryReply() { }
+
 	AppendEntryReply(uint32_t term, int32_t success):term_(term), success_(success) { }
 	uint32_t term_;
 	int32_t  success_;

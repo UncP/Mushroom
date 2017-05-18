@@ -9,10 +9,10 @@
 ### Behold, the power of Mushroom!
 
 ### Feature
-+ B<sup>link</sup> Tree Index (Prefix Compression, Two-Phase Hashing Page Manager, Thread Pool, Bounded Thread-Safe Queue, Latch Manager)
++ B<sup>link</sup> Tree Index (Prefix Compression, Two-Phase Hashing Page Manager, Thread Pool, Bounded Mapping Queue, Latch Manager)
 + TCP Communication Library
 + RPC Framework
-+ Consensus Algorithm -- Raft
++ Distributed Consensus Algorithm -- Raft
 
 ******
 
@@ -44,7 +44,7 @@
 | 0.6.4  |using posix spin lock, Optimize MushroomDB and BLinkTree structure|
 | 0.7.0  |         Log-Structured Merge Tree |
 | 0.8.0  |       TCP Communication Library & RPC Framework    |
-| 0.9.0  |       Raft--distributed consensus algorithm (in construction)   |
+| 0.9.0  |       Raft (in construction)   |
 
 ### Other
 + Version 0.6.0 is the first stable version

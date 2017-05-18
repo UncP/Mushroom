@@ -14,18 +14,18 @@
 #include "../include/mutex.hpp"
 #include "../include/cond.hpp"
 #include "../rpc/rpc_server.hpp"
+#include "../network/eventbase.hpp"
 
 namespace Mushroom {
 
 class Log;
-class Thread;
-class TimerId;
 class RpcConnection;
 class RequestVoteArgs;
 class RequestVoteReply;
 class AppendEntryArgs;
 class AppendEntryReply;
-template<typename T> class BoundedQueue;
+
+enum ElectionResult { Success, Fail, Timeout };
 
 class RaftServer : public RpcServer
 {
@@ -36,8 +36,9 @@ class RaftServer : public RpcServer
 		static uint32_t TimeoutTop;
 		static uint32_t ElectionTimeout;
 		static uint32_t HeartbeatInterval;
+		static uint32_t CommitInterval;
 
-		RaftServer(int32_t id, const std::vector<RpcConnection *> &peers);
+		RaftServer(EventBase *event_base, int32_t id, const std::vector<RpcConnection *> &peers);
 
 		~RaftServer();
 
@@ -54,19 +55,21 @@ class RaftServer : public RpcServer
 
 		using RpcServer::Register;
 
-		void Run();
+		void Background();
 
-		void Election();
+		ElectionResult Election();
 
 		void RequestVote();
 
-		bool SendAppendEntry();
+		void SendAppendEntry();
 
 		void BecomeFollower();
 
 		void BecomeCandidate();
 
 		void BecomeLeader();
+
+		void UpdateCommitIndex();
 
 		using RpcServer::event_base_;
 
@@ -75,31 +78,26 @@ class RaftServer : public RpcServer
 		uint8_t state_;
 		bool    running_;
 		bool    time_out_;
-		bool    election_time_out_;
 		bool    reset_timer_;
-		bool    in_election_;
 
 		uint32_t term_;
 		int32_t  vote_for_;
 		int32_t  commit_;
 		int32_t  applied_;
 
-		TimerId  *election_id_;
 		TimerId  *heartbeat_id_;
+		TimerId  *commit_id_;
 
 		std::vector<Log> logs_;
 
 		Mutex mutex_;
 
 		Cond  back_cond_;
-		Cond  election_cond_;
 
 		std::vector<RpcConnection *> peers_;
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;
-
-		BoundedQueue<Task> *queue_;
 };
 
 } // namespace Mushroom

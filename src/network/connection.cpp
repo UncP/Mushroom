@@ -147,6 +147,7 @@ void Connection::SendOutput()
 	output_.AdvanceHead(write);
 	if (output_.size()) {
 		output_.Adjust();
+		assert(0);
 		if (!channel_->CanWrite())
 			channel_->EnableWrite(true);
 	}

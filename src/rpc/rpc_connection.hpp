@@ -53,12 +53,8 @@ inline Future* RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
 {
 	uint32_t id  = RPC::Hash(str);
 	uint32_t rid = RpcId++;
-	Future *fu = new Future(rid);
-	fu->CallBack([this, reply, fu]() {
-		T2 tmp;
-		marshaller_ >> tmp;
-		if (!fu->timeout())
-			*reply = tmp;
+	Future *fu = new Future(rid, [this, reply]() {
+		marshaller_ >> *reply;
 	});
 	spin_.Lock();
 	futures_.insert({rid, fu});

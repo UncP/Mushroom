@@ -16,7 +16,7 @@ RpcOBJ = $(RpcFile:.cpp=.o)
 
 all: blinktree_with_queue_test blinktree_multi_thread_test
 
-raft: $(RaftOBJ) ../test/raft.cpp
+raft: $(LOBJ) $(NOBJ) $(RpcOBJ) $(RaftOBJ) ../test/raft.cpp
 	$(CPP) $(CPPFLAGS) -o raft_test $^ $(LDFLAGS)
 
 network: client_test server_test

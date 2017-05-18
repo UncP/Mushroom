@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 		base.Exit();
 		for (auto e : futures)
 			if (!e->ok())
-				e->Abandon();
+				e->Cancel();
 	});
 
 	for (auto e : futures)

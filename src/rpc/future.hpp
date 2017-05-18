@@ -8,42 +8,84 @@
 #ifndef _FUTURE_HPP_
 #define _FUTURE_HPP_
 
+#include <vector>
+
 #include "../include/utility.hpp"
-#include "../include/atomic.hpp"
+#include "../include/mutex.hpp"
+#include "../include/cond.hpp"
 
 namespace Mushroom {
 
 class Future : private NoCopy
 {
 	public:
-		enum Status { Pending = 0x0, Ok = 0x1, TimeOut = 0x2, Bad = 0x3 };
+		enum Status { Pending = 0x0, Ok = 0x1, TimeOut = 0x2 };
 
-		Future(uint32_t id):id_(id), status_(Pending), time_out_(0) { }
+		Future(uint32_t id, const Func &callback):id_(id), status_(Pending), callback_(callback) { }
 
 		uint32_t id() const { return id_; }
 
 		inline void Wait() {
-			while (status_.get() == Pending && !time_out_.get())
-				sched_yield();
-			if (time_out_.get())
-				status_ = TimeOut;
+			mutex_.Lock();
+			while (status_ == Pending)
+				cond_.Wait(mutex_);
+			mutex_.Unlock();
 		}
 
-		inline bool ok() { return status_.get() == Ok; }
+		inline bool ok() {
+			mutex_.Lock();
+			bool ret = (status_ == Ok);
+			mutex_.Unlock();
+			return ret;
+		}
 
-		inline bool timeout() { return time_out_.get(); }
+		inline void Notify() {
+			callback_();
+			mutex_.Lock();
+			status_ = Ok;
+			mutex_.Unlock();
+			cond_.Signal();
+		}
 
-		inline void Notify() { callback_(); status_ = Ok; }
-
-		inline void Abandon() { time_out_ = 1; }
-
-		inline void CallBack(const Func &callback) { callback_ = callback; }
+		inline void Cancel() {
+			mutex_.Lock();
+			if (status_ == Pending)
+				status_ = TimeOut;
+			mutex_.Unlock();
+			cond_.Signal();
+		}
 
 	private:
-		uint32_t   id_;
-		atomic_8_t status_;
-		atomic_8_t time_out_;
-		Func       callback_;
+		uint32_t  id_;
+		uint8_t   status_;
+		Cond      cond_;
+		Mutex     mutex_;
+		Func      callback_;
+};
+
+class FutureGroup : private NoCopy
+{
+	public:
+		FutureGroup(int size) { futures_.reserve(size); }
+
+		inline void Add(Future *future) { futures_.push_back(future); }
+
+		inline void Wait() {
+			for (auto e : futures_)
+				e->Wait();
+		}
+
+		inline void Cancel() {
+			for (auto e : futures_)
+				e->Cancel();
+		}
+
+		inline Future* operator[](uint32_t i) {
+			return futures_[i];
+		}
+
+	private:
+		std::vector<Future *> futures_;
 };
 
 } // namespace Mushroom
