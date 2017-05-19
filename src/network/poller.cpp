@@ -52,7 +52,7 @@ void Poller::RemoveChannel(Channel *channel)
 	event.events = channel->events();
 	event.data.ptr = channel;
 	FatalIf(epoll_ctl(fd_, EPOLL_CTL_DEL, channel->fd(), &event),
-		"epoll remove event failed, %s :(", strerror(errno));
+		"epoll remove event failed, %s fd: %d :(", channel->fd(), strerror(errno));
 }
 
 void Poller::LoopOnce(int ms)

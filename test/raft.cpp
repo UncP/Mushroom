@@ -45,11 +45,9 @@ class RaftTest
 
 		static void FreeRaftSet() {
 			for (auto e : rafts)
-				delete e;
+				e->Close();
 			rafts.clear();
-			if (base) {
-				base->Exit();
-			}
+			base->Exit();
 		}
 
 		static void CheckOneLeader(uint32_t *number, int32_t *id) {
@@ -81,30 +79,27 @@ class RaftTest
 
 TEST(ElectionWithNoNetworkFaliure)
 {
-	RaftTest::MakeRaftSet(3);
+	RaftTest::MakeRaftSet(5);
 	for (auto e : rafts)
 		e->Start();
 	uint32_t number;
 	int32_t  id = -1;
 	Thread thread([&]() {
 		base->Loop();
-		delete base;
-		base = 0;
 	});
 	thread.Start();
-	RaftTest::WaitForElection(0.5);
+	RaftTest::WaitForElection(1);
 	RaftTest::CheckOneLeader(&number, &id);
 	RaftTest::FreeRaftSet();
 	thread.Stop();
+	for (auto e : rafts)
+		delete e;
+	delete base;
 	ASSERT_TRUE(number == 1);
 	rafts[id]->Status();
 }
 
 int main()
 {
-	Signal::Register(SIGINT, [&]() {
-		printf("signal captured ;)\n");
-		RaftTest::FreeRaftSet();
-	});
 	return RUN_ALL_TESTS();
 }

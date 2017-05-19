@@ -11,7 +11,6 @@
 #include <map>
 
 #include "raft_server.hpp"
-#include "../include/guard.hpp"
 #include "../rpc/future.hpp"
 #include "../rpc/rpc_connection.hpp"
 #include "log.hpp"
@@ -67,21 +66,23 @@ void RaftServer::Close()
 	if (state_ == Follower) {
 		back_cond_.Signal();
 	} else if (state_ == Leader) {
-		// event_base_->Cancel(commit_id_);
+		event_base_->Cancel(commit_id_);
 		heartbeat_cond_.Signal();
 	}
 
-	for (auto e : peers_)
-		e->Close();
-
 	mutex_.Unlock();
 	back_thread_->Stop();
+
+	for (auto e : peers_)
+		e->Close();
 }
 
 bool RaftServer::IsLeader()
 {
-	Guard guard(mutex_);
-	return state_ == Leader;
+	mutex_.Lock();
+	bool ret = (state_ == Leader);
+	mutex_.Unlock();
+	return ret;
 }
 
 int32_t RaftServer::Id()
@@ -91,16 +92,19 @@ int32_t RaftServer::Id()
 
 uint32_t RaftServer::Term()
 {
-	Guard guard(mutex_);
-	return term_;
+	mutex_.Lock();
+	uint32_t ret = term_;
+	mutex_.Unlock();
+	return ret;
 }
 
 void RaftServer::AddPeer(RpcConnection *peer)
 {
-	Guard guard(mutex_);
+	mutex_.Lock();
 	peers_.push_back(peer);
 	next_.push_back(0);
 	match_.push_back(0);
+	mutex_.Unlock();
 }
 
 int64_t RaftServer::GetTimeOut()
@@ -114,7 +118,7 @@ void RaftServer::BecomeFollower()
 {
 	Info("%d becoming follower, term %u", id_, term_);
 	if (state_ == Leader) {
-		// event_base_->Cancel(commit_id_);
+		event_base_->Cancel(commit_id_);
 		heartbeat_cond_.Signal();
 	}
 	state_    = Follower;
@@ -138,9 +142,9 @@ void RaftServer::BecomeLeader()
 		e = commit_ + 1;
 	for (auto &e : match_)
 		e = -1;
-	// commit_id_ = event_base_->RunEvery(CommitInterval, [this]() {
-	// 	UpdateCommitIndex();
-	// });
+	commit_id_ = event_base_->RunEvery(CommitInterval, [this]() {
+		UpdateCommitIndex();
+	});
 }
 
 void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
@@ -223,9 +227,8 @@ ElectionResult RaftServer::Election()
 {
 	BecomeCandidate();
 	RequestVoteArgs args(term_, id_, commit_, commit_ >= 0 ? logs_[commit_].term_ : 0);
-	Info("election: term %u id %d commit %d term %u", args.term_, args.id_, args.last_index_,
+	Info("election: term %u id %d commit %d last %u", args.term_, args.id_, args.last_index_,
 		args.last_term_);
-	mutex_.Unlock();
 
 	uint32_t size = peers_.size();
 	RequestVoteReply replys[size];
@@ -235,6 +238,7 @@ ElectionResult RaftServer::Election()
 	});
 	for (uint32_t i = 0; i < size; ++i)
 		futures.Add(peers_[i]->Call("RaftServer::Vote", &args, &replys[i]));
+	mutex_.Unlock();
 
 	futures.Wait();
 	event_base_->Cancel(id);
@@ -243,13 +247,17 @@ ElectionResult RaftServer::Election()
 		mutex_.Unlock();
 		return Fail;
 	}
-	uint32_t vote = 1;
+	uint32_t vote = 1, timeout = 0;
 	for (uint32_t i = 0; i < size; ++i) {
-		if (!futures[i]->ok()) continue;
+		if (!futures[i]->ok()) {
+			++timeout;
+			continue;
+		}
 		if (replys[i].granted_) {
 			++vote;
 		} else if (term_ < replys[i].term_) {
 			BecomeFollower();
+			reset_timer_ = false;
 			term_ = replys[i].term_;
 			mutex_.Unlock();
 			return Fail;
@@ -260,8 +268,14 @@ ElectionResult RaftServer::Election()
 		mutex_.Unlock();
 		return Success;
 	}
+	if (timeout) {
+		mutex_.Unlock();
+		return Timeout;
+	}
+	BecomeFollower();
+	reset_timer_ = false;
 	mutex_.Unlock();
-	return Timeout;
+	return Fail;
 }
 
 void RaftServer::UpdateCommitIndex()
@@ -322,6 +336,7 @@ void RaftServer::SendAppendEntry()
 		if (!futures[i]->ok()) continue;
 		if (term_ < replys[i].term_) {
 			BecomeFollower();
+			reset_timer_ = false;
 			term_ = replys[i].term_;
 			mutex_.Unlock();
 			return ;
@@ -346,7 +361,7 @@ void RaftServer::Background()
 			time_out_ = back_cond_.TimedWait(mutex_, GetTimeOut());
 		if (!running_) {
 			mutex_.Unlock();
-			return;
+			return ;
 		}
 		time_out_ = false;
 		if (reset_timer_) {
@@ -379,10 +394,11 @@ void RaftServer::Background()
 
 void RaftServer::Status()
 {
-	Guard guard(mutex_);
+	mutex_.Lock();
 	Info("id: %d  state: %s  term: %u  commit: %d", id_,
 		(state_ != Follower) ? (state_ == Leader ? "Leader" : "Candidate") : "Follower",
 		term_, commit_);
+	mutex_.Unlock();
 }
 
 } // namespace Mushroom
