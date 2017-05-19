@@ -31,7 +31,7 @@ class Socket
 
 		bool Connect(const EndPoint &end_point);
 
-		bool Bind();
+		bool Bind(uint16_t port);
 
 		bool Listen();
 

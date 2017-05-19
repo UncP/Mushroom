@@ -32,7 +32,7 @@ queue_(new BoundedQueue<Task>(queue_size)), pool_(new ThreadPool<Task>(queue_, t
 		char buf;
 		ssize_t r = read(channel_->fd(), &buf, sizeof(buf));
 		if (r == sizeof(buf)) {
-			Info("wake up");
+			// Info("wake up");
 		} else {
 			Fatal("pipe read error, %s :(", strerror(errno));
 		}

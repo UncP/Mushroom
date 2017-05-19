@@ -40,7 +40,6 @@ RpcConnection::~RpcConnection()
 {
 	for (auto e : futures_)
 		delete e.second;
-	assert(futures_.size() == RpcId.get());
 }
 
 Marshaller& RpcConnection::GetMarshaller()

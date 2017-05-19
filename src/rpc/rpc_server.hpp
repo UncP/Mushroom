@@ -23,11 +23,13 @@ class EventBase;
 class RpcServer : public Server
 {
 	public:
-		RpcServer(EventBase *event_base);
+		RpcServer(EventBase *event_base, uint16_t port);
 
 		virtual ~RpcServer();
 
 		void Start();
+
+		void Close();
 
 		template<typename T1, typename T2, typename T3>
 		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));

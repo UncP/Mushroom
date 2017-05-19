@@ -16,8 +16,8 @@ using namespace Mushroom;
 
 int main()
 {
-	EventBase base;
-	Connection con(EndPoint("127.0.0.1"), base.GetPoller());
+	EventBase base(1, 8);
+	Connection con(EndPoint(8000, "127.0.0.1"), base.GetPoller());
 	Signal::Register(SIGINT, [&base]() { base.Exit(); });
 
 	ExitIf(!con.Success(), "");

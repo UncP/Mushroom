@@ -15,6 +15,7 @@ namespace Mushroom {
 
 struct RequestVoteArgs
 {
+	RequestVoteArgs() { }
 	RequestVoteArgs(uint32_t term, uint32_t id, uint32_t last_index, uint32_t last_term)
 	:term_(term), id_(id), last_index_(last_index), last_term_(last_term) { }
 	uint32_t  term_;

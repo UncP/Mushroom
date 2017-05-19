@@ -27,7 +27,7 @@ typedef std::pair<int64_t, int64_t>  TimeRep;
 class EventBase : private NoCopy
 {
 	public:
-		EventBase(int thread_num = 1, int queue_size = 16);
+		EventBase(int thread_num, int queue_size);
 
 		~EventBase();
 

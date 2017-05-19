@@ -5,17 +5,18 @@
  *    > Created Time:  2017-04-22 21:21:08
 **/
 
-#include <cassert>
-#include <random>
 #include <unistd.h>
+#include <random>
 #include <cassert>
 #include <map>
 
 #include "raft_server.hpp"
+#include "../include/guard.hpp"
 #include "../rpc/future.hpp"
 #include "../rpc/rpc_connection.hpp"
 #include "log.hpp"
 #include "arg.hpp"
+#include "../include/thread.hpp"
 
 namespace Mushroom {
 
@@ -25,18 +26,30 @@ uint32_t RaftServer::ElectionTimeout   = 1000;
 uint32_t RaftServer::HeartbeatInterval = 15;
 uint32_t RaftServer::CommitInterval = 150;
 
-RaftServer::RaftServer(EventBase *event_base, int32_t id,
-	const std::vector<RpcConnection *> &peers)
-:RpcServer(event_base), id_(id), state_(Follower), running_(true), time_out_(false),
-reset_timer_(false), term_(0), vote_for_(-1), commit_(-1), applied_(-1), peers_(peers)
+RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
+:RpcServer(event_base, port), id_(id), state_(Follower), running_(false), time_out_(false),
+reset_timer_(false), term_(0), vote_for_(-1), commit_(-1), applied_(-1), back_thread_(0)
 {
-	next_.resize(peers_.size());
-	match_.resize(peers_.size());
+	RpcServer::Start();
+	Register("RaftServer::Vote", this, &RaftServer::Vote);
+	Register("RaftServer::AppendEntry", this, &RaftServer::AppendEntry);
 }
 
 RaftServer::~RaftServer()
 {
 	Close();
+	for (auto e : peers_)
+		delete e;
+	delete back_thread_;
+}
+
+void RaftServer::Start()
+{
+	running_ = true;
+	back_thread_ = new Thread([this]() {
+		Background();
+	});
+	back_thread_->Start();
 }
 
 void RaftServer::Close()
@@ -47,11 +60,47 @@ void RaftServer::Close()
 		return ;
 	}
 
+	RpcServer::Close();
+
 	running_ = false;
-	BecomeFollower();
+
+	if (state_ == Follower) {
+		back_cond_.Signal();
+	} else if (state_ == Leader) {
+		// event_base_->Cancel(commit_id_);
+		heartbeat_cond_.Signal();
+	}
 
 	for (auto e : peers_)
 		e->Close();
+
+	mutex_.Unlock();
+	back_thread_->Stop();
+}
+
+bool RaftServer::IsLeader()
+{
+	Guard guard(mutex_);
+	return state_ == Leader;
+}
+
+int32_t RaftServer::Id()
+{
+	return id_;
+}
+
+uint32_t RaftServer::Term()
+{
+	Guard guard(mutex_);
+	return term_;
+}
+
+void RaftServer::AddPeer(RpcConnection *peer)
+{
+	Guard guard(mutex_);
+	peers_.push_back(peer);
+	next_.push_back(0);
+	match_.push_back(0);
 }
 
 int64_t RaftServer::GetTimeOut()
@@ -63,8 +112,9 @@ int64_t RaftServer::GetTimeOut()
 
 void RaftServer::BecomeFollower()
 {
+	Info("%d becoming follower, term %u", id_, term_);
 	if (state_ == Leader) {
-		event_base_->Cancel(commit_id_);
+		// event_base_->Cancel(commit_id_);
 		heartbeat_cond_.Signal();
 	}
 	state_    = Follower;
@@ -82,15 +132,15 @@ void RaftServer::BecomeCandidate()
 
 void RaftServer::BecomeLeader()
 {
+	Info("%d becoming leader, term %u", id_, term_);
 	state_    = Leader;
-	vote_for_ = -1;
 	for (auto &e : next_)
 		e = commit_ + 1;
 	for (auto &e : match_)
 		e = -1;
-	commit_id_ = event_base_->RunEvery(CommitInterval, [this]() {
-		UpdateCommitIndex();
-	});
+	// commit_id_ = event_base_->RunEvery(CommitInterval, [this]() {
+	// 	UpdateCommitIndex();
+	// });
 }
 
 void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
@@ -111,6 +161,8 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 		goto end;
 	if (commit_ >= 0 && arg.last_term_ != logs_[commit_].term_)
 		goto end;
+
+	Info("%d vote for %d", id_, arg.id_);
 
 	reply->granted_ = true;
 
@@ -159,8 +211,8 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
 	reply->success_ = arg.entries_.end() - (arg.entries_.begin() + prev_j);
 
-	if (args->leader_commit_ > commit_)
-		commit_ = std::min(args->leader_commit_, int32_t(logs_.size()) - 1);
+	if (arg.leader_commit_ > commit_)
+		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
 
 end:
 	reply->term_ = term_;
@@ -171,6 +223,8 @@ ElectionResult RaftServer::Election()
 {
 	BecomeCandidate();
 	RequestVoteArgs args(term_, id_, commit_, commit_ >= 0 ? logs_[commit_].term_ : 0);
+	Info("election: term %u id %d commit %d term %u", args.term_, args.id_, args.last_index_,
+		args.last_term_);
 	mutex_.Unlock();
 
 	uint32_t size = peers_.size();
@@ -321,6 +375,14 @@ void RaftServer::Background()
 			}
 		}
 	}
+}
+
+void RaftServer::Status()
+{
+	Guard guard(mutex_);
+	Info("id: %d  state: %s  term: %u  commit: %d", id_,
+		(state_ != Follower) ? (state_ == Leader ? "Leader" : "Candidate") : "Follower",
+		term_, commit_);
 }
 
 } // namespace Mushroom

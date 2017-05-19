@@ -14,9 +14,9 @@ using namespace Mushroom;
 
 int main()
 {
-	EventBase base;
+	EventBase base(1, 8);
 	Signal::Register(SIGINT, [&] { base.Exit(); });
-	Server server(&base);
+	Server server(&base, 8000);
 	server.Start();
 	server.OnConnect([](Connection *con) {
 		con->OnRead([con]() {

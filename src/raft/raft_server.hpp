@@ -19,6 +19,7 @@
 namespace Mushroom {
 
 class Log;
+class Thread;
 class RpcConnection;
 class RequestVoteArgs;
 class RequestVoteReply;
@@ -38,9 +39,15 @@ class RaftServer : public RpcServer
 		static uint32_t HeartbeatInterval;
 		static uint32_t CommitInterval;
 
-		RaftServer(EventBase *event_base, int32_t id, const std::vector<RpcConnection *> &peers);
+		RaftServer(EventBase *event_base, uint16_t port, int32_t id);
 
 		~RaftServer();
+
+		bool IsLeader();
+
+		int32_t Id();
+
+		uint32_t Term();
 
 		void Vote(const RequestVoteArgs *args, RequestVoteReply *reply);
 
@@ -48,12 +55,14 @@ class RaftServer : public RpcServer
 
 		void Close();
 
-		void Print() const;
+		void AddPeer(RpcConnection *peer);
+
+		void Start();
+
+		void Status();
 
 	private:
 		static int64_t GetTimeOut();
-
-		using RpcServer::Register;
 
 		void Background();
 
@@ -71,6 +80,7 @@ class RaftServer : public RpcServer
 
 		void UpdateCommitIndex();
 
+		using RpcServer::Register;
 		using RpcServer::event_base_;
 
 		int32_t  id_;
@@ -98,6 +108,8 @@ class RaftServer : public RpcServer
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;
+
+		Thread *back_thread_;
 };
 
 } // namespace Mushroom

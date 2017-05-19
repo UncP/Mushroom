@@ -12,7 +12,7 @@
 
 namespace Mushroom {
 
-RpcServer::RpcServer(EventBase *event_base):Server(event_base) { }
+RpcServer::RpcServer(EventBase *event_base, uint16_t port):Server(event_base, port) { }
 
 RpcServer::~RpcServer()
 {
@@ -24,6 +24,11 @@ void RpcServer::Start()
 {
 	Server::Start();
 	listen_->OnRead([this]() { HandleAccept(); });
+}
+
+void RpcServer::Close()
+{
+	Server::Close();
 }
 
 void RpcServer::HandleAccept()

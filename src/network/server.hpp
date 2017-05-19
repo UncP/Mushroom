@@ -22,15 +22,18 @@ class EventBase;
 class Server : private NoCopy
 {
 	public:
-		Server(EventBase *event_base);
+		Server(EventBase *event_base, uint16_t port);
 
 		virtual ~Server();
 
-		virtual void Start();
+		void Start();
+
+		void Close();
 
 		void OnConnect(const ConnectCallBack &connectcb);
 
 	protected:
+		uint16_t   port_;
 		EventBase *event_base_;
 		Socket     socket_;
 		Channel   *listen_;

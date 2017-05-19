@@ -56,17 +56,17 @@ bool Socket::Connect(const EndPoint &end_point)
 	struct sockaddr_in server;
 	memset(&server, 0, sizeof(server));
 	server.sin_family      = AF_INET;
-	server.sin_port        = htons(8000);
+	server.sin_port        = htons(end_point.Port());
 	server.sin_addr.s_addr = end_point.Address();
 	return !connect(fd_, (const struct sockaddr *)&server, sizeof(server));
 }
 
-bool Socket::Bind()
+bool Socket::Bind(uint16_t port)
 {
 	struct sockaddr_in server;
 	memset(&server, 0, sizeof(server));
 	server.sin_family      = AF_INET;
-	server.sin_port        = htons(8000);
+	server.sin_port        = htons(port);
 	server.sin_addr.s_addr = htonl(INADDR_ANY);
 	return !bind(fd_, (const struct sockaddr *)&server, sizeof(server));
 }
@@ -108,7 +108,7 @@ bool Socket::GetPeerName(EndPoint *endpoint)
 	memset(&addr, 0, sizeof(addr));
 	socklen_t len = sizeof(addr);
 	if (!getsockname(fd_, (struct sockaddr *)&addr, &len)) {
-		*endpoint = EndPoint(addr.sin_addr.s_addr);
+		*endpoint = EndPoint(ntohs(addr.sin_port), addr.sin_addr.s_addr);
 		return true;
 	}
 	return false;
@@ -120,7 +120,7 @@ bool Socket::GetSockName(EndPoint *endpoint)
 	memset(&addr, 0, sizeof(addr));
 	socklen_t len = sizeof(addr);
 	if (!getpeername(fd_, (struct sockaddr *)&addr, &len)) {
-		*endpoint = EndPoint(addr.sin_addr.s_addr);
+		*endpoint = EndPoint(ntohs(addr.sin_port), addr.sin_addr.s_addr);
 		return true;
 	}
 	return false;

@@ -17,19 +17,20 @@ class EndPoint
 	public:
 		static const uint32_t MaxLen = 16;
 
-		EndPoint();
+		EndPoint(uint16_t port, uint32_t address);
 
-		EndPoint(uint32_t address);
-
-		EndPoint(const char *str);
+		EndPoint(uint16_t port, const char *str);
 
 		~EndPoint();
+
+		uint16_t Port() const;
 
 		uint32_t Address() const;
 
 		std::string ToString() const;
 
 	private:
+		uint16_t port_;
 		uint32_t address_;
 };
 
