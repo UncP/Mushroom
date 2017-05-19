@@ -85,14 +85,14 @@ class RaftServer : public RpcServer
 		int32_t  commit_;
 		int32_t  applied_;
 
-		TimerId  *heartbeat_id_;
-		TimerId  *commit_id_;
+		TimerId  commit_id_;
 
 		std::vector<Log> logs_;
 
 		Mutex mutex_;
 
 		Cond  back_cond_;
+		Cond  heartbeat_cond_;
 
 		std::vector<RpcConnection *> peers_;
 

@@ -40,7 +40,12 @@ class Cond : private NoCopy
 			gettimeofday(&tv, 0);
 			timespec abstime;
 			abstime.tv_sec  = tv.tv_sec;
-			abstime.tv_nsec = tv.tv_usec * 1000 + millisecond * 1000000;
+			int64_t nsec = int64_t(tv.tv_usec) * 1000 + millisecond * 1000000;
+			if (nsec >= 1000000000) {
+				++abstime.tv_sec;
+				nsec -= 1000000000;
+			}
+			abstime.tv_nsec = nsec;
 			return pthread_cond_timedwait(cond_, mutex.mutex_, &abstime) == ETIMEDOUT;
 		}
 

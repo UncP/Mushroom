@@ -32,9 +32,11 @@ reset_timer_(false), term_(0), vote_for_(-1), commit_(-1), applied_(-1), peers_(
 {
 	next_.resize(peers_.size());
 	match_.resize(peers_.size());
+}
 
-	heartbeat_id_ = new TimerId();
-	commit_id_ = new TimerId();
+RaftServer::~RaftServer()
+{
+	Close();
 }
 
 void RaftServer::Close()
@@ -46,18 +48,10 @@ void RaftServer::Close()
 	}
 
 	running_ = false;
-	back_cond_.Signal();
-	mutex_.Unlock();
+	BecomeFollower();
 
 	for (auto e : peers_)
 		e->Close();
-}
-
-RaftServer::~RaftServer()
-{
-	Close();
-	delete heartbeat_id_;
-	delete commit_id_;
 }
 
 int64_t RaftServer::GetTimeOut()
@@ -70,8 +64,8 @@ int64_t RaftServer::GetTimeOut()
 void RaftServer::BecomeFollower()
 {
 	if (state_ == Leader) {
-		event_base_->Cancel(*heartbeat_id_);
-		event_base_->Cancel(*commit_id_);
+		event_base_->Cancel(commit_id_);
+		heartbeat_cond_.Signal();
 	}
 	state_    = Follower;
 	vote_for_ = -1;
@@ -94,10 +88,7 @@ void RaftServer::BecomeLeader()
 		e = commit_ + 1;
 	for (auto &e : match_)
 		e = -1;
-	*heartbeat_id_ = event_base_->RunEvery(HeartbeatInterval, [this]() {
-		SendAppendEntry();
-	});
-	*commit_id_ = event_base_->RunEvery(CommitInterval, [this]() {
+	commit_id_ = event_base_->RunEvery(CommitInterval, [this]() {
 		UpdateCommitIndex();
 	});
 }
@@ -110,10 +101,9 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	if (arg.term_ < term_)
 		goto end;
 
-	if (arg.term_ > term_) {
+	if (arg.term_ > term_ && state_ != Follower)
 		BecomeFollower();
-		term_ = arg.term_;
-	}
+	term_ = arg.term_;
 
 	if (vote_for_ != -1 && vote_for_ != arg.id_)
 		goto end;
@@ -141,30 +131,31 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	int32_t  prev_i = arg.prev_index_;
 	uint32_t prev_t = arg.prev_term_;
 	uint32_t prev_j = 0;
+
+	reset_timer_ = true;
+	back_cond_.Signal();
+
 	if (arg.term_ < term_)
 		goto end;
 
-	if (arg.term_ >= term_) {
+	if (arg.term_ > term_ && state_ != Follower)
 		BecomeFollower();
-		term_ = arg.term_;
-	}
+	term_ = arg.term_;
 
 	if (prev_i >= int32_t(logs_.size()))
 		goto end;
 	if (prev_i >= 0 && logs_[prev_i].term_ != prev_t)
 		goto end;
 
-	if (arg.entries_.empty() && ++prev_i < int32_t(logs_.size()))
+	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty())
 		logs_.erase(logs_.begin() + prev_i, logs_.end());
-	if (prev_i >= 0) {
-		for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
-			if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
-				logs_.erase(logs_.begin() + prev_i, logs_.end());
-				break;
-			}
+	for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
+		if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
+			logs_.erase(logs_.begin() + prev_i, logs_.end());
+			break;
 		}
 	}
-	assert(prev_i == -1 || prev_i == int32_t(logs_.size()));
+	assert(prev_i == int32_t(logs_.size()));
 	logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
 	reply->success_ = arg.entries_.end() - (arg.entries_.begin() + prev_j);
 
@@ -173,7 +164,6 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 
 end:
 	reply->term_ = term_;
-	reset_timer_ = true;
 	mutex_.Unlock();
 }
 
@@ -206,6 +196,7 @@ ElectionResult RaftServer::Election()
 			++vote;
 		} else if (term_ < replys[i].term_) {
 			BecomeFollower();
+			term_ = replys[i].term_;
 			mutex_.Unlock();
 			return Fail;
 		}
@@ -215,7 +206,8 @@ ElectionResult RaftServer::Election()
 		mutex_.Unlock();
 		return Success;
 	}
-	assert(0);
+	mutex_.Unlock();
+	return Timeout;
 }
 
 void RaftServer::UpdateCommitIndex()
@@ -234,8 +226,8 @@ void RaftServer::UpdateCommitIndex()
 			++map[e];
 	}
 	for (auto &e : map)
-		if (term_ == logs_[e.first].term_ && e.first > commit_
-			&& e.second > ((peers_.size() + 1) / 2)) {
+		if (e.second > ((peers_.size() + 1) / 2) && term_ == logs_[e.first].term_
+			&& e.first > commit_) {
 			commit_ = e.first;
 			break;
 		}
@@ -248,15 +240,14 @@ void RaftServer::SendAppendEntry()
 	AppendEntryArgs args[size];
 	AppendEntryReply replys[size];
 	FutureGroup futures(size);
-	TimerId id = event_base_->RunAfter(150, [&futures]() {
-		futures.Cancel();
-	});
 	mutex_.Lock();
 	if (state_ != Leader) {
-		event_base_->Cancel(id);
 		mutex_.Unlock();
 		return ;
 	}
+	TimerId id = event_base_->RunAfter(150, [&futures]() {
+		futures.Cancel();
+	});
 	for (size_t i = 0; i < peers_.size(); ++i) {
 		int32_t prev = next_[i] - 1;
 		args[i] = {term_, id_, prev >= 0 ? logs_[prev].term_ : 0, prev, commit_};
@@ -269,7 +260,7 @@ void RaftServer::SendAppendEntry()
 	futures.Wait();
 	event_base_->Cancel(id);
 	mutex_.Lock();
-	if (state_ != Leader) {
+	if (!running_ || state_ != Leader) {
 		mutex_.Unlock();
 		return ;
 	}
@@ -277,6 +268,7 @@ void RaftServer::SendAppendEntry()
 		if (!futures[i]->ok()) continue;
 		if (term_ < replys[i].term_) {
 			BecomeFollower();
+			term_ = replys[i].term_;
 			mutex_.Unlock();
 			return ;
 		} else if (term_ == replys[i].term_) {
@@ -296,26 +288,34 @@ void RaftServer::Background()
 {
 	for (;;) {
 		mutex_.Lock();
-		while (running_ && !reset_timer_ && !time_out_ && state_ != Leader)
+		while (running_ && !reset_timer_ && !time_out_)
 			time_out_ = back_cond_.TimedWait(mutex_, GetTimeOut());
 		if (!running_) {
 			mutex_.Unlock();
-			break;
+			return;
 		}
 		time_out_ = false;
-		if (state_ == Leader) {
-			mutex_.Unlock();
-			continue;
-		}
 		if (reset_timer_) {
 			reset_timer_ = false;
 			mutex_.Unlock();
 			continue;
 		}
-		for (;;) {
-			ElectionResult r = Election();
-			if (r == Timeout) {
-				mutex_.Lock();
+		ElectionResult r;
+		for (; (r = Election()) == Timeout;)
+			mutex_.Lock();
+		for (; r == Success;) {
+			bool time_out = false;
+			mutex_.Lock();
+			while (running_ && state_ == Leader && !time_out)
+				time_out = heartbeat_cond_.TimedWait(mutex_, HeartbeatInterval);
+			if (!running_) {
+				mutex_.Unlock();
+				return ;
+			}
+			mutex_.Unlock();
+			if (time_out) {
+				time_out = false;
+				event_base_->RunNow([this]() { SendAppendEntry(); });
 			} else {
 				break;
 			}
