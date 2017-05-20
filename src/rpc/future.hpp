@@ -42,7 +42,8 @@ class Future : private NoCopy
 		inline void Notify() {
 			callback_();
 			mutex_.Lock();
-			status_ = Ok;
+			if (status_ == Pending)
+				status_ = Ok;
 			mutex_.Unlock();
 			cond_.Signal();
 		}

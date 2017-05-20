@@ -18,36 +18,41 @@ using namespace Mushroom;
 
 static EventBase *base;
 static vector<RaftServer *> rafts;
+static Thread *loop;
 
 class RaftTest
 {
 	public:
 		RaftTest() { }
 
-		static void MakeRaftSet(int number) {
-			if (rafts.size())
-				FreeRaftSet();
+		static void MakeRaftSet(int number, float error_rate = 0.f) {
 			base = new EventBase(4, 16);
-			rafts.reserve(number);
 			uint16_t port = 7000;
+			rafts.clear();
 			for (int i = 0; i < number; ++i)
 				rafts.push_back(new RaftServer(base, port + i, i));
 			for (int i = 0; i < number; ++i) {
 				for (int j = 0; j < number; ++j) {
 					if (i != j) {
 						RpcConnection *con = new RpcConnection(EndPoint(port + j, "127.0.0.1"),
-							base->GetPoller());
+							base->GetPoller(), error_rate);
 						rafts[i]->AddPeer(con);
 					}
 				}
 			}
+			loop = new Thread([&]() { base->Loop(); });
+			loop->Start();
+			for (auto e : rafts)
+				e->Start();
 		}
 
 		static void FreeRaftSet() {
-			for (auto e : rafts)
-				e->Close();
-			rafts.clear();
 			base->Exit();
+			loop->Stop();
+			for (auto e : rafts)
+				delete e;
+			delete base;
+			delete loop;
 		}
 
 		static void CheckOneLeader(uint32_t *number, int32_t *id) {
@@ -77,29 +82,32 @@ class RaftTest
 		}
 };
 
-TEST(ElectionWithNoNetworkFaliure)
+// TEST(ElectionWithNoNetworkFaliure)
+// {
+// 	RaftTest::MakeRaftSet(5);
+// 	uint32_t number;
+// 	int32_t  id = -1;
+// 	RaftTest::WaitForElection(1);
+// 	RaftTest::CheckOneLeader(&number, &id);
+// 	RaftTest::FreeRaftSet();
+// 	ASSERT_TRUE(number == 1);
+// 	rafts[id]->Status();
+// }
+
+TEST(ElectionWithNetworkFaliure)
 {
-	RaftTest::MakeRaftSet(5);
-	for (auto e : rafts)
-		e->Start();
+	RaftTest::MakeRaftSet(5, 0.5);
 	uint32_t number;
 	int32_t  id = -1;
-	Thread thread([&]() {
-		base->Loop();
-	});
-	thread.Start();
-	RaftTest::WaitForElection(1);
+	RaftTest::WaitForElection(2);
 	RaftTest::CheckOneLeader(&number, &id);
 	RaftTest::FreeRaftSet();
-	thread.Stop();
-	for (auto e : rafts)
-		delete e;
-	delete base;
 	ASSERT_TRUE(number == 1);
 	rafts[id]->Status();
 }
 
 int main()
 {
+	Signal::Register(SIGINT, []() { RaftTest::FreeRaftSet(); });
 	return RUN_ALL_TESTS();
 }

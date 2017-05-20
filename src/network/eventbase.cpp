@@ -65,11 +65,13 @@ void EventBase::Loop()
 
 void EventBase::Exit()
 {
-	if (running_) {
-		running_ = false;
-		WakeUp();
-	}
 	mutex_.Lock();
+	if (!running_) {
+		mutex_.Unlock();
+		return ;
+	}
+	running_ = false;
+	WakeUp();
 	repeat_.clear();
 	pending_.clear();
 	mutex_.Unlock();
@@ -99,34 +101,40 @@ void EventBase::RunNow(const Task &task)
 
 TimerId EventBase::RunAfter(int64_t milli_sec, const Task &task)
 {
-	TimerId id { Time::Now() + milli_sec, seq_++};
 	mutex_.Lock();
+	if (!running_) {
+		mutex_.Unlock();
+		return TimerId();
+	}
+	TimerId id { Time::Now() + milli_sec, seq_++};
 	pending_.insert({id, task});
 	if (pthread_self() != pid_) {
-		mutex_.Unlock();
 		WakeUp();
 	} else {
 		Refresh();
-		mutex_.Unlock();
 	}
+	mutex_.Unlock();
 	return id;
 }
 
 TimerId EventBase::RunEvery(int64_t milli_sec, const Task &task)
 {
+	mutex_.Lock();
+	if (!running_) {
+		mutex_.Unlock();
+		return TimerId();
+	}
 	uint32_t seq = seq_++;
 	TimeRep rep {milli_sec, Time::Now()};
 	TimerId id {rep.second, seq};
-	mutex_.Lock();
 	repeat_.insert({seq, rep});
 	pending_.insert({id, task});
 	if (pthread_self() != pid_) {
-		mutex_.Unlock();
 		WakeUp();
 	} else {
 		Refresh();
-		mutex_.Unlock();
 	}
+	mutex_.Unlock();
 	return {milli_sec, seq};
 }
 

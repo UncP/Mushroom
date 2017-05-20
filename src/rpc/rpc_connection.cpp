@@ -14,8 +14,8 @@ namespace Mushroom {
 
 atomic_32_t RpcConnection::RpcId(0);
 
-RpcConnection::RpcConnection(const EndPoint &server, Poller *poller)
-:Connection(server, poller), marshaller_(&input_, &output_)
+RpcConnection::RpcConnection(const EndPoint &server, Poller *poller, float error_rate)
+:Connection(server, poller), error_rate_(error_rate), marshaller_(&input_, &output_)
 {
 	readcb_ = [this]() {
 		for (; marshaller_.HasCompleteArgs();) {
@@ -40,6 +40,16 @@ RpcConnection::~RpcConnection()
 {
 	for (auto e : futures_)
 		delete e.second;
+}
+
+void RpcConnection::Disable()
+{
+	disable_ = 1;
+}
+
+void RpcConnection::Enable()
+{
+	disable_ = 0;
 }
 
 Marshaller& RpcConnection::GetMarshaller()

@@ -65,7 +65,7 @@ class UnitTest
 				current_test_case_ = test_case;
 				current_test_case_->test_result_ = true;
 
-				std::cout << "\033[34m[ Run  ] \033[0m" << test_case->case_name_ << std::endl;
+				std::cout << "\033[34m[ Run ] \033[0m" << test_case->case_name_ << std::endl;
 
 				test_case->Run();
 

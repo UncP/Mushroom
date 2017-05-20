@@ -59,6 +59,8 @@ void RaftServer::Close()
 		return ;
 	}
 
+	Info("closing raft server %d", id_);
+
 	RpcServer::Close();
 
 	running_ = false;
@@ -72,9 +74,6 @@ void RaftServer::Close()
 
 	mutex_.Unlock();
 	back_thread_->Stop();
-
-	for (auto e : peers_)
-		e->Close();
 }
 
 bool RaftServer::IsLeader()
@@ -233,7 +232,8 @@ ElectionResult RaftServer::Election()
 	uint32_t size = peers_.size();
 	RequestVoteReply replys[size];
 	FutureGroup futures(size);
-	TimerId id = event_base_->RunAfter(ElectionTimeout, [&futures]() {
+	TimerId id = event_base_->RunAfter(ElectionTimeout, [&]() {
+		Info("%p", &futures);
 		futures.Cancel();
 	});
 	for (uint32_t i = 0; i < size; ++i)
@@ -309,13 +309,10 @@ void RaftServer::SendAppendEntry()
 	AppendEntryReply replys[size];
 	FutureGroup futures(size);
 	mutex_.Lock();
-	if (state_ != Leader) {
+	if (!running_ || state_ != Leader) {
 		mutex_.Unlock();
 		return ;
 	}
-	TimerId id = event_base_->RunAfter(150, [&futures]() {
-		futures.Cancel();
-	});
 	for (size_t i = 0; i < peers_.size(); ++i) {
 		int32_t prev = next_[i] - 1;
 		args[i] = {term_, id_, prev >= 0 ? logs_[prev].term_ : 0, prev, commit_};
@@ -324,6 +321,9 @@ void RaftServer::SendAppendEntry()
 		futures.Add(peers_[i]->Call("RaftServer::AppendEntry", &args[i], &replys[i]));
 	}
 	mutex_.Unlock();
+	TimerId id = event_base_->RunAfter(150, [&]() {
+		futures.Cancel();
+	});
 
 	futures.Wait();
 	event_base_->Cancel(id);
