@@ -85,6 +85,8 @@ class FutureGroup : private NoCopy
 			return futures_[i];
 		}
 
+		inline void Clear() { futures_.clear(); }
+
 	private:
 		std::vector<Future *> futures_;
 };

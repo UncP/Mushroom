@@ -47,6 +47,8 @@ class RaftTest
 		}
 
 		static void FreeRaftSet() {
+			for (auto e : rafts)
+				e->Close();
 			base->Exit();
 			loop->Stop();
 			for (auto e : rafts)
@@ -82,28 +84,27 @@ class RaftTest
 		}
 };
 
-// TEST(ElectionWithNoNetworkFaliure)
-// {
-// 	RaftTest::MakeRaftSet(5);
-// 	uint32_t number;
-// 	int32_t  id = -1;
-// 	RaftTest::WaitForElection(1);
-// 	RaftTest::CheckOneLeader(&number, &id);
-// 	RaftTest::FreeRaftSet();
-// 	ASSERT_TRUE(number == 1);
-// 	rafts[id]->Status();
-// }
+TEST(ElectionWithNoNetworkFaliure)
+{
+	RaftTest::MakeRaftSet(5);
+	uint32_t number;
+	int32_t  id = -1;
+	RaftTest::WaitForElection(1);
+	RaftTest::CheckOneLeader(&number, &id);
+	RaftTest::FreeRaftSet();
+	ASSERT_TRUE(number == 1);
+	rafts[id]->Status();
+}
 
 TEST(ElectionWithNetworkFaliure)
 {
-	RaftTest::MakeRaftSet(5, 0.5);
+	RaftTest::MakeRaftSet(5, 1.0);
 	uint32_t number;
 	int32_t  id = -1;
 	RaftTest::WaitForElection(2);
 	RaftTest::CheckOneLeader(&number, &id);
 	RaftTest::FreeRaftSet();
-	ASSERT_TRUE(number == 1);
-	rafts[id]->Status();
+	ASSERT_TRUE(number == 0);
 }
 
 int main()

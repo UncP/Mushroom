@@ -25,6 +25,7 @@ class RequestVoteArgs;
 class RequestVoteReply;
 class AppendEntryArgs;
 class AppendEntryReply;
+class FutureGroup;
 
 enum ElectionResult { Success, Fail, Timeout };
 
@@ -98,6 +99,8 @@ class RaftServer : public RpcServer
 		TimerId  commit_id_;
 
 		std::vector<Log> logs_;
+
+		FutureGroup *futures_;
 
 		Mutex mutex_;
 
