@@ -27,8 +27,6 @@ class PoolManager : private NoCopy
 
 		~PoolManager();
 
-		page_t TotalPage() { return cur_.get(); }
-
 		Page* GetPage(page_t page_no);
 
 		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);

@@ -18,11 +18,8 @@ namespace Mushroom {
 BLinkTree::BLinkTree(uint32_t key_len):key_len_((uint8_t)key_len)
 {
 	latch_manager_ = new LatchManager();
-
 	pool_manager_ = new PoolManager();
-
 	degree_ = Page::CalculateDegree(key_len_);
-
 	Initialize();
 }
 
@@ -43,7 +40,6 @@ BLinkTree::~BLinkTree()
 
 bool BLinkTree::Free()
 {
-	printf("total page: %u\n", pool_manager_->TotalPage());
 	pool_manager_->Free();
 	return true;
 }
@@ -161,52 +157,6 @@ bool BLinkTree::Get(KeySlice *key)
 
 	set.latch_->UnlockShared();
 	return true;
-}
-
-bool BLinkTree::First(Page **page, int32_t level)
-{
-	*page = pool_manager_->GetPage(root_.get());
-	if (level > (*page)->level_)
-		return false;
-	if (level == -1)
-		level = (*page)->level_;
-
-	for (; (*page)->level_ != level;)
-		*page = pool_manager_->GetPage((*page)->first_);
-
-	return true;
-}
-
-bool BLinkTree::Next(KeySlice *key, Page **page, uint16_t *index)
-{
-	page_t page_no;
-	if ((*page)->Ascend(key, &page_no, index))
-		return true;
-	if (page_no) {
-		*page = pool_manager_->GetPage(page_no);
-		return (*page)->Ascend(key, &page_no, index);
-	}
-	return false;
-}
-
-uint32_t BLinkTree::KeyLength() {
-	return key_len_;
-}
-
-BLinkTree::Iterator::Iterator(BLinkTree *b_link_tree, int32_t level)
-:b_link_tree_(b_link_tree), level_(level), index_(0) {
-	char *buf = new char[b_link_tree->KeyLength() + sizeof(valptr)];
-	key_ = (KeySlice *)buf;
-	assert(b_link_tree_->First(&curr_, level_));
-	assert(Next());
-}
-
-bool BLinkTree::Iterator::Next() {
-	return b_link_tree_->Next(key_, &curr_, &index_);
-}
-
-BLinkTree::Iterator::~Iterator() {
-	delete [] key_;
 }
 
 } // namespace Mushroom

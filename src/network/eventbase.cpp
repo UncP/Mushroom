@@ -162,6 +162,7 @@ void EventBase::HandleTimeout()
 	for (; !pending_.empty() && pending_.begin()->first <= now; ) {
 		queue_->Push(pending_.begin()->second);
 		TimerId id = pending_.begin()->first;
+		Info("seq %ld", id.second);
 		auto it = repeat_.find(id.second);
 		if (it != repeat_.end()) {
 			TimerId nid { now.first + it->second.first, id.second };

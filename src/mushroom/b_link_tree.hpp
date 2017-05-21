@@ -22,31 +22,11 @@ class LatchManager;
 class BLinkTree : private NoCopy
 {
 	public:
-		class Iterator
-		{
-			public:
-				Iterator(BLinkTree *b_link_tree, int32_t level = 0);
-
-				~Iterator();
-
-				bool Next();
-
-				KeySlice *key_;
-
-			private:
-				BLinkTree *b_link_tree_;
-				Page      *curr_;
-				int32_t    level_;
-				uint16_t   index_;
-		};
-
 		static const uint32_t MAX_KEY_LENGTH = 255;
 
 		BLinkTree(uint32_t key_len);
 
 		~BLinkTree();
-
-		uint32_t KeyLength();
 
 		bool Free();
 
@@ -56,10 +36,6 @@ class BLinkTree : private NoCopy
 
 	private:
 		void Initialize();
-
-		bool First(Page **page, int32_t level);
-
-		bool Next(KeySlice *key, Page **page, uint16_t *index);
 
 		struct Set {
 			Set():depth_(0) { }

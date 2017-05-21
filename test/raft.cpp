@@ -27,7 +27,7 @@ class RaftTest
 
 		static void MakeRaftSet(int number, float error_rate = 0.f) {
 			base = new EventBase(4, 16);
-			uint16_t port = 7000;
+			uint16_t port = 6000;
 			rafts.clear();
 			for (int i = 0; i < number; ++i)
 				rafts.push_back(new RaftServer(base, port + i, i));
@@ -84,21 +84,32 @@ class RaftTest
 		}
 };
 
-TEST(ElectionWithNoNetworkFaliure)
-{
-	RaftTest::MakeRaftSet(5);
-	uint32_t number;
-	int32_t  id = -1;
-	RaftTest::WaitForElection(1);
-	RaftTest::CheckOneLeader(&number, &id);
-	RaftTest::FreeRaftSet();
-	ASSERT_TRUE(number == 1);
-	rafts[id]->Status();
-}
+// TEST(ElectionWithNoNetworkFaliure)
+// {
+// 	RaftTest::MakeRaftSet(5);
+// 	uint32_t number;
+// 	int32_t  id = -1;
+// 	RaftTest::WaitForElection(1);
+// 	RaftTest::CheckOneLeader(&number, &id);
+// 	RaftTest::FreeRaftSet();
+// 	ASSERT_TRUE(number == 1);
+// 	rafts[id]->Status();
+// }
 
-TEST(ElectionWithNetworkFaliure)
+// TEST(ElectionWithTotalNetworkFaliure)
+// {
+// 	RaftTest::MakeRaftSet(5, 1.0);
+// 	uint32_t number;
+// 	int32_t  id = -1;
+// 	RaftTest::WaitForElection(2);
+// 	RaftTest::CheckOneLeader(&number, &id);
+// 	RaftTest::FreeRaftSet();
+// 	ASSERT_TRUE(number == 0);
+// }
+
+TEST(ElectionWithPartialNetworkFaliure)
 {
-	RaftTest::MakeRaftSet(5, 1.0);
+	RaftTest::MakeRaftSet(3, 0.5);
 	uint32_t number;
 	int32_t  id = -1;
 	RaftTest::WaitForElection(2);
