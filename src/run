@@ -1,0 +1,41 @@
+#! /bin/sh
+
+if [ "$1" = "mushroom" ]
+then
+	if [ "$2" = "queue" ]
+	then
+		make blinktree_with_queue_test && ./blinktree_with_queue_test 4096 4800 10 4 $3
+	elif [ "$2" = "thread" ]
+	then
+		make blinktree_multi_thread_test && ./blinktree_multi_thread_test 4096 4800 10 4 $3
+		else
+			echo "wrong argument :("
+	fi
+elif [ "$1" = "network" ]
+then
+	if [ "$2" = "client" ]
+	then
+		make client_test && ./client_test
+	elif [ "$2" = "server" ]
+	then
+		make server_test && ./server_test
+		else
+			echo "wrong argument :("
+	fi
+elif [ "$1" = "rpc" ]
+then
+	if [ "$2" = "client" ]
+	then
+		make rpc_client_test && ./rpc_client_test $3
+	elif [ "$2" = "server" ]
+	then
+		make rpc_server_test && ./rpc_server_test
+	else
+		echo "wrong argument :("
+	fi
+elif [ "$1" = "raft" ]
+then
+	make raft_test && ./raft_test
+else
+	echo "wrong argument :("
+fi
