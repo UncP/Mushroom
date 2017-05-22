@@ -25,7 +25,7 @@ uint32_t RaftServer::HeartbeatInterval = 15;
 uint32_t RaftServer::CommitInterval = 150;
 
 RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
-:RpcServer(event_base, port), id_(id), state_(Follower), running_(false), term_(0),
+:RpcServer(event_base, port), id_(id), state_(Follower), running_(true), term_(0),
 vote_for_(-1), commit_(-1), applied_(-1)
 {
 	RpcServer::Start();
@@ -237,14 +237,15 @@ void RaftServer::Election()
 		args.last_term_);
 
 	uint32_t size = peers_.size();
-	RequestVoteReply replys[size];
-	FutureGroup futures(size);
-	TimerId id = event_base_->RunAfter(ElectionTimeout, [&futures]() {
-		futures.Cancel();
+	Future<RequestVoteReply> futures[size];
+	TimerId id = event_base_->RunAfter(ElectionTimeout, [&futures, size]() {
+		for (uint32_t i = 0; i < size; ++i)
+			futures[i].Cancel();
 	});
 	for (uint32_t i = 0; i < size; ++i)
-		futures.Add(peers_[i]->Call("RaftServer::Vote", &args, &replys[i]));
-	futures.Wait();
+		peers_[i]->Call("RaftServer::Vote", &args, &futures[i]);
+	for (uint32_t i = 0; i < size; ++i)
+		futures[i].Wait();
 	event_base_->Cancel(id);
 
 	mutex_.Lock();
@@ -254,14 +255,15 @@ void RaftServer::Election()
 	}
 	uint32_t vote = 1, timeout = 0;
 	for (uint32_t i = 0; i < size; ++i) {
-		if (!futures[i]->ok()) {
+		if (!futures[i].ok()) {
 			++timeout;
 			continue;
 		}
-		if (replys[i].granted_) {
+		RequestVoteReply &reply = futures[i].Value();
+		if (reply.granted_) {
 			++vote;
-		} else if (term_ < replys[i].term_) {
-			BecomeFollower(replys[i].term_);
+		} else if (term_ < reply.term_) {
+			BecomeFollower(reply.term_);
 			mutex_.Unlock();
 			return ;
 		}
@@ -279,6 +281,58 @@ void RaftServer::Election()
 	BecomeFollower(term_);
 	mutex_.Unlock();
 	return ;
+}
+
+void RaftServer::SendAppendEntry()
+{
+	uint32_t size = peers_.size();
+	AppendEntryArgs args[size];
+	mutex_.Lock();
+	if (!running_ || state_ != Leader) {
+		mutex_.Unlock();
+		return ;
+	}
+	FutureGroup<AppendEntryReply> futures(size);
+	for (size_t i = 0; i < peers_.size(); ++i) {
+		int32_t prev = next_[i] - 1;
+		args[i] = {term_, id_, prev >= 0 ? logs_[prev].term_ : 0, prev, commit_};
+		if (next_[i] < int32_t(logs_.size()))
+			args[i].entries_.insert(args[i].entries_.end(), logs_.begin() + next_[i], logs_.end());
+		futures->Add(peers_[i]->Call("RaftServer::AppendEntry", &args[i], &replys[i]));
+	}
+	mutex_.Unlock();
+	TimerId id = event_base_->RunAfter(150, [futures]() {
+		futures->Cancel();
+	});
+
+	futures->Wait();
+	event_base_->Cancel(id);
+	mutex_.Lock();
+	if (!running_ || state_ != Leader) {
+		mutex_.Unlock();
+		delete futures;
+		return ;
+	}
+	for (uint32_t i = 0; i < size; ++i) {
+		if (!(*futures)[i]->ok()) continue;
+		if (term_ < replys[i].term_) {
+			BecomeFollower();
+			term_ = replys[i].term_;
+			mutex_.Unlock();
+			delete futures;
+			return ;
+		} else if (term_ == replys[i].term_) {
+			if (replys[i].success_ == -1) {
+				if (next_[i] > 0)
+					--next_[i];
+			} else {
+				next_[i] += replys[i].success_;
+				match_[i] = next_[i] - 1;
+			}
+		}
+	}
+	mutex_.Unlock();
+	delete futures;
 }
 
 } // namespace Mushroom

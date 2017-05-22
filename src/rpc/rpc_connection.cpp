@@ -24,9 +24,10 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller, float error
 			spin_.Lock();
 			auto it = futures_.find(rid);
 			FatalIf(it == futures_.end(), "rpc id %u not called :(", rid);
-			Future *fu = it->second;
+			Func func(std::move(it->second));
+			futures_.erase(it);
 			spin_.Unlock();
-			fu->Notify();
+			func();
 		}
 		if (input_.size())
 			input_.Adjust();
@@ -36,11 +37,7 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller, float error
 RpcConnection::RpcConnection(const Socket &socket, Poller *poller)
 :Connection(socket, poller), marshaller_(&input_, &output_) { }
 
-RpcConnection::~RpcConnection()
-{
-	for (auto e : futures_)
-		delete e.second;
-}
+RpcConnection::~RpcConnection() { }
 
 void RpcConnection::Disable()
 {

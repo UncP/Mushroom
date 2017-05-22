@@ -17,7 +17,6 @@
 #include "../network/connection.hpp"
 #include "rpc.hpp"
 #include "marshaller.hpp"
-#include "../network/channel.hpp"
 #include "future.hpp"
 
 static std::default_random_engine engine(time(0));
@@ -37,7 +36,7 @@ class RpcConnection : public Connection
 		~RpcConnection();
 
 		template<typename T1, typename T2>
-		inline Future* Call(const char *str, const T1 *args, T2 *reply);
+		inline void Call(const char *str, const T1 *args, Future<T2> *reply);
 
 		Marshaller& GetMarshaller();
 
@@ -54,29 +53,24 @@ class RpcConnection : public Connection
 		atomic_8_t  disable_ = 0;
 		float       error_rate_ = 0.f;
 
-		SpinLock                     spin_;
-		std::map<uint32_t, Future *> futures_;
+		SpinLock                 spin_;
+		std::map<uint32_t, Func> futures_;
 
 		Marshaller marshaller_;
 };
 
 template<typename T1, typename T2>
-inline Future* RpcConnection::Call(const char *str, const T1 *args, T2 *reply)
+inline void RpcConnection::Call(const char *str, const T1 *args, Future<T2> *fu)
 {
-	Future *fu;
 	uint32_t id  = RPC::Hash(str);
 	uint32_t rid = RpcId++;
-	fu = new Future(rid, [this, reply]() {
-		marshaller_ >> *reply;
-	});
 	spin_.Lock();
-	futures_.insert({rid, fu});
+	futures_[rid] = std::move([fu, this]() { fu->Notify(marshaller_); });
 	spin_.Unlock();
 	if (!disable_.get() && dist(engine) > error_rate_) {
 		marshaller_.MarshalArgs(id, rid, args);
 		SendOutput();
 	}
-	return fu;
 }
 
 } // namespace Mushroom

@@ -34,21 +34,18 @@ int main(int argc, char **argv)
 	Test::Pair args(2047, 65535);
 
 	int total = (argc == 2) ? atoi(argv[1]) : 1;
-	std::vector<int32_t> reply(total);
-	std::vector<Future *> futures;
-	futures.reserve(total);
+	std::vector<Future<int32_t>> futures(total);
 	for (int i = 0; i < total; ++i)
-		futures.push_back(con.Call("Test::Add", &args, &reply[i]));
+		con.Call("Test::Add", &args, &futures[i]);
 
 	Signal::Register(SIGINT, [&base, &futures]() {
 		base.Exit();
-		for (auto e : futures)
-			if (!e->ok())
-				e->Cancel();
+		for (auto &e : futures)
+			e.Cancel();
 	});
 
-	for (auto e : futures)
-		e->Wait();
+	for (auto &e : futures)
+		e.Wait();
 
 	con.Close();
 	base.Exit();
@@ -57,8 +54,9 @@ int main(int argc, char **argv)
 	test.Add(&args, &reply2);
 	int success = 0, failure = 0, bad = 0;
 	for (int i = 0; i < total; ++i) {
-		if (futures[i]->ok()) {
-			if (reply2 == reply[i])
+		if (futures[i].ok()) {
+			int32_t &reply = futures[i].Value();
+			if (reply == reply2)
 				++success;
 			else
 				++failure;

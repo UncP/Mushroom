@@ -9,6 +9,7 @@
 #define _FUTURE_HPP_
 
 #include <vector>
+#include <functional>
 
 #include "../include/utility.hpp"
 #include "../include/mutex.hpp"
@@ -16,14 +17,19 @@
 
 namespace Mushroom {
 
-class Future : private NoCopy
+template<typename T>
+class Future : private NoCopyTemplate<T>
 {
 	public:
-		enum Status { Pending = 0x0, Ok = 0x1, TimeOut = 0x2 };
+		typedef std::function<void(Future<T> *)> CallBack;
 
-		Future(uint32_t id, const Func &cb1):id_(id), status_(Pending), cb1_(cb1), cb2_(0) { }
+		enum Status { Pending = 0x0, Ok = 0x1, Timeout = 0x2 };
 
-		uint32_t id() const { return id_; }
+		Future():cb_(0) { }
+
+		Future(Func &&cb):cb_(cb) { }
+
+		inline T& Value() { return value_; }
 
 		inline void Wait() {
 			mutex_.Lock();
@@ -39,44 +45,41 @@ class Future : private NoCopy
 			return ret;
 		}
 
-		inline void Notify() {
-			cb1_();
+		inline void Notify(Marshaller &mar) {
+			mar >> value_;
 			mutex_.Lock();
-			if (status_ == Pending)
+			if (status_ == Pending) {
 				status_ = Ok;
-			cond_.Signal();
+				cond_.Signal();
+			}
 			mutex_.Unlock();
-			if (status_ != TimeOut && cb2_)
-				cb2_();
+			if (cb_) cb_(this);
 		}
 
 		inline void Cancel() {
 			mutex_.Lock();
-			if (status_ == Pending)
-				status_ = TimeOut;
-			cond_.Signal();
+			if (status_ == Pending) {
+				status_ = Timeout;
+				cond_.Signal();
+			}
 			mutex_.Unlock();
 		}
 
-		inline void OnCallback(const Func &cb2) {
-			cb2_ = cb2;
-		}
-
 	private:
-		uint32_t id_;
-		uint8_t  status_;
-		Mutex    mutex_;
-		Cond     cond_;
-		Func     cb1_;
-		Func     cb2_;
+		uint8_t   status_;
+		T         value_;
+		Mutex     mutex_;
+		Cond      cond_;
+		CallBack  cb_;
 };
 
-class FutureGroup : private NoCopy
+template<typename T>
+class FutureGroup : private NoCopyTemplate<T>
 {
 	public:
 		FutureGroup(int size) { futures_.reserve(size); }
 
-		inline void Add(Future *future) { futures_.push_back(future); }
+		inline void Add(Future<T> *future) { futures_.push_back(future); }
 
 		inline void Wait() {
 			for (auto e : futures_)
@@ -88,14 +91,12 @@ class FutureGroup : private NoCopy
 				e->Cancel();
 		}
 
-		inline Future* operator[](uint32_t i) {
+		inline Future<T>* operator[](uint32_t i) {
 			return futures_[i];
 		}
 
-		inline void Clear() { futures_.clear(); }
-
 	private:
-		std::vector<Future *> futures_;
+		std::vector<Future<T> *> futures_;
 };
 
 } // namespace Mushroom

@@ -94,12 +94,12 @@ void EventBase::Refresh()
 	}
 }
 
-void EventBase::RunNow(const Task &task)
+void EventBase::RunNow(Task &&task)
 {
-	RunAfter(0, task);
+	RunAfter(0, std::move(task));
 }
 
-TimerId EventBase::RunAfter(int64_t milli_sec, const Task &task)
+TimerId EventBase::RunAfter(int64_t milli_sec, Task &&task)
 {
 	mutex_.Lock();
 	if (!running_) {
@@ -107,7 +107,7 @@ TimerId EventBase::RunAfter(int64_t milli_sec, const Task &task)
 		return TimerId();
 	}
 	TimerId id { Time::Now() + milli_sec, seq_++};
-	pending_.insert({id, task});
+	pending_.insert({id, std::move(task)});
 	if (pthread_self() != pid_) {
 		WakeUp();
 	} else {
@@ -117,7 +117,7 @@ TimerId EventBase::RunAfter(int64_t milli_sec, const Task &task)
 	return id;
 }
 
-TimerId EventBase::RunEvery(int64_t milli_sec, const Task &task)
+TimerId EventBase::RunEvery(int64_t milli_sec, Task &&task)
 {
 	mutex_.Lock();
 	if (!running_) {
@@ -128,7 +128,7 @@ TimerId EventBase::RunEvery(int64_t milli_sec, const Task &task)
 	TimeRep rep {milli_sec, Time::Now()};
 	TimerId id {rep.second, seq};
 	repeat_.insert({seq, rep});
-	pending_.insert({id, task});
+	pending_.insert({id, std::move(task)});
 	if (pthread_self() != pid_) {
 		WakeUp();
 	} else {
@@ -160,7 +160,7 @@ void EventBase::HandleTimeout()
 	TimerId now { Time::Now(), 0xFFFFFFFF};
 	mutex_.Lock();
 	for (; !pending_.empty() && pending_.begin()->first <= now; ) {
-		queue_->Push(pending_.begin()->second);
+		queue_->Push(std::move(pending_.begin()->second));
 		TimerId id = pending_.begin()->first;
 		auto it = repeat_.find(id.second);
 		if (it != repeat_.end()) {

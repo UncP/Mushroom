@@ -22,7 +22,7 @@ class BoundedQueue : private NoCopyTemplate<T>
 
 		~BoundedQueue();
 
-		inline void Push(const T &);
+		inline void Push(T &&);
 
 		inline T Pop();
 
@@ -72,7 +72,7 @@ inline void BoundedQueue<T>::Clear()
 }
 
 template<typename T>
-inline void BoundedQueue<T>::Push(const T &t)
+inline void BoundedQueue<T>::Push(T &&t)
 {
 	mutex_.Lock();
 	while (((end_+1)%capacity_) == beg_)
@@ -94,7 +94,7 @@ inline T BoundedQueue<T>::Pop()
 		mutex_.Unlock();
 		return T();
 	}
-	T t = queue_[beg_];
+	T t = std::move(queue_[beg_]);
 	if (++beg_ == capacity_)
 		beg_ = 0;
 	mutex_.Unlock();

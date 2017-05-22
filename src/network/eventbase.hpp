@@ -37,11 +37,11 @@ class EventBase : private NoCopy
 
 		Poller* GetPoller();
 
-		void RunNow(const Task &task);
+		void RunNow(Task &&task);
 
-		TimerId RunAfter(int64_t milli_sec, const Task &task);
+		TimerId RunAfter(int64_t milli_sec, Task &&task);
 
-		TimerId RunEvery(int64_t milli_sec, const Task &task);
+		TimerId RunEvery(int64_t milli_sec, Task &&task);
 
 		void Cancel(const TimerId &timer_id);
 

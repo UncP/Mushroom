@@ -25,8 +25,6 @@ class RequestVoteReply;
 class AppendEntryArgs;
 class AppendEntryReply;
 
-enum ElectionResult { Success, Fail, Timeout };
-
 class RaftServer : public RpcServer
 {
 	public:
