@@ -19,13 +19,11 @@
 namespace Mushroom {
 
 class Log;
-class Thread;
 class RpcConnection;
 class RequestVoteArgs;
 class RequestVoteReply;
 class AppendEntryArgs;
 class AppendEntryReply;
-class FutureGroup;
 
 enum ElectionResult { Success, Fail, Timeout };
 
@@ -33,12 +31,6 @@ class RaftServer : public RpcServer
 {
 	public:
 		enum State { Follower = 0x0, Candidate, Leader };
-
-		static uint32_t TimeoutBase;
-		static uint32_t TimeoutTop;
-		static uint32_t ElectionTimeout;
-		static uint32_t HeartbeatInterval;
-		static uint32_t CommitInterval;
 
 		RaftServer(EventBase *event_base, uint16_t port, int32_t id);
 
@@ -50,6 +42,8 @@ class RaftServer : public RpcServer
 
 		uint32_t Term();
 
+		void Status();
+
 		void Vote(const RequestVoteArgs *args, RequestVoteReply *reply);
 
 		void AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply);
@@ -60,20 +54,22 @@ class RaftServer : public RpcServer
 
 		void Start();
 
-		void Status();
-
 	private:
-		static int64_t GetTimeOut();
+		static uint32_t TimeoutBase;
+		static uint32_t TimeoutTop;
+		static uint32_t ElectionTimeout;
+		static uint32_t HeartbeatInterval;
+		static uint32_t CommitInterval;
 
-		void Background();
-
-		ElectionResult Election();
+		void Election();
 
 		void RequestVote();
 
 		void SendAppendEntry();
 
-		void BecomeFollower();
+		void RescheduleElection();
+
+		void BecomeFollower(uint32_t term);
 
 		void BecomeCandidate();
 
@@ -86,33 +82,26 @@ class RaftServer : public RpcServer
 
 		int32_t  id_;
 
-		uint8_t state_;
-		bool    running_;
-		bool    time_out_;
-		bool    reset_timer_;
+		uint8_t  state_;
+		bool     running_;
 
 		uint32_t term_;
 		int32_t  vote_for_;
 		int32_t  commit_;
 		int32_t  applied_;
 
+		TimerId  election_id_;
+		TimerId  heartbeat_id_;
 		TimerId  commit_id_;
 
 		std::vector<Log> logs_;
 
-		FutureGroup *futures_;
-
 		Mutex mutex_;
-
-		Cond  back_cond_;
-		Cond  heartbeat_cond_;
 
 		std::vector<RpcConnection *> peers_;
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;
-
-		Thread *back_thread_;
 };
 
 } // namespace Mushroom

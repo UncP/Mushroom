@@ -21,7 +21,7 @@ class Future : private NoCopy
 	public:
 		enum Status { Pending = 0x0, Ok = 0x1, TimeOut = 0x2 };
 
-		Future(uint32_t id, const Func &callback):id_(id), status_(Pending), callback_(callback) { }
+		Future(uint32_t id, const Func &cb1):id_(id), status_(Pending), cb1_(cb1), cb2_(0) { }
 
 		uint32_t id() const { return id_; }
 
@@ -40,28 +40,35 @@ class Future : private NoCopy
 		}
 
 		inline void Notify() {
-			callback_();
+			cb1_();
 			mutex_.Lock();
 			if (status_ == Pending)
 				status_ = Ok;
-			mutex_.Unlock();
 			cond_.Signal();
+			mutex_.Unlock();
+			if (status_ != TimeOut && cb2_)
+				cb2_();
 		}
 
 		inline void Cancel() {
 			mutex_.Lock();
 			if (status_ == Pending)
 				status_ = TimeOut;
-			mutex_.Unlock();
 			cond_.Signal();
+			mutex_.Unlock();
+		}
+
+		inline void OnCallback(const Func &cb2) {
+			cb2_ = cb2;
 		}
 
 	private:
-		uint32_t  id_;
-		uint8_t   status_;
-		Cond      cond_;
-		Mutex     mutex_;
-		Func      callback_;
+		uint32_t id_;
+		uint8_t  status_;
+		Mutex    mutex_;
+		Cond     cond_;
+		Func     cb1_;
+		Func     cb2_;
 };
 
 class FutureGroup : private NoCopy

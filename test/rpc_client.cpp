@@ -19,8 +19,8 @@ using namespace Mushroom;
 
 int main(int argc, char **argv)
 {
-	EventBase base;
-	RpcConnection con(EndPoint("127.0.0.1"), base.GetPoller());
+	EventBase base(1, 8);
+	RpcConnection con(EndPoint(7000, "127.0.0.1"), base.GetPoller());
 
 	ExitIf(!con.Success(), "");
 

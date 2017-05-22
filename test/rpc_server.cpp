@@ -14,8 +14,8 @@ using namespace Mushroom;
 
 int main()
 {
-	EventBase base;
-	RpcServer server(&base);
+	EventBase base(1, 8);
+	RpcServer server(&base, 7000);
 	Signal::Register(SIGINT, [&] { base.Exit(); });
 	Test test;
 	server.Register("Test::Add", &test, &Test::Add);

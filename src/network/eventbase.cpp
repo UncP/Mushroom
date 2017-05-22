@@ -90,7 +90,7 @@ void EventBase::Refresh()
 	} else {
 		auto &it = pending_.begin()->first;
 		int64_t tmp = it.first - Time::Now();
-		next_time_out_ = tmp <= 0 ? 0 : int(tmp);
+		next_time_out_ = (tmp <= 0) ? 0 : int(tmp);
 	}
 }
 
@@ -162,7 +162,6 @@ void EventBase::HandleTimeout()
 	for (; !pending_.empty() && pending_.begin()->first <= now; ) {
 		queue_->Push(pending_.begin()->second);
 		TimerId id = pending_.begin()->first;
-		Info("seq %ld", id.second);
 		auto it = repeat_.find(id.second);
 		if (it != repeat_.end()) {
 			TimerId nid { now.first + it->second.first, id.second };
