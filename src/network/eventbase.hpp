@@ -43,6 +43,8 @@ class EventBase : private NoCopy
 
 		TimerId RunEvery(int64_t milli_sec, Task &&task);
 
+		void RescheduleAfter(TimerId *id, int64_t milli_sec, Task &&task);
+
 		void Cancel(const TimerId &timer_id);
 
 	private:

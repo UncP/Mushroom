@@ -52,10 +52,10 @@ class RaftServer : public RpcServer
 
 		void Start();
 
+		static uint32_t ElectionTimeout;
 	private:
 		static uint32_t TimeoutBase;
 		static uint32_t TimeoutTop;
-		static uint32_t ElectionTimeout;
 		static uint32_t HeartbeatInterval;
 		static uint32_t CommitInterval;
 

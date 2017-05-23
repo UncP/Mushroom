@@ -75,10 +75,6 @@ class RaftTest
 			return true;
 		}
 
-		static void WaitForTimeout(float factor) {
-			usleep(factor * RaftServer::TimeoutTop * 1000);
-		}
-
 		static void WaitForElection(float factor) {
 			usleep(factor * RaftServer::ElectionTimeout * 1000);
 		}

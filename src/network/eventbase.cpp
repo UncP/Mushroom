@@ -108,11 +108,10 @@ TimerId EventBase::RunAfter(int64_t milli_sec, Task &&task)
 	}
 	TimerId id { Time::Now() + milli_sec, seq_++};
 	pending_.insert({id, std::move(task)});
-	if (pthread_self() != pid_) {
+	if (pthread_self() != pid_)
 		WakeUp();
-	} else {
+	else
 		Refresh();
-	}
 	mutex_.Unlock();
 	return id;
 }
@@ -129,13 +128,32 @@ TimerId EventBase::RunEvery(int64_t milli_sec, Task &&task)
 	TimerId id {rep.second, seq};
 	repeat_.insert({seq, rep});
 	pending_.insert({id, std::move(task)});
-	if (pthread_self() != pid_) {
+	if (pthread_self() != pid_)
 		WakeUp();
-	} else {
+	else
 		Refresh();
-	}
 	mutex_.Unlock();
 	return {milli_sec, seq};
+}
+
+void EventBase::RescheduleAfter(TimerId *id, int64_t milli_sec, Task &&task)
+{
+	mutex_.Lock();
+	if (!running_) {
+		mutex_.Unlock();
+		return ;
+	}
+	TimerId nid { Time::Now() + milli_sec, seq_++};
+	auto it = pending_.find(*id);
+	if (it != pending_.end())
+		pending_.erase(it);
+	pending_.insert({nid, std::move(task)});
+	*id = nid;
+	if (pthread_self() != pid_)
+		WakeUp();
+	else
+		Refresh();
+	mutex_.Unlock();
 }
 
 void EventBase::Cancel(const TimerId &id)

@@ -29,6 +29,10 @@ class Future : private NoCopyTemplate<T>
 
 		Future(Func &&cb):cb_(cb) { }
 
+		inline void SetId(uint32_t id) { id_ = id; }
+
+		inline uint32_t Id() const { return id_; }
+
 		inline T& Value() { return value_; }
 
 		inline void Wait() {
@@ -67,6 +71,7 @@ class Future : private NoCopyTemplate<T>
 
 	private:
 		uint8_t   status_;
+		uint32_t  id_;
 		T         value_;
 		Mutex     mutex_;
 		Cond      cond_;

@@ -96,7 +96,7 @@ void RaftServer::RescheduleElection()
 {
 	static std::default_random_engine engine(time(0));
 	static std::uniform_int_distribution<int64_t> dist(TimeoutBase, TimeoutTop);
-	election_id_ = event_base_->RescheduleTo(dist(engine), [this]() {
+	event_base_->RescheduleAfter(&election_id_, dist(engine), [this]() {
 		Election();
 	});
 }
@@ -285,54 +285,53 @@ void RaftServer::Election()
 
 void RaftServer::SendAppendEntry()
 {
-	uint32_t size = peers_.size();
-	AppendEntryArgs args[size];
 	mutex_.Lock();
 	if (!running_ || state_ != Leader) {
 		mutex_.Unlock();
 		return ;
 	}
-	FutureGroup<AppendEntryReply> futures(size);
+	uint32_t size = peers_.size();
+	AppendEntryArgs args[size];
+	Future<AppendEntryReply> *futures = new Future<AppendEntryReply>[size];
 	for (size_t i = 0; i < peers_.size(); ++i) {
 		int32_t prev = next_[i] - 1;
 		args[i] = {term_, id_, prev >= 0 ? logs_[prev].term_ : 0, prev, commit_};
 		if (next_[i] < int32_t(logs_.size()))
 			args[i].entries_.insert(args[i].entries_.end(), logs_.begin() + next_[i], logs_.end());
-		futures->Add(peers_[i]->Call("RaftServer::AppendEntry", &args[i], &replys[i]));
+		peers_[i]->Call("RaftServer::AppendEntry", &args[i], &futures[i]);
 	}
 	mutex_.Unlock();
-	TimerId id = event_base_->RunAfter(150, [futures]() {
-		futures->Cancel();
+	event_base_->RunAfter(TimeoutBase, [this, futures, size]() {
+		for (uint32_t i = 0; i != size; ++i)
+			peers_[i]->RemoveFuture(&futures[i]);
+		delete [] futures;
 	});
 
-	futures->Wait();
-	event_base_->Cancel(id);
-	mutex_.Lock();
-	if (!running_ || state_ != Leader) {
-		mutex_.Unlock();
-		delete futures;
-		return ;
-	}
-	for (uint32_t i = 0; i < size; ++i) {
-		if (!(*futures)[i]->ok()) continue;
-		if (term_ < replys[i].term_) {
-			BecomeFollower();
-			term_ = replys[i].term_;
-			mutex_.Unlock();
-			delete futures;
-			return ;
-		} else if (term_ == replys[i].term_) {
-			if (replys[i].success_ == -1) {
-				if (next_[i] > 0)
-					--next_[i];
-			} else {
-				next_[i] += replys[i].success_;
-				match_[i] = next_[i] - 1;
-			}
-		}
-	}
-	mutex_.Unlock();
-	delete futures;
+	// mutex_.Lock();
+	// if (!running_ || state_ != Leader) {
+	// 	mutex_.Unlock();
+	// 	delete futures;
+	// 	return ;
+	// }
+	// for (uint32_t i = 0; i < size; ++i) {
+	// 	if (!(*futures)[i]->ok()) continue;
+	// 	if (term_ < replys[i].term_) {
+	// 		BecomeFollower();
+	// 		term_ = replys[i].term_;
+	// 		mutex_.Unlock();
+	// 		delete futures;
+	// 		return ;
+	// 	} else if (term_ == replys[i].term_) {
+	// 		if (replys[i].success_ == -1) {
+	// 			if (next_[i] > 0)
+	// 				--next_[i];
+	// 		} else {
+	// 			next_[i] += replys[i].success_;
+	// 			match_[i] = next_[i] - 1;
+	// 		}
+	// 	}
+	// }
+	// mutex_.Unlock();
 }
 
 } // namespace Mushroom

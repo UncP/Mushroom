@@ -36,7 +36,7 @@ class RpcConnection : public Connection
 		~RpcConnection();
 
 		template<typename T1, typename T2>
-		inline void Call(const char *str, const T1 *args, Future<T2> *reply);
+		inline void Call(const char *str, const T1 *args, Future<T2> *fu);
 
 		Marshaller& GetMarshaller();
 
@@ -45,6 +45,9 @@ class RpcConnection : public Connection
 		void Disable();
 
 		void Enable();
+
+		template<typename T>
+		inline void RemoveFuture(Future<T> *fu);
 
 	private:
 		using Connection::Send;
@@ -65,12 +68,23 @@ inline void RpcConnection::Call(const char *str, const T1 *args, Future<T2> *fu)
 	uint32_t id  = RPC::Hash(str);
 	uint32_t rid = RpcId++;
 	spin_.Lock();
+	fu->SetId(id);
 	futures_[rid] = std::move([fu, this]() { fu->Notify(marshaller_); });
 	spin_.Unlock();
 	if (!disable_.get() && dist(engine) > error_rate_) {
 		marshaller_.MarshalArgs(id, rid, args);
 		SendOutput();
 	}
+}
+
+template<typename T>
+inline void RpcConnection::RemoveFuture(Future<T> *fu)
+{
+	spin_.Lock();
+	auto it = futures_.find(fu->Id());
+	if (it != futures_.end())
+		futures_.erase(it);
+	spin_.Unlock();
 }
 
 } // namespace Mushroom
