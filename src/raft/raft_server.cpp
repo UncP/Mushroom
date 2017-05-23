@@ -22,7 +22,6 @@ uint32_t RaftServer::TimeoutBase   = 150;
 uint32_t RaftServer::TimeoutTop    = 300;
 uint32_t RaftServer::ElectionTimeout   = 1000;
 uint32_t RaftServer::HeartbeatInterval = 15;
-uint32_t RaftServer::CommitInterval = 150;
 
 RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
 :RpcServer(event_base, port), id_(id), state_(Follower), running_(true), term_(0),
@@ -53,12 +52,10 @@ void RaftServer::Close()
 	RpcServer::Close();
 
 	running_ = false;
-	if (state_ == Follower) {
+	if (state_ == Follower)
 		event_base_->Cancel(election_id_);
-	} else if (state_ == Leader) {
-		event_base_->Cancel(commit_id_);
+	else if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
-	}
 	mutex_.Unlock();
 }
 
@@ -114,10 +111,8 @@ void RaftServer::Status()
 void RaftServer::BecomeFollower(uint32_t term)
 {
 	Info("%d becoming follower, term %u", id_, term);
-	if (state_ == Leader) {
-		event_base_->Cancel(commit_id_);
+	if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
-	}
 	state_ = Follower;
 	term_  = term;
 	RescheduleElection();
@@ -140,9 +135,6 @@ void RaftServer::BecomeLeader()
 		e = -1;
 	heartbeat_id_ = event_base_->RunEvery(HeartbeatInterval, [this]() {
 		SendAppendEntry();
-	});
-	commit_id_ = event_base_->RunEvery(CommitInterval, [this]() {
-		UpdateCommitIndex();
 	});
 }
 
@@ -188,12 +180,12 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	int32_t  prev_i = arg.prev_index_;
 	uint32_t prev_t = arg.prev_term_;
 	uint32_t prev_j = 0;
-	if (arg.term_ < term_)
-		goto end;
 	if ((arg.term_ > term_) || (arg.term_ == term_ && state_ == Candidate))
 		BecomeFollower(arg.term_);
 	else
 		RescheduleElection(); // what if (arg.term_ == term_ && state_ == Leader)
+	if (arg.term_ < term_)
+		goto end;
 
 	if (prev_i >= int32_t(logs_.size()))
 		goto end;
@@ -218,6 +210,7 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
 
 end:
+	reply->curr_idx_ = logs_.size() - 1;
 	reply->term_ = term_;
 	mutex_.Unlock();
 }
@@ -298,40 +291,52 @@ void RaftServer::SendAppendEntry()
 		args[i] = {term_, id_, prev >= 0 ? logs_[prev].term_ : 0, prev, commit_};
 		if (next_[i] < int32_t(logs_.size()))
 			args[i].entries_.insert(args[i].entries_.end(), logs_.begin() + next_[i], logs_.end());
-		peers_[i]->Call("RaftServer::AppendEntry", &args[i], &futures[i]);
+		Future<AppendEntryReply> *fu = futures + i;
+		peers_[i]->Call("RaftServer::AppendEntry", &args[i], fu);
+		fu->OnCallback([this, i, fu]() {
+			const auto &reply = fu->Value();
+			ReceiveAppendEntryReply(i, reply);
+		});
 	}
 	mutex_.Unlock();
 	event_base_->RunAfter(TimeoutBase, [this, futures, size]() {
-		for (uint32_t i = 0; i != size; ++i)
+		for (uint32_t i = 0; i != size; ++i) {
 			peers_[i]->RemoveFuture(&futures[i]);
+			futures[i].Cancel();
+		}
 		delete [] futures;
 	});
+}
 
-	// mutex_.Lock();
-	// if (!running_ || state_ != Leader) {
-	// 	mutex_.Unlock();
-	// 	delete futures;
-	// 	return ;
-	// }
-	// for (uint32_t i = 0; i < size; ++i) {
-	// 	if (!(*futures)[i]->ok()) continue;
-	// 	if (term_ < replys[i].term_) {
-	// 		BecomeFollower();
-	// 		term_ = replys[i].term_;
-	// 		mutex_.Unlock();
-	// 		delete futures;
-	// 		return ;
-	// 	} else if (term_ == replys[i].term_) {
-	// 		if (replys[i].success_ == -1) {
-	// 			if (next_[i] > 0)
-	// 				--next_[i];
-	// 		} else {
-	// 			next_[i] += replys[i].success_;
-	// 			match_[i] = next_[i] - 1;
-	// 		}
-	// 	}
-	// }
-	// mutex_.Unlock();
+void RaftServer::ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &reply)
+{
+	mutex_.Lock();
+	uint32_t vote = 1;
+	if (state_ != Leader)
+		goto end;
+	if (reply.term_ > term_) {
+		BecomeFollower(reply.term_);
+		goto end;
+	}
+	if (reply.term_ != term_ || reply.success_ == 0)
+		goto end;
+	if (reply.success_ == -1) {
+		if (next_[i] > 0)
+			--next_[i];
+	} else {
+		next_[i] += reply.success_;
+		match_[i] = next_[i] - 1;
+	}
+
+	if (commit_ >= reply.curr_idx_ || logs_[reply.curr_idx_].term_ != term_)
+		goto end;
+	for (uint32_t i = 0; i < peers_.size(); ++i)
+		if (match_[i] >= reply.curr_idx_)
+			++vote;
+	if (vote > ((peers_.size() + 1) / 2))
+		commit_ = reply.curr_idx_;
+end:
+	mutex_.Unlock();
 }
 
 } // namespace Mushroom

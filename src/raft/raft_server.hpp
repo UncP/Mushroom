@@ -50,14 +50,14 @@ class RaftServer : public RpcServer
 
 		void AddPeer(RpcConnection *peer);
 
-		void Start();
-
 		static uint32_t ElectionTimeout;
+
+		void RescheduleElection();
+
 	private:
 		static uint32_t TimeoutBase;
 		static uint32_t TimeoutTop;
 		static uint32_t HeartbeatInterval;
-		static uint32_t CommitInterval;
 
 		void Election();
 
@@ -65,7 +65,6 @@ class RaftServer : public RpcServer
 
 		void SendAppendEntry();
 
-		void RescheduleElection();
 
 		void BecomeFollower(uint32_t term);
 
@@ -74,6 +73,8 @@ class RaftServer : public RpcServer
 		void BecomeLeader();
 
 		void UpdateCommitIndex();
+
+		void ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &reply);
 
 		using RpcServer::Register;
 		using RpcServer::event_base_;
@@ -90,7 +91,6 @@ class RaftServer : public RpcServer
 
 		TimerId  election_id_;
 		TimerId  heartbeat_id_;
-		TimerId  commit_id_;
 
 		std::vector<Log> logs_;
 

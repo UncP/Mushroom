@@ -85,7 +85,7 @@ class UnitTest
 			std::cout << "\n\033[33m[ ALL  ] \033[33;1m" << test_cases_.size() << "\033[0m\n";
 			std::cout << "\033[32m" << "[ PASS ] \033[32;1m" << passed_num_ << "\033[0m\n";
 			std::cout << "\033[31m" << "[ FAIL ] \033[31;1m" << failed_num_ << "\033[0m\n";
-			return test_result_;
+			return !test_result_;
 		}
 
 		~UnitTest() {

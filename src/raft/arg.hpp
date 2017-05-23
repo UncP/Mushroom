@@ -27,8 +27,6 @@ struct RequestVoteArgs
 struct RequestVoteReply
 {
 	RequestVoteReply() { }
-
-	RequestVoteReply(uint32_t term, uint32_t granted):term_(term), granted_(granted) { }
 	uint32_t term_;
 	uint32_t granted_;
 };
@@ -51,10 +49,9 @@ struct AppendEntryArgs
 struct AppendEntryReply
 {
 	AppendEntryReply() { }
-
-	AppendEntryReply(uint32_t term, int32_t success):term_(term), success_(success) { }
 	uint32_t term_;
 	int32_t  success_;
+	int32_t  curr_idx_;
 };
 
 inline Marshaller& operator<<(Marshaller &marshaller, const RequestVoteArgs &args)
@@ -115,6 +112,7 @@ inline Marshaller& operator<<(Marshaller &marshaller, const AppendEntryReply &re
 {
 	marshaller << reply.term_;
 	marshaller << reply.success_;
+	marshaller << reply.curr_idx_;
 	return marshaller;
 }
 
@@ -122,6 +120,7 @@ inline Marshaller& operator>>(Marshaller &marshaller, AppendEntryReply &reply)
 {
 	marshaller >> reply.term_;
 	marshaller >> reply.success_;
+	marshaller >> reply.curr_idx_;
 	return marshaller;
 }
 

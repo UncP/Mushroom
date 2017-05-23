@@ -9,7 +9,6 @@
 #define _FUTURE_HPP_
 
 #include <vector>
-#include <functional>
 
 #include "../include/utility.hpp"
 #include "../include/mutex.hpp"
@@ -21,15 +20,13 @@ template<typename T>
 class Future : private NoCopyTemplate<T>
 {
 	public:
-		typedef std::function<void(Future<T> *)> CallBack;
-
 		enum Status { Pending = 0x0, Ok = 0x1, Timeout = 0x2 };
 
 		Future():cb_(0) { }
 
-		Future(Func &&cb):cb_(cb) { }
-
 		inline void SetId(uint32_t id) { id_ = id; }
+
+		inline void OnCallback(Func &&cb) { cb_ = cb; }
 
 		inline uint32_t Id() const { return id_; }
 
@@ -55,9 +52,12 @@ class Future : private NoCopyTemplate<T>
 			if (status_ == Pending) {
 				status_ = Ok;
 				cond_.Signal();
+			} else {
+				mutex_.Unlock();
+				return ;
 			}
+			if (cb_) cb_();
 			mutex_.Unlock();
-			if (cb_) cb_(this);
 		}
 
 		inline void Cancel() {
@@ -75,7 +75,7 @@ class Future : private NoCopyTemplate<T>
 		T         value_;
 		Mutex     mutex_;
 		Cond      cond_;
-		CallBack  cb_;
+		Func      cb_;
 };
 
 template<typename T>
