@@ -18,16 +18,21 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller, float error
 :Connection(server, poller), error_rate_(error_rate), marshaller_(&input_, &output_)
 {
 	readcb_ = [this]() {
-		for (; marshaller_.HasCompleteArgs();) {
+		uint32_t packet_size;
+		for (; (packet_size = marshaller_.HasCompleteArgs());) {
 			uint32_t rid;
 			marshaller_ >> rid;
 			spin_.Lock();
 			auto it = futures_.find(rid);
-			FatalIf(it == futures_.end(), "rpc id %u not called :(", rid);
-			Func func(std::move(it->second));
-			futures_.erase(it);
-			spin_.Unlock();
-			func();
+			if (it == futures_.end()) {
+				Info("rpc id %u not called or expired :(", rid);
+				marshaller_.Dump(packet_size);
+			} else {
+				Func func(std::move(it->second));
+				futures_.erase(it);
+				spin_.Unlock();
+				func();
+			}
 		}
 		if (input_.size())
 			input_.Adjust();

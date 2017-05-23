@@ -34,7 +34,7 @@ class RaftServer : public RpcServer
 
 		~RaftServer();
 
-		bool IsLeader();
+		bool IsLeader(uint32_t *term);
 
 		int32_t Id();
 
@@ -42,13 +42,15 @@ class RaftServer : public RpcServer
 
 		void Status();
 
-		void Vote(const RequestVoteArgs *args, RequestVoteReply *reply);
-
-		void AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply);
-
 		void Close();
 
 		void AddPeer(RpcConnection *peer);
+
+		std::vector<RpcConnection *>& Peers();
+
+		void Vote(const RequestVoteArgs *args, RequestVoteReply *reply);
+
+		void AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply);
 
 		static uint32_t ElectionTimeout;
 
@@ -59,12 +61,13 @@ class RaftServer : public RpcServer
 		static uint32_t TimeoutTop;
 		static uint32_t HeartbeatInterval;
 
+		static int64_t GetElectionTimeout();
+
 		void Election();
 
 		void RequestVote();
 
 		void SendAppendEntry();
-
 
 		void BecomeFollower(uint32_t term);
 
@@ -89,17 +92,17 @@ class RaftServer : public RpcServer
 		int32_t  commit_;
 		int32_t  applied_;
 
-		TimerId  election_id_;
-		TimerId  heartbeat_id_;
-
 		std::vector<Log> logs_;
-
-		Mutex mutex_;
-
-		std::vector<RpcConnection *> peers_;
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;
+
+		std::vector<RpcConnection *> peers_;
+
+		Mutex mutex_;
+
+		TimerId  election_id_;
+		TimerId  heartbeat_id_;
 };
 
 } // namespace Mushroom

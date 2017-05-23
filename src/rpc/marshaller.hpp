@@ -31,7 +31,9 @@ class Marshaller
 
 		inline void Write(void *str, uint32_t len);
 
-		inline bool HasCompleteArgs();
+		inline uint32_t HasCompleteArgs();
+
+		inline void Dump(uint32_t size);
 
 	private:
 		inline void Unget(uint32_t size);
@@ -122,17 +124,22 @@ inline void Marshaller::Unget(uint32_t size)
 	input_->Unget(size);
 }
 
-inline bool Marshaller::HasCompleteArgs()
+inline void Marshaller::Dump(uint32_t size)
+{
+	input_->AdvanceHead(size);
+}
+
+inline uint32_t Marshaller::HasCompleteArgs()
 {
 	if (input_->size() < 4)
-		return false;
+		return 0;
 	uint32_t packet_size;
 	*this >> packet_size;
 	if (input_->size() >= packet_size) {
-		return true;
+		return packet_size;
 	} else {
 		Unget(4);
-		return false;
+		return 0;
 	}
 }
 

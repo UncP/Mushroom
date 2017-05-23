@@ -39,6 +39,16 @@ class Future : private NoCopyTemplate<T>
 			mutex_.Unlock();
 		}
 
+		inline void TimedWait(int64_t milli_sec) {
+			mutex_.Lock();
+			bool timeout = false;
+			while (status_ == Pending && !timeout)
+				timeout = cond_.TimedWait(mutex_, milli_sec);
+			if (timeout)
+				status_ = Timeout;
+			mutex_.Unlock();
+		}
+
 		inline bool ok() {
 			mutex_.Lock();
 			bool ret = (status_ == Ok);

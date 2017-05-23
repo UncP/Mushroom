@@ -9,10 +9,10 @@
 ### Behold, the power of Mushroom!
 
 ### Feature
-+ B<sup>link</sup> Tree Index (Prefix Compression, Two-Phase Hashing Page Manager, Thread Pool, Bounded Mapping Queue, Latch Manager)
++ Concurrent B<sup>link</sup> Tree Index (Prefix Compression, Two-Phase Hashing Page Manager, Thread Pool, Bounded Mapping Queue, Latch Manager)
 + TCP Communication Library
 + RPC Framework
-+ Distributed Consensus Algorithm -- Raft
++ Consensus Algorithm -- Raft
 
 ******
 

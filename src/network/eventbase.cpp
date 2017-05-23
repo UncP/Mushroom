@@ -32,7 +32,6 @@ queue_(new BoundedQueue<Task>(queue_size)), pool_(new ThreadPool<Task>(queue_, t
 		char buf;
 		ssize_t r = read(channel_->fd(), &buf, sizeof(buf));
 		if (r == sizeof(buf)) {
-			// Info("wake up");
 		} else {
 			Fatal("pipe read error, %s :(", strerror(errno));
 		}
@@ -61,6 +60,9 @@ void EventBase::Loop()
 		HandleTimeout();
 	}
 	poller_->LoopOnce(0);
+	repeat_.clear();
+	pending_.clear();
+	pool_->Clear();
 }
 
 void EventBase::Exit()
@@ -72,15 +74,14 @@ void EventBase::Exit()
 	}
 	running_ = false;
 	WakeUp();
-	repeat_.clear();
-	pending_.clear();
 	mutex_.Unlock();
 }
 
 void EventBase::WakeUp()
 {
-	ssize_t r = write(wake_up_[1], "", 1);
-	FatalIf(r <= 0, "wake up failed, %s :(", strerror(errno));
+	char buf;
+	ssize_t r = write(wake_up_[1], &buf, sizeof(buf));
+	FatalIf(r <= 0, "%d wake up failed, %s :(", wake_up_[1], strerror(errno));
 }
 
 void EventBase::Refresh()
@@ -177,7 +178,7 @@ void EventBase::HandleTimeout()
 {
 	TimerId now { Time::Now(), 0xFFFFFFFF};
 	mutex_.Lock();
-	for (; !pending_.empty() && pending_.begin()->first <= now; ) {
+	for (; running_ && !pending_.empty() && pending_.begin()->first <= now; ) {
 		queue_->Push(std::move(pending_.begin()->second));
 		TimerId id = pending_.begin()->first;
 		auto it = repeat_.find(id.second);

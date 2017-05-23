@@ -8,11 +8,10 @@
 #ifndef _THREAD_POOL_HPP_
 #define _THREAD_POOL_HPP_
 
-#include <cassert>
-
 #include "utility.hpp"
 #include "bounded_queue.hpp"
 #include "thread.hpp"
+#include "atomic.hpp"
 
 namespace Mushroom {
 
@@ -29,7 +28,7 @@ class ThreadPool : private NoCopyTemplate<T>
 		void Clear();
 
 	private:
-		bool              working_;
+		atomic_8_t        working_;
 		int               thread_num_;
 		BoundedQueue<T>  *queue_;
 		Thread          **threads_;
@@ -37,18 +36,20 @@ class ThreadPool : private NoCopyTemplate<T>
 
 template<typename T>
 ThreadPool<T>::ThreadPool(BoundedQueue<T> *queue, int thread_num)
-:working_(false), thread_num_(thread_num), queue_(queue)
+:working_(0), thread_num_(thread_num), queue_(queue)
 {
-	assert(thread_num_ > 0 && thread_num_ <= 4);
+	if (thread_num_ <= 0)
+		thread_num_ = 1;
+	else if (thread_num_ > 8)
+		thread_num_ = 8;
 
 	threads_ = new Thread*[thread_num_];
-
-	working_ = true;
 
 	for (int i = 0; i != thread_num_; ++i) {
 		threads_[i] = new Thread([this] { this->Run(); });
 		threads_[i]->Start();
 	}
+	working_ = 1;
 }
 
 template<typename T>
@@ -57,7 +58,7 @@ void ThreadPool<T>::Run()
 	for (;;) {
 		T task = queue_->Pop();
 
-		if (!working_)
+		if (!working_.get())
 			break;
 
 		task();
@@ -67,10 +68,10 @@ void ThreadPool<T>::Run()
 template<typename T>
 void ThreadPool<T>::Clear()
 {
-	if (!working_)
+	if (!working_.get())
 		return ;
 
-	working_ = false;
+	working_ = 0;
 
 	queue_->Clear();
 
@@ -81,8 +82,6 @@ void ThreadPool<T>::Clear()
 template<typename T>
 ThreadPool<T>::~ThreadPool()
 {
-	Clear();
-
 	for (int i = 0; i != thread_num_; ++i)
 		delete threads_[i];
 

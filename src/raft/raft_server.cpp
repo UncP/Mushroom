@@ -13,6 +13,7 @@
 #include "raft_server.hpp"
 #include "../rpc/future.hpp"
 #include "../rpc/rpc_connection.hpp"
+#include "../network/time.hpp"
 #include "log.hpp"
 #include "arg.hpp"
 
@@ -56,13 +57,15 @@ void RaftServer::Close()
 		event_base_->Cancel(election_id_);
 	else if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
+
 	mutex_.Unlock();
 }
 
-bool RaftServer::IsLeader()
+bool RaftServer::IsLeader(uint32_t *term)
 {
 	mutex_.Lock();
 	bool ret = (state_ == Leader);
+	*term = term_;
 	mutex_.Unlock();
 	return ret;
 }
@@ -89,11 +92,21 @@ void RaftServer::AddPeer(RpcConnection *peer)
 	mutex_.Unlock();
 }
 
-void RaftServer::RescheduleElection()
+std::vector<RpcConnection *>& RaftServer::Peers()
+{
+	return peers_;
+}
+
+int64_t RaftServer::GetElectionTimeout()
 {
 	static std::default_random_engine engine(time(0));
 	static std::uniform_int_distribution<int64_t> dist(TimeoutBase, TimeoutTop);
-	event_base_->RescheduleAfter(&election_id_, dist(engine), [this]() {
+	return dist(engine);
+}
+
+void RaftServer::RescheduleElection()
+{
+	event_base_->RescheduleAfter(&election_id_, GetElectionTimeout(), [this]() {
 		Election();
 	});
 }
@@ -115,6 +128,7 @@ void RaftServer::BecomeFollower(uint32_t term)
 		event_base_->Cancel(heartbeat_id_);
 	state_ = Follower;
 	term_  = term;
+	vote_for_ = -1;
 	RescheduleElection();
 }
 
@@ -231,18 +245,25 @@ void RaftServer::Election()
 
 	uint32_t size = peers_.size();
 	Future<RequestVoteReply> futures[size];
-	TimerId id = event_base_->RunAfter(ElectionTimeout, [&futures, size]() {
-		for (uint32_t i = 0; i < size; ++i)
-			futures[i].Cancel();
-	});
 	for (uint32_t i = 0; i < size; ++i)
 		peers_[i]->Call("RaftServer::Vote", &args, &futures[i]);
-	for (uint32_t i = 0; i < size; ++i)
-		futures[i].Wait();
-	event_base_->Cancel(id);
+
+	int64_t limit = Time::Now() + GetElectionTimeout();
+	for (uint32_t i = 0; i < size; ++i) {
+		int64_t left = limit - Time::Now();
+		if (left > 0) {
+			futures[i].TimedWait(left);
+		} else {
+			for (; i < size; ++i) {
+				peers_[i]->RemoveFuture(&futures[i]);
+				futures[i].Cancel();
+			}
+			break;
+		}
+	}
 
 	mutex_.Lock();
-	if (!running_ || state_ == Follower) {
+	if (!running_ || state_ != Candidate) {
 		mutex_.Unlock();
 		return ;
 	}
@@ -267,6 +288,7 @@ void RaftServer::Election()
 		return ;
 	}
 	if (timeout) {
+		state_ = Follower;
 		mutex_.Unlock();
 		event_base_->RunNow([this]() { Election(); });
 		return ;

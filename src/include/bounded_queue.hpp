@@ -53,8 +53,6 @@ BoundedQueue<T>::BoundedQueue(int capacity):clear_(false), beg_(0), end_(0),capa
 template<typename T>
 BoundedQueue<T>::~BoundedQueue()
 {
-	Clear();
-
 	delete [] queue_;
 }
 
@@ -67,8 +65,8 @@ inline void BoundedQueue<T>::Clear()
 		return ;
 	}
 	clear_ = true;
-	mutex_.Unlock();
 	empty_.Broadcast();
+	mutex_.Unlock();
 }
 
 template<typename T>
