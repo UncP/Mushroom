@@ -24,7 +24,7 @@ static Thread *loop;
 namespace RaftTest {
 
 static void MakeRaftSet(int number, float error_rate = 0.f) {
-	base = new EventBase(8, 32);
+	base = new EventBase(8, 64);
 	uint16_t port = 7000;
 	rafts.clear();
 	for (int i = 0; i < number; ++i)
@@ -133,7 +133,7 @@ TEST(ElectionWithTotalNetworkFailure)
 	ASSERT_TRUE(number == 0);
 }
 */
-TEST(RelectionAfterNetworkFailure)
+TEST(ReelectionAfterNetworkFailure)
 {
 	uint32_t total = 3;
 	MakeRaftSet(total);
@@ -145,7 +145,7 @@ TEST(RelectionAfterNetworkFailure)
 
 	DisableServer(leader1);
 	int32_t leader2;
-	CheckOneLeaderAfter(2, &number, &leader2);
+	CheckOneLeaderAfter(4, &number, &leader2);
 	EXPECT_EQ(number, 1);
 	if (number == 1)
 		rafts[leader2]->Status();

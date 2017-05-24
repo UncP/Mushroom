@@ -19,9 +19,7 @@ Server::Server(EventBase *event_base, uint16_t port)
 Server::~Server()
 {
 	if (listen_)
-		delete listen_;
-
-	socket_.Close();
+		Close();
 
 	for (auto e : connections_)
 		delete e;

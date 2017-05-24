@@ -19,10 +19,10 @@
 
 namespace Mushroom {
 
-uint32_t RaftServer::TimeoutBase   = 300;
-uint32_t RaftServer::TimeoutTop    = 450;
+uint32_t RaftServer::TimeoutBase   = 150;
+uint32_t RaftServer::TimeoutTop    = 300;
 uint32_t RaftServer::ElectionTimeout   = 1000;
-uint32_t RaftServer::HeartbeatInterval = 20;
+uint32_t RaftServer::HeartbeatInterval = 30;
 
 RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
 :RpcServer(event_base, port), id_(id), state_(Follower), running_(true), term_(0),
@@ -105,7 +105,9 @@ int64_t RaftServer::GetElectionTimeout()
 
 void RaftServer::RescheduleElection()
 {
-	event_base_->RescheduleAfter(&election_id_, GetElectionTimeout(), [this]() {
+	int64_t timeout = GetElectionTimeout();
+	// Info("%ld, %ld", timeout, Time::Now());
+	event_base_->RescheduleAfter(&election_id_, timeout, [this]() {
 		SendRequestVote();
 	});
 }
@@ -168,6 +170,7 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 
 	if (vote_for_ != -1 && vote_for_ != arg.id_)
 		goto end;
+
 	if (arg.last_term_ < last_term)
 		goto end;
 	if (arg.last_term_ == last_term && curr_idx > arg.last_index_)
@@ -198,6 +201,7 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		BecomeFollower(arg.term_);
 	else
 		RescheduleElection(); // what if (arg.term_ == term_ && state_ == Leader)
+
 	if (arg.term_ < term_)
 		goto end;
 
@@ -262,6 +266,7 @@ void RaftServer::SendRequestVote()
 		mutex_.Lock();
 		if (state_ == Candidate) {
 			state_ = Follower;
+			vote_for_ = -1;
 			mutex_.Unlock();
 			event_base_->RunNow([this]() { SendRequestVote(); });
 		} else {
@@ -273,7 +278,7 @@ void RaftServer::SendRequestVote()
 void RaftServer::ReceiveRequestVoteReply(const RequestVoteReply &reply)
 {
 	mutex_.Lock();
-	if (state_ != Candidate)
+	if (!running_ || state_ != Candidate)
 		goto end;
 	if (reply.granted_) {
 		if (++votes_ > ((peers_.size() + 1) / 2))

@@ -11,7 +11,6 @@
 #include <map>
 
 #include "../include/utility.hpp"
-#include "../include/atomic.hpp"
 #include "../include/mutex.hpp"
 
 namespace Mushroom {
@@ -64,7 +63,7 @@ class EventBase : private NoCopy
 		uint64_t pid_;
 		int      next_time_out_;
 
-		atomic_32_t seq_;
+		uint32_t seq_;
 
 		BoundedQueue<Task> *queue_;
 		ThreadPool<Task>   *pool_;

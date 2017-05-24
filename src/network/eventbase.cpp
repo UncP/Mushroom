@@ -185,7 +185,7 @@ void EventBase::HandleTimeout()
 	mutex_.Lock();
 	for (; running_ && !pending_.empty() && pending_.begin()->first <= now; ) {
 		queue_->Push(std::move(pending_.begin()->second));
-		TimerId id = pending_.begin()->first;
+		const TimerId &id = pending_.begin()->first;
 		auto it = repeat_.find(id.second);
 		if (it != repeat_.end()) {
 			TimerId nid { now.first + it->second.first, id.second };
