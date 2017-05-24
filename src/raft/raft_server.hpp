@@ -63,7 +63,7 @@ class RaftServer : public RpcServer
 
 		static int64_t GetElectionTimeout();
 
-		void Election();
+		void SendRequestVote();
 
 		void RequestVote();
 
@@ -77,6 +77,8 @@ class RaftServer : public RpcServer
 
 		void UpdateCommitIndex();
 
+		void ReceiveRequestVoteReply(const RequestVoteReply &reply);
+
 		void ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &reply);
 
 		using RpcServer::Register;
@@ -85,12 +87,14 @@ class RaftServer : public RpcServer
 		int32_t  id_;
 
 		uint8_t  state_;
-		bool     running_;
+		uint8_t  running_;
 
 		uint32_t term_;
 		int32_t  vote_for_;
 		int32_t  commit_;
 		int32_t  applied_;
+
+		uint32_t votes_;
 
 		std::vector<Log> logs_;
 

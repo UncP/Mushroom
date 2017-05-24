@@ -19,10 +19,10 @@
 
 namespace Mushroom {
 
-uint32_t RaftServer::TimeoutBase   = 150;
-uint32_t RaftServer::TimeoutTop    = 300;
+uint32_t RaftServer::TimeoutBase   = 300;
+uint32_t RaftServer::TimeoutTop    = 450;
 uint32_t RaftServer::ElectionTimeout   = 1000;
-uint32_t RaftServer::HeartbeatInterval = 15;
+uint32_t RaftServer::HeartbeatInterval = 20;
 
 RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
 :RpcServer(event_base, port), id_(id), state_(Follower), running_(true), term_(0),
@@ -106,7 +106,7 @@ int64_t RaftServer::GetElectionTimeout()
 void RaftServer::RescheduleElection()
 {
 	event_base_->RescheduleAfter(&election_id_, GetElectionTimeout(), [this]() {
-		Election();
+		SendRequestVote();
 	});
 }
 
@@ -136,6 +136,7 @@ void RaftServer::BecomeCandidate()
 	++term_;
 	state_    = Candidate;
 	vote_for_ = id_;
+	votes_ = 1;
 }
 
 void RaftServer::BecomeLeader()
@@ -228,7 +229,7 @@ end:
 	mutex_.Unlock();
 }
 
-void RaftServer::Election()
+void RaftServer::SendRequestVote()
 {
 	mutex_.Lock();
 	if (!running_ || state_ != Follower) {
@@ -243,58 +244,45 @@ void RaftServer::Election()
 		args.last_term_);
 
 	uint32_t size = peers_.size();
-	Future<RequestVoteReply> futures[size];
-	for (uint32_t i = 0; i < size; ++i)
-		peers_[i]->Call("RaftServer::Vote", &args, &futures[i]);
-
-	int64_t limit = Time::Now() + GetElectionTimeout();
+	Future<RequestVoteReply> *futures = new Future<RequestVoteReply>[size];
 	for (uint32_t i = 0; i < size; ++i) {
-		int64_t left = limit - Time::Now();
-		if (left > 0) {
-			futures[i].TimedWait(left);
-		} else {
-			for (; i < size; ++i) {
-				peers_[i]->RemoveFuture(&futures[i]);
-				futures[i].Cancel();
-			}
-			break;
-		}
+		Future<RequestVoteReply> *fu = futures + i;
+		peers_[i]->Call("RaftServer::Vote", &args, fu);
+		fu->OnCallback([this, fu]() {
+			ReceiveRequestVoteReply(fu->Value());
+		});
 	}
 
-	mutex_.Lock();
-	if (!running_ || state_ != Candidate) {
-		mutex_.Unlock();
-		return ;
-	}
-	uint32_t vote = 1, timeout = 0;
-	for (uint32_t i = 0; i < size; ++i) {
-		if (!futures[i].ok()) {
-			++timeout;
-			continue;
+	event_base_->RunAfter(ElectionTimeout, [this, futures, size]() {
+		for (uint32_t i = 0; i != size; ++i) {
+			peers_[i]->RemoveFuture(&futures[i]);
+			futures[i].Cancel();
 		}
-		RequestVoteReply &reply = futures[i].Value();
-		if (reply.granted_) {
-			++vote;
-		} else if (term_ < reply.term_) {
-			BecomeFollower(reply.term_);
+		delete [] futures;
+		mutex_.Lock();
+		if (state_ == Candidate) {
+			state_ = Follower;
 			mutex_.Unlock();
-			return ;
+			event_base_->RunNow([this]() { SendRequestVote(); });
+		} else {
+			mutex_.Unlock();
 		}
+	});
+}
+
+void RaftServer::ReceiveRequestVoteReply(const RequestVoteReply &reply)
+{
+	mutex_.Lock();
+	if (state_ != Candidate)
+		goto end;
+	if (reply.granted_) {
+		if (++votes_ > ((peers_.size() + 1) / 2))
+			BecomeLeader();
+	} else if (reply.term_ > term_) {
+		BecomeFollower(reply.term_);
 	}
-	if (vote > ((size + 1) / 2)) {
-		BecomeLeader();
-		mutex_.Unlock();
-		return ;
-	}
-	if (timeout) {
-		state_ = Follower;
-		mutex_.Unlock();
-		event_base_->RunNow([this]() { Election(); });
-		return ;
-	}
-	BecomeFollower(term_);
+end:
 	mutex_.Unlock();
-	return ;
 }
 
 void RaftServer::SendAppendEntry()
@@ -315,8 +303,7 @@ void RaftServer::SendAppendEntry()
 		Future<AppendEntryReply> *fu = futures + i;
 		peers_[i]->Call("RaftServer::AppendEntry", &args[i], fu);
 		fu->OnCallback([this, i, fu]() {
-			const auto &reply = fu->Value();
-			ReceiveAppendEntryReply(i, reply);
+			ReceiveAppendEntryReply(i, fu->Value());
 		});
 	}
 	mutex_.Unlock();

@@ -24,7 +24,7 @@ static Thread *loop;
 namespace RaftTest {
 
 static void MakeRaftSet(int number, float error_rate = 0.f) {
-	base = new EventBase(8, 16);
+	base = new EventBase(8, 32);
 	uint16_t port = 7000;
 	rafts.clear();
 	for (int i = 0; i < number; ++i)
@@ -111,7 +111,7 @@ static void EnableServer(int32_t id) {
 } // namespace RaftTest
 
 using namespace RaftTest;
-
+/*
 TEST(ElectionWithNoNetworkFaliure)
 {
 	MakeRaftSet(5);
@@ -132,7 +132,7 @@ TEST(ElectionWithTotalNetworkFailure)
 	FreeRaftSet();
 	ASSERT_TRUE(number == 0);
 }
-
+*/
 TEST(RelectionAfterNetworkFailure)
 {
 	uint32_t total = 3;
@@ -150,11 +150,11 @@ TEST(RelectionAfterNetworkFailure)
 	if (number == 1)
 		rafts[leader2]->Status();
 
-	// EnableServer(leader1);
-	// int32_t leader3;
-	// CheckOneLeaderAfter(0.5, &number, &leader3);
-	// EXPECT_TRUE(number == 1);
-	// EXPECT_TRUE(leader2 == leader3);
+	EnableServer(leader1);
+	int32_t leader3;
+	CheckOneLeaderAfter(0.5, &number, &leader3);
+	EXPECT_TRUE(number == 1);
+	EXPECT_TRUE(leader2 == leader3);
 
 	// DisableServer(leader2);
 	// DisableServer((leader2+1)%total);

@@ -59,7 +59,12 @@ void EventBase::Loop()
 		poller_->LoopOnce(std::min(5000, next_time_out_));
 		HandleTimeout();
 	}
-	poller_->LoopOnce(0);
+	if (next_time_out_ != MaxTimeout) {
+		poller_->LoopOnce(next_time_out_);
+		HandleTimeout();
+	} else {
+		poller_->LoopOnce(0);
+	}
 	repeat_.clear();
 	pending_.clear();
 	pool_->Clear();
