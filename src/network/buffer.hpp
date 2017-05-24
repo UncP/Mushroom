@@ -1,8 +1,8 @@
 /**
- *    > Author:            UncP
- *    > Mail:         770778010@qq.com
- *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2017-04-27 09:44:37
+ *    > Author:        UncP
+ *    > Github:  www.github.com/UncP/Mushroom
+ *    > License:      BSD-3
+ *    > Time:  2017-04-27 09:44:37
 **/
 
 #ifndef _BUFFER_HPP_

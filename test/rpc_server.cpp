@@ -1,8 +1,8 @@
 /**
- *    > Author:            UncP
- *    > Mail:         770778010@qq.com
- *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2017-05-01 19:52:00
+ *    > Author:        UncP
+ *    > Github:  www.github.com/UncP/Mushroom
+ *    > License:      BSD-3
+ *    > Time:  2017-05-01 19:52:00
 **/
 
 #include "rpc_call.hpp"

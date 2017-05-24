@@ -1,8 +1,8 @@
 /**
- *    > Author:            UncP
- *    > Mail:         770778010@qq.com
- *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2017-04-30 11:23:02
+ *    > Author:        UncP
+ *    > Github:  www.github.com/UncP/Mushroom
+ *    > License:      BSD-3
+ *    > Time:  2017-04-30 11:23:02
 **/
 
 #ifndef _RPC_SERVER_HPP_

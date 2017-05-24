@@ -1,8 +1,8 @@
 /**
- *    > Author:            UncP
- *    > Mail:         770778010@qq.com
- *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2016-11-20 12:37:41
+ *    > Author:        UncP
+ *    > Github:  www.github.com/UncP/Mushroom
+ *    > License:      BSD-3
+ *    > Time:  2016-11-20 12:37:41
 **/
 
 #include <cassert>

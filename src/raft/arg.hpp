@@ -1,8 +1,8 @@
 /**
- *    > Author:            UncP
- *    > Mail:         770778010@qq.com
- *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2017-05-08 09:15:27
+ *    > Author:        UncP
+ *    > Github:  www.github.com/UncP/Mushroom
+ *    > License:      BSD-3
+ *    > Time:  2017-05-08 09:15:27
 **/
 
 #ifndef _RAFT_ARG_HPP_

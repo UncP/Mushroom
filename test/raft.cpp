@@ -1,8 +1,8 @@
 /**
- *    > Author:            UncP
- *    > Mail:         770778010@qq.com
- *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2017-05-08 14:22:46
+ *    > Author:        UncP
+ *    > Github:  www.github.com/UncP/Mushroom
+ *    > License:      BSD-3
+ *    > Time:  2017-05-08 14:22:46
 **/
 
 #include <unistd.h>
@@ -112,28 +112,26 @@ static void EnableServer(int32_t id) {
 
 using namespace RaftTest;
 
-// TEST(ElectionWithNoNetworkFaliure)
-// {
-// 	MakeRaftSet(5);
-// 	uint32_t number;
-// 	int32_t  id;
-// 	WaitForElection(1);
-// 	CheckOneLeader(&number, &id);
-// 	FreeRaftSet();
-// 	ASSERT_TRUE(number == 1);
-// 	rafts[id]->Status();
-// }
+TEST(ElectionWithNoNetworkFaliure)
+{
+	MakeRaftSet(5);
+	int32_t number;
+	int32_t  id;
+	CheckOneLeaderAfter(1, &number, &id);
+	FreeRaftSet();
+	ASSERT_TRUE(number == 1);
+	rafts[id]->Status();
+}
 
-// TEST(ElectionWithTotalNetworkFailure)
-// {
-// 	MakeRaftSet(5, 1.0);
-// 	uint32_t number;
-// 	int32_t  id;
-// 	WaitForElection(2);
-// 	CheckOneLeader(&number, &id);
-// 	FreeRaftSet();
-// 	ASSERT_TRUE(number == 0);
-// }
+TEST(ElectionWithTotalNetworkFailure)
+{
+	MakeRaftSet(5, 1.0);
+	int32_t number;
+	int32_t  id;
+	CheckOneLeaderAfter(2, &number, &id);
+	FreeRaftSet();
+	ASSERT_TRUE(number == 0);
+}
 
 TEST(RelectionAfterNetworkFailure)
 {

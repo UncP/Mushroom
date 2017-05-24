@@ -1,8 +1,8 @@
 /**
- *    > Author:            UncP
- *    > Mail:         770778010@qq.com
- *    > Github:    https://www.github.com/UncP/Mushroom
- *    > Created Time:  2017-04-22 21:21:08
+ *    > Author:        UncP
+ *    > Github:  www.github.com/UncP/Mushroom
+ *    > License:      BSD-3
+ *    > Time:  2017-04-22 21:21:08
 **/
 
 #include <unistd.h>
@@ -31,7 +31,6 @@ vote_for_(-1), commit_(-1), applied_(-1)
 	RpcServer::Start();
 	Register("RaftServer::Vote", this, &RaftServer::Vote);
 	Register("RaftServer::AppendEntry", this, &RaftServer::AppendEntry);
-	RescheduleElection();
 }
 
 RaftServer::~RaftServer()

@@ -1,8 +1,8 @@
 /**
- *    > Author:            UncP
- *    > Mail:         770778010@qq.com
- *    > Githup:    https://www.githup.com/UncP/Mushroom
- *    > Created Time:  2017-04-29 09:37:28
+ *    > Author:        UncP
+ *    > Github:  www.github.com/UncP/Mushroom
+ *    > License:      BSD-3
+ *    > Time:  2017-04-29 09:37:28
 **/
 
 #include <cstdarg>
