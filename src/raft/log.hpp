@@ -15,7 +15,6 @@ namespace Mushroom {
 struct Log
 {
 		Log() { }
-
 		Log(uint32_t term, uint32_t number):term_(term), number_(number) { }
 
 		uint32_t term_;

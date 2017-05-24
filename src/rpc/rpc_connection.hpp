@@ -67,9 +67,9 @@ inline void RpcConnection::Call(const char *str, const T1 *args, Future<T2> *fu)
 {
 	uint32_t id  = RPC::Hash(str);
 	uint32_t rid = RpcId++;
+	fu->SetId(rid);
 	spin_.Lock();
-	fu->SetId(id);
-	futures_[rid] = std::move([fu, this]() { fu->Notify(marshaller_); });
+	futures_.insert({rid, std::move([fu, this]() { fu->Notify(marshaller_); })});
 	spin_.Unlock();
 	if (!disable_.get() && dist(engine) > error_rate_) {
 		marshaller_.MarshalArgs(id, rid, args);
@@ -81,7 +81,7 @@ template<typename T>
 inline void RpcConnection::RemoveFuture(Future<T> *fu)
 {
 	spin_.Lock();
-	auto it = futures_.find(fu->Id());
+	auto it = futures_.find(fu->GetId());
 	if (it != futures_.end())
 		futures_.erase(it);
 	spin_.Unlock();

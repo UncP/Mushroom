@@ -42,6 +42,10 @@ class RaftServer : public RpcServer
 
 		void Status();
 
+		bool Start(uint32_t number, uint32_t *index);
+
+		bool LogAt(uint32_t index, uint32_t *commit);
+
 		void Close();
 
 		void AddPeer(RpcConnection *peer);

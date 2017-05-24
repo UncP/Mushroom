@@ -82,6 +82,41 @@ uint32_t RaftServer::Term()
 	return ret;
 }
 
+void RaftServer::Status()
+{
+	mutex_.Lock();
+	Info("\033[31mid: %d\033[0m  state: \033[34m%s\033[0m  \033[33mterm: %u\033[0m  "
+		"\033[32mcommit: %d\033[0m",
+		id_, (state_ != Follower) ? (state_ == Leader ? "Leader" : "Candidate") : "Follower",
+		term_, commit_);
+	mutex_.Unlock();
+}
+
+bool RaftServer::Start(uint32_t number, uint32_t *index)
+{
+	mutex_.Lock();
+	if (state_ != Leader) {
+		mutex_.Unlock();
+		return false;
+	}
+	*index = logs_.size();
+	logs_.push_back(Log(term_, number));
+	mutex_.Unlock();
+	return true;
+}
+
+bool RaftServer::LogAt(uint32_t index, uint32_t *commit)
+{
+	mutex_.Lock();
+	if (int32_t(index) > commit_) {
+		mutex_.Unlock();
+		return false;
+	}
+	*commit = logs_[index].number_;
+	mutex_.Unlock();
+	return true;
+}
+
 void RaftServer::AddPeer(RpcConnection *peer)
 {
 	mutex_.Lock();
@@ -110,16 +145,6 @@ void RaftServer::RescheduleElection()
 	event_base_->RescheduleAfter(&election_id_, timeout, [this]() {
 		SendRequestVote();
 	});
-}
-
-void RaftServer::Status()
-{
-	mutex_.Lock();
-	Info("\033[31mid: %d\033[0m  state: \033[34m%s\033[0m  \033[33mterm: %u\033[0m  "
-		"\033[32mcommit: %d\033[0m",
-		id_, (state_ != Follower) ? (state_ == Leader ? "Leader" : "Candidate") : "Follower",
-		term_, commit_);
-	mutex_.Unlock();
 }
 
 void RaftServer::BecomeFollower(uint32_t term)

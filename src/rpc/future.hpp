@@ -22,13 +22,13 @@ class Future : private NoCopyTemplate<T>
 	public:
 		enum Status { Pending = 0x0, Ok = 0x1, Timeout = 0x2 };
 
-		Future():cb_(0) { }
+		Future():status_(Pending), cb_(0) { }
 
 		inline void SetId(uint32_t id) { id_ = id; }
 
-		inline void OnCallback(Func &&cb) { cb_ = cb; }
+		inline uint32_t GetId() const { return id_; }
 
-		inline uint32_t Id() const { return id_; }
+		inline void OnCallback(Func &&cb) { cb_ = cb; }
 
 		inline T& Value() { return value_; }
 
@@ -36,16 +36,6 @@ class Future : private NoCopyTemplate<T>
 			mutex_.Lock();
 			while (status_ == Pending)
 				cond_.Wait(mutex_);
-			mutex_.Unlock();
-		}
-
-		inline void TimedWait(int64_t milli_sec) {
-			mutex_.Lock();
-			bool timeout = false;
-			while (status_ == Pending && !timeout)
-				timeout = cond_.TimedWait(mutex_, milli_sec);
-			if (timeout)
-				status_ = Timeout;
 			mutex_.Unlock();
 		}
 
@@ -80,38 +70,12 @@ class Future : private NoCopyTemplate<T>
 		}
 
 	private:
-		uint8_t   status_;
-		uint32_t  id_;
-		T         value_;
-		Mutex     mutex_;
-		Cond      cond_;
-		Func      cb_;
-};
-
-template<typename T>
-class FutureGroup : private NoCopyTemplate<T>
-{
-	public:
-		FutureGroup(int size) { futures_.reserve(size); }
-
-		inline void Add(Future<T> *future) { futures_.push_back(future); }
-
-		inline void Wait() {
-			for (auto e : futures_)
-				e->Wait();
-		}
-
-		inline void Cancel() {
-			for (auto e : futures_)
-				e->Cancel();
-		}
-
-		inline Future<T>* operator[](uint32_t i) {
-			return futures_[i];
-		}
-
-	private:
-		std::vector<Future<T> *> futures_;
+		uint8_t  status_;
+		uint32_t id_;
+		T        value_;
+		Mutex    mutex_;
+		Cond     cond_;
+		Func     cb_;
 };
 
 } // namespace Mushroom

@@ -17,18 +17,36 @@
 using namespace std;
 using namespace Mushroom;
 
-static EventBase *base;
+static EventBase *base = 0;
+static Thread *loop = 0;
 static vector<RaftServer *> rafts;
-static Thread *loop;
+static vector<bool> connected;
 
 namespace RaftTest {
 
+static void FreeRaftSet() {
+	for (auto e : rafts)
+		e->Close();
+	if (base) base->Exit();
+	if (loop) loop->Stop();
+	for (auto e : rafts)
+		delete e;
+	delete base;
+	delete loop;
+	base = 0;
+	loop = 0;
+	rafts.clear();
+	connected.clear();
+}
+
 static void MakeRaftSet(int number, float error_rate = 0.f) {
+	FreeRaftSet();
 	base = new EventBase(8, 64);
 	uint16_t port = 7000;
-	rafts.clear();
-	for (int i = 0; i < number; ++i)
+	for (int i = 0; i < number; ++i) {
 		rafts.push_back(new RaftServer(base, port + i, i));
+		connected.push_back(true);
+	}
 	for (int i = 0; i < number; ++i) {
 		for (int j = 0; j < number; ++j) {
 			if (i != j) {
@@ -42,17 +60,6 @@ static void MakeRaftSet(int number, float error_rate = 0.f) {
 	loop->Start();
 	for (auto e : rafts)
 		e->RescheduleElection();
-}
-
-static void FreeRaftSet() {
-	for (auto e : rafts)
-		e->Close();
-	base->Exit();
-	loop->Stop();
-	for (auto e : rafts)
-		delete e;
-	delete base;
-	delete loop;
 }
 
 static void WaitForElection(float factor) {
@@ -87,6 +94,7 @@ static bool CheckNoLeaderAfter(float factor) {
 }
 
 static void DisableServer(int32_t id) {
+	connected[id] = false;
 	for (auto e : rafts[id]->Peers())
 		e->Disable();
 	int32_t size = rafts.size();
@@ -98,6 +106,7 @@ static void DisableServer(int32_t id) {
 }
 
 static void EnableServer(int32_t id) {
+	connected[id] = true;
 	for (auto e : rafts[id]->Peers())
 		e->Enable();
 	int32_t size = rafts.size();
@@ -108,31 +117,64 @@ static void EnableServer(int32_t id) {
 			rafts[i]->Peers()[id-1]->Enable();
 }
 
+static bool CommitAt(uint32_t index, uint32_t *commit, int *count)
+{
+	*count = 0;
+	uint32_t pre = ~0;
+	for (auto e : rafts) {
+		if (!e->LogAt(index, commit)) continue;
+		if (*count && pre != *commit) {
+			printf("not match at %u, %u : %u\n", index, pre, *commit);
+			return false;
+		}
+		pre = *commit;
+		++*count;
+	}
+	return true;
+}
+
+static bool One(uint32_t number, int expect)
+{
+	for (int i = 0; i < 5; ++i) {
+		for (uint32_t j = 0; j < rafts.size(); ++j) {
+			if (!connected[j]) continue;
+			uint32_t index;
+			if (!rafts[j]->Start(number, &index)) continue;
+			for (int k = 0; k < 4; ++k) {
+				usleep(100 * 1000);
+				uint32_t commit;
+				int count;
+				if (!CommitAt(index, &commit, &count))
+					return false;
+				if (count >= expect && commit == number)
+					return true;
+			}
+		}
+		usleep(100 * 1000);
+	}
+	return false;
+}
+
 } // namespace RaftTest
 
 using namespace RaftTest;
-/*
-TEST(ElectionWithNoNetworkFaliure)
-{
-	MakeRaftSet(5);
-	int32_t number;
-	int32_t  id;
-	CheckOneLeaderAfter(1, &number, &id);
-	FreeRaftSet();
-	ASSERT_TRUE(number == 1);
-	rafts[id]->Status();
-}
 
-TEST(ElectionWithTotalNetworkFailure)
-{
-	MakeRaftSet(5, 1.0);
-	int32_t number;
-	int32_t  id;
-	CheckOneLeaderAfter(2, &number, &id);
-	FreeRaftSet();
-	ASSERT_TRUE(number == 0);
-}
-*/
+// TEST(ElectionWithNoNetworkFaliure)
+// {
+// 	MakeRaftSet(5);
+// 	int32_t number;
+// 	int32_t id;
+// 	CheckOneLeaderAfter(1, &number, &id);
+// 	ASSERT_EQ(number,  1);
+// 	rafts[id]->Status();
+// }
+
+// TEST(ElectionWithTotalNetworkFailure)
+// {
+// 	MakeRaftSet(5, 1.0);
+// 	ASSERT_TRUE(CheckNoLeaderAfter(2));
+// }
+/*
 TEST(ReelectionAfterNetworkFailure)
 {
 	uint32_t total = 3;
@@ -140,42 +182,54 @@ TEST(ReelectionAfterNetworkFailure)
 	int32_t number;
 	int32_t leader1;
 	CheckOneLeaderAfter(1, &number, &leader1);
-	EXPECT_TRUE(number == 1);
+	ASSERT_EQ(number,  1);
 	rafts[leader1]->Status();
 
 	DisableServer(leader1);
 	int32_t leader2;
-	CheckOneLeaderAfter(4, &number, &leader2);
-	EXPECT_EQ(number, 1);
-	if (number == 1)
-		rafts[leader2]->Status();
+	CheckOneLeaderAfter(2, &number, &leader2);
+	ASSERT_EQ(number,  1);
+	rafts[leader2]->Status();
 
 	EnableServer(leader1);
 	int32_t leader3;
 	CheckOneLeaderAfter(0.5, &number, &leader3);
-	EXPECT_TRUE(number == 1);
-	EXPECT_TRUE(leader2 == leader3);
+	ASSERT_EQ(number,  1);
+	ASSERT_EQ(leader2, leader3);
 
-	// DisableServer(leader2);
-	// DisableServer((leader2+1)%total);
-	// EXPECT_TRUE(CheckNoLeaderAfter(2));
+	DisableServer(leader2);
+	DisableServer((leader2+1)%total);
+	ASSERT_TRUE(CheckNoLeaderAfter(2));
 
-	// EnableServer((leader2+1)%total);
-	// int32_t leader4;
-	// CheckOneLeaderAfter(1, &number, &leader4);
-	// EXPECT_TRUE(number == 1);
+	EnableServer((leader2+1)%total);
+	int32_t leader4;
+	CheckOneLeaderAfter(1, &number, &leader4);
+	ASSERT_EQ(number, 1);
+	rafts[leader4]->Status();
 
-	// EnableServer(leader2);
-	// int32_t leader5;
-	// CheckOneLeaderAfter(0.5, &number, &leader5);
-	// EXPECT_TRUE(number == 1);
-	// EXPECT_TRUE(leader4 == leader5);
+	EnableServer(leader2);
+	int32_t leader5;
+	CheckOneLeaderAfter(0.5, &number, &leader5);
+	ASSERT_EQ(number, 1);
+	ASSERT_EQ(leader4, leader5);
+}
+*/
+TEST(AgreementWithoutNetworkFailure)
+{
+	uint32_t total = 3;
+	MakeRaftSet(total);
+	int32_t number;
+	int32_t id;
+	CheckOneLeaderAfter(1, &number, &id);
+	ASSERT_EQ(number, 1);
+	rafts[leader1]->Status();
 
-	FreeRaftSet();
 }
 
 int main()
 {
 	Signal::Register(SIGINT, []() { FreeRaftSet(); });
-	return RUN_ALL_TESTS();
+	RUN_ALL_TESTS();
+	FreeRaftSet();
+	return 0;
 }
