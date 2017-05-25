@@ -25,8 +25,8 @@ uint32_t RaftServer::ElectionTimeout   = 1000;
 uint32_t RaftServer::HeartbeatInterval = 30;
 
 RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
-:RpcServer(event_base, port), id_(id), state_(Follower), running_(true), term_(0),
-vote_for_(-1), commit_(-1), applied_(-1)
+:RpcServer(event_base, port), id_(id), state_(Follower), running_(true), in_election_(0),
+term_(0), vote_for_(-1), commit_(-1), applied_(-1)
 {
 	RpcServer::Start();
 	Register("RaftServer::Vote", this, &RaftServer::Vote);
@@ -47,7 +47,7 @@ void RaftServer::Close()
 		return ;
 	}
 
-	Info("closing raft server %d", id_);
+	// Info("closing raft server %d", id_);
 
 	RpcServer::Close();
 
@@ -82,13 +82,28 @@ uint32_t RaftServer::Term()
 	return ret;
 }
 
-void RaftServer::Status()
+void RaftServer::Status(bool print_log, bool print_next)
 {
 	mutex_.Lock();
-	Info("\033[31mid: %d\033[0m  state: \033[34m%s\033[0m  \033[33mterm: %u\033[0m  "
+	Info("\033[31mid: %d\033[0m  \033[34mstate: %s\033[0m  \033[33mterm: %u\033[0m  "
 		"\033[32mcommit: %d\033[0m",
 		id_, (state_ != Follower) ? (state_ == Leader ? "Leader" : "Candidate") : "Follower",
 		term_, commit_);
+	if (print_log) {
+		for (auto &e : logs_) {
+			printf("%u %u  ", e.term_, e.number_);
+		}
+		printf("\n");
+	}
+	if (state_ == Leader && print_next) {
+		printf("next : ");
+		for (auto e : next_)
+			printf("%-2d ", e);
+		printf("\nmatch: ");
+		for (auto e : match_)
+			printf("%-2d ", e);
+		printf("\n");
+	}
 	mutex_.Unlock();
 }
 
@@ -102,6 +117,7 @@ bool RaftServer::Start(uint32_t number, uint32_t *index)
 	*index = logs_.size();
 	logs_.push_back(Log(term_, number));
 	mutex_.Unlock();
+	event_base_->RunNow([this]() { SendAppendEntry(); });
 	return true;
 }
 
@@ -140,16 +156,14 @@ int64_t RaftServer::GetElectionTimeout()
 
 void RaftServer::RescheduleElection()
 {
-	int64_t timeout = GetElectionTimeout();
-	// Info("%ld, %ld", timeout, Time::Now());
-	event_base_->RescheduleAfter(&election_id_, timeout, [this]() {
+	event_base_->RescheduleAfter(&election_id_, GetElectionTimeout(), [this]() {
 		SendRequestVote();
 	});
 }
 
 void RaftServer::BecomeFollower(uint32_t term)
 {
-	Info("%d becoming follower, term %u", id_, term);
+	// Info("%d becoming follower, term %u", id_, term);
 	if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
 	state_ = Follower;
@@ -164,12 +178,14 @@ void RaftServer::BecomeCandidate()
 	state_    = Candidate;
 	vote_for_ = id_;
 	votes_ = 1;
+	in_election_ = 1;
 }
 
 void RaftServer::BecomeLeader()
 {
-	Info("%d becoming leader, term %u", id_, term_);
+	// Info("%d becoming leader, term %u", id_, term_);
 	state_    = Leader;
+	in_election_ = 0;
 	for (auto &e : next_)
 		e = commit_ + 1;
 	for (auto &e : match_)
@@ -184,8 +200,8 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	mutex_.Lock();
 	reply->granted_ = 0;
 	const RequestVoteArgs &arg = *args;
-	int32_t  curr_idx  = logs_.size() - 1;
-	uint32_t last_term = (curr_idx >= 0) ? logs_[curr_idx].term_ : 0;
+	int32_t  last_idx  = logs_.size() - 1;
+	uint32_t last_term = (last_idx >= 0) ? logs_[last_idx].term_ : 0;
 	uint32_t prev_term = term_;
 	if (arg.term_ < term_)
 		goto end;
@@ -198,10 +214,10 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 
 	if (arg.last_term_ < last_term)
 		goto end;
-	if (arg.last_term_ == last_term && curr_idx > arg.last_index_)
+	if (arg.last_term_ == last_term && last_idx > arg.last_index_)
 		goto end;
 
-	Info("%d vote for %d", id_, arg.id_);
+	// Info("%d vote for %d", id_, arg.id_);
 
 	reply->granted_ = 1;
 	vote_for_ = arg.id_;
@@ -211,6 +227,70 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 
 end:
 	reply->term_ = term_;
+	mutex_.Unlock();
+}
+
+void RaftServer::SendRequestVote()
+{
+	mutex_.Lock();
+	if (!running_ || state_ != Follower) {
+		mutex_.Unlock();
+		return ;
+	}
+	if (in_election_) {
+		RescheduleElection();
+		mutex_.Unlock();
+		return ;
+	}
+	BecomeCandidate();
+	int32_t last_idx = logs_.size() - 1;
+	RequestVoteArgs args(term_, id_, last_idx, last_idx >= 0 ? logs_[last_idx].term_ : 0);
+	mutex_.Unlock();
+
+	// Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
+	// 	args.last_term_);
+
+	uint32_t size = peers_.size();
+	Future<RequestVoteReply> *futures = new Future<RequestVoteReply>[size];
+	for (uint32_t i = 0; i < size; ++i) {
+		Future<RequestVoteReply> *fu = futures + i;
+		peers_[i]->Call("RaftServer::Vote", &args, fu);
+		fu->OnCallback([this, fu]() {
+			ReceiveRequestVoteReply(fu->Value());
+		});
+	}
+
+	event_base_->RunAfter(ElectionTimeout, [this, futures, size]() {
+		for (uint32_t i = 0; i != size; ++i) {
+			peers_[i]->RemoveFuture(&futures[i]);
+			futures[i].Cancel();
+		}
+		delete [] futures;
+		mutex_.Lock();
+		in_election_ = 0;
+		if (state_ == Candidate) {
+			state_ = Follower;
+			vote_for_ = -1;
+			mutex_.Unlock();
+			event_base_->RunNow([this]() { SendRequestVote(); });
+		} else {
+			mutex_.Unlock();
+		}
+	});
+}
+
+void RaftServer::ReceiveRequestVoteReply(const RequestVoteReply &reply)
+{
+	mutex_.Lock();
+	if (!running_ || state_ != Candidate)
+		goto end;
+	if (reply.granted_) {
+		if (++votes_ > ((peers_.size() + 1) / 2))
+			BecomeLeader();
+	} else if (reply.term_ > term_) {
+		BecomeFollower(reply.term_);
+	}
+end:
 	mutex_.Unlock();
 }
 
@@ -237,8 +317,11 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		goto end;
 	}
 
-	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty())
+	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
+		reply->success_ = 0;
 		logs_.erase(logs_.begin() + prev_i, logs_.end());
+		goto end;
+	}
 	for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
 		if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
 			logs_.erase(logs_.begin() + prev_i, logs_.end());
@@ -247,7 +330,7 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	}
 	assert(prev_i == int32_t(logs_.size()));
 	logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
-	reply->success_ = arg.entries_.end() - (arg.entries_.begin() + prev_j);
+	reply->success_ = 1;
 
 	if (arg.leader_commit_ > commit_)
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
@@ -255,63 +338,6 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 end:
 	reply->curr_idx_ = logs_.size() - 1;
 	reply->term_ = term_;
-	mutex_.Unlock();
-}
-
-void RaftServer::SendRequestVote()
-{
-	mutex_.Lock();
-	if (!running_ || state_ != Follower) {
-		mutex_.Unlock();
-		return ;
-	}
-	BecomeCandidate();
-	RequestVoteArgs args(term_, id_, commit_, commit_ >= 0 ? logs_[commit_].term_ : 0);
-	mutex_.Unlock();
-
-	Info("election: term %u id %d commit %d last %u", args.term_, args.id_, args.last_index_,
-		args.last_term_);
-
-	uint32_t size = peers_.size();
-	Future<RequestVoteReply> *futures = new Future<RequestVoteReply>[size];
-	for (uint32_t i = 0; i < size; ++i) {
-		Future<RequestVoteReply> *fu = futures + i;
-		peers_[i]->Call("RaftServer::Vote", &args, fu);
-		fu->OnCallback([this, fu]() {
-			ReceiveRequestVoteReply(fu->Value());
-		});
-	}
-
-	event_base_->RunAfter(ElectionTimeout, [this, futures, size]() {
-		for (uint32_t i = 0; i != size; ++i) {
-			peers_[i]->RemoveFuture(&futures[i]);
-			futures[i].Cancel();
-		}
-		delete [] futures;
-		mutex_.Lock();
-		if (state_ == Candidate) {
-			state_ = Follower;
-			vote_for_ = -1;
-			mutex_.Unlock();
-			event_base_->RunNow([this]() { SendRequestVote(); });
-		} else {
-			mutex_.Unlock();
-		}
-	});
-}
-
-void RaftServer::ReceiveRequestVoteReply(const RequestVoteReply &reply)
-{
-	mutex_.Lock();
-	if (!running_ || state_ != Candidate)
-		goto end;
-	if (reply.granted_) {
-		if (++votes_ > ((peers_.size() + 1) / 2))
-			BecomeLeader();
-	} else if (reply.term_ > term_) {
-		BecomeFollower(reply.term_);
-	}
-end:
 	mutex_.Unlock();
 }
 
@@ -361,10 +387,10 @@ void RaftServer::ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &rep
 	if (reply.success_ == -1) {
 		if (next_[i] > 0)
 			--next_[i];
-	} else {
-		next_[i] += reply.success_;
-		match_[i] = next_[i] - 1;
+		goto end;
 	}
+	next_[i] = reply.curr_idx_ + 1;
+	match_[i] = next_[i] - 1;
 
 	if (commit_ >= reply.curr_idx_ || logs_[reply.curr_idx_].term_ != term_)
 		goto end;

@@ -59,4 +59,9 @@ void Server::HandleAccept()
 	connections_.push_back(con);
 }
 
+std::vector<Connection *>& Server::Connections()
+{
+	return connections_;
+}
+
 } // namespaceMushroom

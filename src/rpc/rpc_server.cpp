@@ -12,7 +12,8 @@
 
 namespace Mushroom {
 
-RpcServer::RpcServer(EventBase *event_base, uint16_t port):Server(event_base, port) { }
+RpcServer::RpcServer(EventBase *event_base, uint16_t port)
+:Server(event_base, port), rpc_count_(0) { }
 
 RpcServer::~RpcServer()
 {
@@ -41,6 +42,10 @@ void RpcServer::HandleAccept()
 	RpcConnection *con = new RpcConnection(Socket(fd), event_base_->GetPoller());
 	connections_.push_back((Connection *)con);
 	con->OnRead([con, this]() {
+		if (con->Disabled()) {
+			con->GetInput().Clear();
+			return ;
+		}
 		Marshaller &mar = con->GetMarshaller();
 		bool has = false;
 		for (; mar.HasCompleteArgs();) {
@@ -52,6 +57,7 @@ void RpcServer::HandleAccept()
 			rpc->GetReady(mar);
 			(*rpc)();
 			has = true;
+			++rpc_count_;
 		}
 		Buffer &in = con->GetInput();
 		if (in.size())
@@ -59,6 +65,11 @@ void RpcServer::HandleAccept()
 		if (has)
 			con->SendOutput();
 	});
+}
+
+uint32_t RpcServer::RpcCount()
+{
+	return rpc_count_.get();
 }
 
 } // namespace Mushroom

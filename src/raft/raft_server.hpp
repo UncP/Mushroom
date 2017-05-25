@@ -40,7 +40,7 @@ class RaftServer : public RpcServer
 
 		uint32_t Term();
 
-		void Status();
+		void Status(bool print_log = false, bool print_next = false);
 
 		bool Start(uint32_t number, uint32_t *index);
 
@@ -92,6 +92,7 @@ class RaftServer : public RpcServer
 
 		uint8_t  state_;
 		uint8_t  running_;
+		uint8_t  in_election_;
 
 		uint32_t term_;
 		int32_t  vote_for_;

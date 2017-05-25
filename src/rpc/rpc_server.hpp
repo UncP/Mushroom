@@ -12,6 +12,7 @@
 #include <unordered_map>
 
 #include "../include/utility.hpp"
+#include "../include/atomic.hpp"
 #include "../log/log.hpp"
 #include "../network/server.hpp"
 #include "rpc.hpp"
@@ -34,8 +35,12 @@ class RpcServer : public Server
 		template<typename T1, typename T2, typename T3>
 		void Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*));
 
+		uint32_t RpcCount();
+
 	private:
 		std::unordered_map<uint32_t, RPC *> services_;
+
+		atomic_32_t rpc_count_;
 
 		void HandleAccept();
 };

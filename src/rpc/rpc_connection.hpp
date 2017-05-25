@@ -38,23 +38,25 @@ class RpcConnection : public Connection
 		template<typename T1, typename T2>
 		inline void Call(const char *str, const T1 *args, Future<T2> *fu);
 
+		template<typename T>
+		inline void RemoveFuture(Future<T> *fu);
+
 		Marshaller& GetMarshaller();
 
-		using Connection::OnRead;
+		bool Disabled();
 
 		void Disable();
 
 		void Enable();
 
-		template<typename T>
-		inline void RemoveFuture(Future<T> *fu);
+		using Connection::OnRead;
 
 	private:
 		using Connection::Send;
 		using Connection::OnWrite;
 
-		atomic_8_t  disable_ = 0;
-		float       error_rate_ = 0.f;
+		atomic_32_t disable_;
+		float       error_rate_;
 
 		SpinLock                 spin_;
 		std::map<uint32_t, Func> futures_;

@@ -32,6 +32,8 @@ class Server : private NoCopy
 
 		void OnConnect(const ConnectCallBack &connectcb);
 
+		std::vector<Connection *>& Connections();
+
 	protected:
 		uint16_t   port_;
 		EventBase *event_base_;

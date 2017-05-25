@@ -15,10 +15,14 @@ namespace Mushroom {
 atomic_32_t RpcConnection::RpcId(0);
 
 RpcConnection::RpcConnection(const EndPoint &server, Poller *poller, float error_rate)
-:Connection(server, poller), error_rate_(error_rate), marshaller_(&input_, &output_)
+:Connection(server, poller), disable_(0), error_rate_(error_rate), marshaller_(&input_, &output_)
 {
 	readcb_ = [this]() {
 		uint32_t packet_size;
+		if (disable_.get()) {
+			input_.Clear();
+			return ;
+		}
 		for (; (packet_size = marshaller_.HasCompleteArgs());) {
 			uint32_t rid;
 			marshaller_ >> rid;
@@ -47,6 +51,11 @@ RpcConnection::~RpcConnection() { }
 void RpcConnection::Disable()
 {
 	disable_ = 1;
+}
+
+bool RpcConnection::Disabled()
+{
+	return disable_.get();
 }
 
 void RpcConnection::Enable()
