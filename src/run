@@ -35,7 +35,21 @@ then
 	fi
 elif [ "$1" = "raft" ]
 then
-	make raft_test && ./raft_test
+	make raft_test
+	total=1
+	if [ $2 -gt 0 ]
+	then
+		total=$2
+	fi
+	for i in `seq $total`; do
+		./raft_test
+		r=$?
+		if [ $r -ne 0 ]
+		then
+			echo 'test failed at '$i' '
+			exit 1
+		fi
+	done
 else
 	echo "wrong argument :("
 fi

@@ -75,12 +75,13 @@ static void CheckOneLeaderAfter(float factor, int32_t *number, int32_t *id) {
 	*id = -1;
 	*number = 0;
 	uint32_t last = 0;
-	for (auto e : rafts) {
-		uint32_t now;
-		if (e->IsLeader(&now)) {
-			map[now].push_back(e->Id());
-			last = last < now ? now : last;
-		}
+	for (uint32_t i = 0; i < rafts.size(); ++i) {
+		if (!connected[i])
+			continue;
+		uint32_t term;
+		if (rafts[i]->IsLeader(&term))
+			map[term].push_back(rafts[i]->Id());
+		last = last < term ? term : last;
 	}
 	if (map.size()) {
 		auto &leaders = map[last];
@@ -139,7 +140,7 @@ static uint32_t One(uint32_t number, int expect)
 {
 	int count;
 	int64_t now = Time::Now();
-	for (; Time::Now() < (now + 5000);) {
+	for (; Time::Now() < (now + 10000);) {
 		uint32_t index = ~0u;
 		for (uint32_t j = 0; j < rafts.size(); ++j) {
 			if (!connected[j]) continue;
@@ -150,7 +151,7 @@ static uint32_t One(uint32_t number, int expect)
 			usleep(100 * 1000);
 			continue;
 		}
-		for (int k = 0; k < 25; ++k) {
+		for (int k = 0; k < 40; ++k) {
 			usleep(50 * 1000);
 			uint32_t commit;
 			if (!CommittedAt(index, &commit, &count))
@@ -224,7 +225,7 @@ TEST(ElectionWithTotalNetworkFailure)
 	MakeRaftSet(5, 1.0);
 	ASSERT_TRUE(CheckNoLeaderAfter(2));
 }
-*/
+
 
 TEST(ReelectionAfterNetworkFailure)
 {
@@ -248,7 +249,7 @@ TEST(ReelectionAfterNetworkFailure)
 
 	DisableServer(leader2);
 	DisableServer((leader2+1)%total);
-	ASSERT_TRUE(CheckNoLeaderAfter(2));
+	ASSERT_TRUE(CheckNoLeaderAfter(1));
 
 	EnableServer((leader2+1)%total);
 	int32_t leader4;
@@ -261,8 +262,8 @@ TEST(ReelectionAfterNetworkFailure)
 	ASSERT_EQ(number, 1);
 	ASSERT_EQ(leader4, leader5);
 }
+*/
 
-/*
 TEST(AgreementWithoutNetworkFailure)
 {
 	uint32_t total = 3;
@@ -272,20 +273,17 @@ TEST(AgreementWithoutNetworkFailure)
 	CheckOneLeaderAfter(1, &number, &id);
 	ASSERT_EQ(number, 1);
 
-	for (uint32_t i = 0; i < 3; ++i) {
+	for (uint32_t i = 0; i < 5; ++i) {
 		uint32_t commit;
 		int count;
 		ASSERT_TRUE(CommittedAt(i, &commit, &count));
 		ASSERT_EQ(count, 0);
 		uint32_t index = One(100 + i, total);
-		if (index != i) {
-			printf("got %u but expect %u\n", index, i);
-			ASSERT_TRUE(0);
-		}
+		ASSERT_EQ(index, i);
 	}
 }
 
-
+/*
 TEST(AgreementWithFollowerDisconnected)
 {
 	uint32_t total = 3;
@@ -489,6 +487,7 @@ TEST(RpcCount)
 	uint32_t all1, all2;
 loop:
 	for (int i = 0; i < 3; ++i) {
+		if (i) WaitForElection(1);
 		all1 = RpcCount();
 		uint32_t index, term;
 		ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
@@ -498,7 +497,8 @@ loop:
 		for (int j = 1; j < iter+2; ++j) {
 			uint32_t tmp_idx;
 			logs.push_back(lg);
-			ASSERT_TRUE(rafts[leader]->Start(lg++, &tmp_idx));
+			if (!rafts[leader]->Start(lg++, &tmp_idx))
+				goto loop;
 			uint32_t tmp_trm = rafts[leader]->Term();
 			if (tmp_trm != term)
 				goto loop;
