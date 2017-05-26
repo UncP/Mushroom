@@ -26,15 +26,16 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller, float error
 		for (; (packet_size = marshaller_.HasCompleteArgs());) {
 			uint32_t rid;
 			marshaller_ >> rid;
-			spin_.Lock();
+			mutex_.Lock();
 			auto it = futures_.find(rid);
 			if (it == futures_.end()) {
+				mutex_.Unlock();
 				Info("rpc id %u not called or expired :(", rid);
 				marshaller_.Dump(packet_size);
 			} else {
 				Func func(std::move(it->second));
 				futures_.erase(it);
-				spin_.Unlock();
+				mutex_.Unlock();
 				func();
 			}
 		}
@@ -47,6 +48,12 @@ RpcConnection::RpcConnection(const Socket &socket, Poller *poller)
 :Connection(socket, poller), disable_(0), error_rate_(0), marshaller_(&input_, &output_) { }
 
 RpcConnection::~RpcConnection() { }
+
+bool RpcConnection::Close()
+{
+	Disable();
+	return Connection::Close();
+}
 
 void RpcConnection::Disable()
 {

@@ -28,9 +28,9 @@ RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
 :RpcServer(event_base, port), id_(id), state_(Follower), running_(true), in_election_(0),
 term_(0), vote_for_(-1), commit_(-1), applied_(-1)
 {
-	RpcServer::Start();
 	Register("RaftServer::Vote", this, &RaftServer::Vote);
 	Register("RaftServer::AppendEntry", this, &RaftServer::AppendEntry);
+	RpcServer::Start();
 }
 
 RaftServer::~RaftServer()
@@ -56,6 +56,9 @@ void RaftServer::Close()
 		event_base_->Cancel(election_id_);
 	else if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
+
+	for (auto e : peers_)
+		e->Close();
 
 	mutex_.Unlock();
 }
@@ -164,7 +167,7 @@ void RaftServer::RescheduleElection()
 
 void RaftServer::BecomeFollower(uint32_t term)
 {
-	Info("%d becoming follower, term %u", id_, term);
+	// Info("%d becoming follower, term %u", id_, term);
 	if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
 	state_ = Follower;
@@ -218,7 +221,7 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	if (arg.last_term_ == last_term && last_idx > arg.last_index_)
 		goto end;
 
-	Info("%d vote for %d", id_, arg.id_);
+	// Info("%d vote for %d", id_, arg.id_);
 
 	reply->granted_ = 1;
 	vote_for_ = arg.id_;
@@ -243,8 +246,8 @@ void RaftServer::SendRequestVote()
 	RequestVoteArgs args(term_, id_, last_idx, last_idx >= 0 ? logs_[last_idx].term_ : 0);
 	mutex_.Unlock();
 
-	Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
-		args.last_term_);
+	// Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
+	// 	args.last_term_);
 
 	uint32_t size = peers_.size();
 	Future<RequestVoteReply> *futures = new Future<RequestVoteReply>[size];

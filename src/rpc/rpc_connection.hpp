@@ -13,7 +13,7 @@
 // #include <ctime>
 
 #include "../include/atomic.hpp"
-#include "../include/spin_lock.hpp"
+#include "../include/mutex.hpp"
 #include "../network/connection.hpp"
 #include "rpc.hpp"
 #include "marshaller.hpp"
@@ -41,6 +41,8 @@ class RpcConnection : public Connection
 		template<typename T>
 		inline void RemoveFuture(Future<T> *fu);
 
+		bool Close();
+
 		Marshaller& GetMarshaller();
 
 		bool Disabled();
@@ -58,7 +60,7 @@ class RpcConnection : public Connection
 		atomic_32_t disable_;
 		float       error_rate_;
 
-		SpinLock                 spin_;
+		Mutex                    mutex_;
 		std::map<uint32_t, Func> futures_;
 
 		Marshaller marshaller_;
@@ -70,9 +72,9 @@ inline void RpcConnection::Call(const char *str, const T1 *args, Future<T2> *fu)
 	uint32_t id  = RPC::Hash(str);
 	uint32_t rid = RpcId++;
 	fu->SetId(rid);
-	spin_.Lock();
+	mutex_.Lock();
 	futures_.insert({rid, std::move([fu, this]() { fu->Notify(marshaller_); })});
-	spin_.Unlock();
+	mutex_.Unlock();
 	if (!disable_.get()) { // && dist(engine) > error_rate_
 		marshaller_.MarshalArgs(id, rid, args);
 		SendOutput();
@@ -82,11 +84,11 @@ inline void RpcConnection::Call(const char *str, const T1 *args, Future<T2> *fu)
 template<typename T>
 inline void RpcConnection::RemoveFuture(Future<T> *fu)
 {
-	spin_.Lock();
+	mutex_.Lock();
 	auto it = futures_.find(fu->GetId());
 	if (it != futures_.end())
 		futures_.erase(it);
-	spin_.Unlock();
+	mutex_.Unlock();
 }
 
 } // namespace Mushroom

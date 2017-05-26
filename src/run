@@ -52,15 +52,15 @@ then
 	success=0
 	for i in `seq $total`; do
 		echo 'Running Test '$i' of '$total''
-		# ./raft_test $arg
-		./raft_test $arg > $i
+		./raft_test $arg
+		# ./raft_test $arg > $i
 		if [ $? -ne 0 ]
 		then
 			fail=`expr $fail + 1`
 			echo 'Test Failed at '$i''
 		else
 			success=`expr $success + 1`
-			rm $i
+			# rm $i
 		fi
 	done
 	echo 'Total '$total'  Fail '$fail'  Success '$success''

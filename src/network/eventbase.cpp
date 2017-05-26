@@ -6,6 +6,7 @@
 **/
 
 #include <unistd.h>
+#include <vector>
 
 #include "../include/bounded_queue.hpp"
 #include "../include/thread_pool.hpp"
@@ -182,20 +183,23 @@ void EventBase::Cancel(const TimerId &id)
 void EventBase::HandleTimeout()
 {
 	TimerId now { Time::Now(), 0xFFFFFFFF};
+	std::vector<Task> expired;
 	mutex_.Lock();
 	for (; running_ && !pending_.empty() && pending_.begin()->first <= now; ) {
-		queue_->Push(std::move(pending_.begin()->second));
+		expired.push_back(pending_.begin()->second);
 		const TimerId &id = pending_.begin()->first;
 		auto it = repeat_.find(id.second);
 		if (it != repeat_.end()) {
 			TimerId nid { now.first + it->second.first, id.second };
 			it->second.second = nid.first;
-			pending_.insert({nid, pending_.begin()->second});
+			pending_.insert({nid, std::move(pending_.begin()->second)});
 		}
 		pending_.erase(pending_.begin());
 	}
 	Refresh();
 	mutex_.Unlock();
+	for (uint32_t i = 0; i < expired.size(); ++i)
+		queue_->Push(std::move(expired[i]));
 }
 
 } // namespace Mushroom

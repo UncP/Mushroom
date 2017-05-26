@@ -34,6 +34,8 @@ class Server : private NoCopy
 
 		std::vector<Connection *>& Connections();
 
+		uint16_t Port() const;
+
 	protected:
 		uint16_t   port_;
 		EventBase *event_base_;

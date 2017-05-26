@@ -64,4 +64,9 @@ std::vector<Connection *>& Server::Connections()
 	return connections_;
 }
 
+uint16_t Server::Port() const
+{
+	return port_;
+}
+
 } // namespaceMushroom

@@ -44,6 +44,7 @@ Connection::~Connection()
 bool Connection::Close()
 {
 	if (socket_.Valid()) {
+		// Info("closing connection");
 		connected_ = false;
 		delete channel_;
 		channel_ = 0;
@@ -147,9 +148,8 @@ void Connection::SendOutput()
 	output_.AdvanceHead(write);
 	if (output_.size()) {
 		output_.Adjust();
-		assert(0);
-		if (!channel_->CanWrite())
-			channel_->EnableWrite(true);
+		// if (!channel_->CanWrite())
+			// channel_->EnableWrite(true);
 	}
 }
 
