@@ -9,8 +9,8 @@
 #define _RPC_CONNECTION_HPP_
 
 #include <map>
-#include <random>
-#include <ctime>
+// #include <random>
+// #include <ctime>
 
 #include "../include/atomic.hpp"
 #include "../include/spin_lock.hpp"
@@ -19,8 +19,8 @@
 #include "marshaller.hpp"
 #include "future.hpp"
 
-static std::default_random_engine engine(time(0));
-static std::uniform_real_distribution<float> dist(0, 1);
+// static std::default_random_engine engine(time(0));
+// static std::uniform_real_distribution<float> dist(0, 1);
 
 namespace Mushroom {
 
@@ -29,7 +29,7 @@ class RpcConnection : public Connection
 	public:
 		static atomic_32_t RpcId;
 
-		RpcConnection(const EndPoint &server, Poller *poller, float error_rate = 0.f);
+		RpcConnection(const EndPoint &server, Poller *poller, float error_rate);
 
 		RpcConnection(const Socket &socket, Poller *poller);
 
@@ -73,7 +73,7 @@ inline void RpcConnection::Call(const char *str, const T1 *args, Future<T2> *fu)
 	spin_.Lock();
 	futures_.insert({rid, std::move([fu, this]() { fu->Notify(marshaller_); })});
 	spin_.Unlock();
-	if (!disable_.get() && dist(engine) > error_rate_) {
+	if (!disable_.get()) { // && dist(engine) > error_rate_
 		marshaller_.MarshalArgs(id, rid, args);
 		SendOutput();
 	}

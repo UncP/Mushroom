@@ -164,7 +164,7 @@ void RaftServer::RescheduleElection()
 
 void RaftServer::BecomeFollower(uint32_t term)
 {
-	// Info("%d becoming follower, term %u", id_, term);
+	Info("%d becoming follower, term %u", id_, term);
 	if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
 	state_ = Follower;
@@ -218,7 +218,7 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	if (arg.last_term_ == last_term && last_idx > arg.last_index_)
 		goto end;
 
-	// Info("%d vote for %d", id_, arg.id_);
+	Info("%d vote for %d", id_, arg.id_);
 
 	reply->granted_ = 1;
 	vote_for_ = arg.id_;
@@ -243,8 +243,8 @@ void RaftServer::SendRequestVote()
 	RequestVoteArgs args(term_, id_, last_idx, last_idx >= 0 ? logs_[last_idx].term_ : 0);
 	mutex_.Unlock();
 
-	// Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
-	// 	args.last_term_);
+	Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
+		args.last_term_);
 
 	uint32_t size = peers_.size();
 	Future<RequestVoteReply> *futures = new Future<RequestVoteReply>[size];
@@ -263,16 +263,16 @@ void RaftServer::SendRequestVote()
 		}
 		delete [] futures;
 		mutex_.Lock();
-		if (state_ == Candidate) {
-			assert(in_election_);
+		if (state_ != Leader) {
+			if (in_election_) {
+				in_election_ = 0;
+				RescheduleElection();
+			}
 			state_ = Follower;
 			vote_for_ = -1;
 			mutex_.Unlock();
-			event_base_->RunNow([this]() { SendRequestVote(); });
 		} else {
-			in_election_ = 0;
-			if (state_ == Follower)
-				RescheduleElection();
+			assert(!in_election_);
 			mutex_.Unlock();
 		}
 	});

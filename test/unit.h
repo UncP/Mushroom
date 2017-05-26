@@ -11,7 +11,7 @@
 #include <vector>
 #include <typeinfo>
 #include <cstring>
-#include <iostream>
+#include <cstdio>
 #include <cmath>
 
 #define TEST_NAME(test_name) test_name##_TEST
@@ -29,7 +29,7 @@ TestCase* const TEST_NAME(test_name)::test_case_ = UnitTest::GetInstance()->Regi
 new TEST_NAME(test_name)(#test_name)); \
 void TEST_NAME(test_name)::Run()
 
-#define RUN_ALL_TESTS() UnitTest::GetInstance()->Run();
+#define RUN_ALL_TESTS(str) UnitTest::GetInstance()->Run(str);
 
 class TestCase
 {
@@ -55,24 +55,28 @@ class UnitTest
 			return testcase;
 		}
 
-		bool Run() {
+		bool Run(const char *str) {
 			test_result_ = true;
 
-			std::cout << "\033[33m[ Start ] \033[33;1m" << test_cases_.size() << "\033[0m Unit Tests\n\n";
+			printf("\033[33m[ Start ]  Unit Tests\033[0m\n\n");
 
+			all_ = 0;
 			for (auto it = test_cases_.begin(); it != test_cases_.end(); ++it) {
 				TestCase *test_case = *it;
+				if (str && !strstr(test_case->case_name_, str))
+					continue;
+				++all_;
 				current_test_case_ = test_case;
 				current_test_case_->test_result_ = true;
 
-				std::cout << "\033[34m[ Run ] \033[0m" << test_case->case_name_ << std::endl;
+				printf("\033[34m[ Run  ] \033[0m%s\n", test_case->case_name_);
 
 				test_case->Run();
 
 				if (test_case->test_result_)
-					std::cout << "\033[32m" << "[ Pass ] \033[0m" << test_case->case_name_ << std::endl;
+					printf("\033[32m[ Pass ] \033[0m%s\n", test_case->case_name_);
 				else
-					std::cout << "\033[31m" << "[ Fail ] \033[0m" << test_case->case_name_ << std::endl;
+					printf("\033[31m[ Fail ] \033[0m%s\n", test_case->case_name_);
 
 				if (test_case->test_result_) {
 					++passed_num_;
@@ -82,9 +86,9 @@ class UnitTest
 				}
 			}
 
-			std::cout << "\n\033[33m[ ALL  ] \033[33;1m" << test_cases_.size() << "\033[0m\n";
-			std::cout << "\033[32m" << "[ PASS ] \033[32;1m" << passed_num_ << "\033[0m\n";
-			std::cout << "\033[31m" << "[ FAIL ] \033[31;1m" << failed_num_ << "\033[0m\n";
+			printf("\n\033[33m[ ALL  ] \033[33;1m%d\033[0m\n", all_);
+			printf("\033[32m[ PASS ] \033[32;1m%d\033[0m\n", passed_num_);
+			printf("\033[31m[ FAIL ] \033[31;1m%d\033[0m\n", failed_num_);
 			return !test_result_;
 		}
 
@@ -95,6 +99,7 @@ class UnitTest
 
 		TestCase              *current_test_case_;
 		bool                   test_result_;
+		int                    all_;
 		int                    passed_num_;
 		int                    failed_num_;
 		std::vector<TestCase*> test_cases_;
@@ -162,8 +167,8 @@ bool CheckNumericalData(ElemType left_value, ElemType right_value,
 
 	if (condition) {
 		UnitTest::GetInstance()->current_test_case_->test_result_ = false;
-		std::cout << "\033[36;1m" << file_name << "\033[0m: \033[31;1m" << line_num << "\033[0m: ";
-		std::cout << "\033[33;1mExpect: \033[0m" << str_left_value << str_operator << str_right_value << std::endl;
+		printf("\033[36;1m%s\033[0m: \033[31;1m%lu\033[0m: ", file_name, line_num);
+		printf("\033[33;1mExpect: \033[0m%s%s%s\n", str_left_value, str_operator, str_right_value);
 	}
 	return !condition;
 }
@@ -186,8 +191,8 @@ bool CheckStrData(const char *left_value, const char *right_value,
 
 	if (condition) {
 		UnitTest::GetInstance()->current_test_case_->test_result_ = false;
-		std::cout << "\033[36;1m" << file_name << "\033[0m: \033[31;1m" << line_num << "\033[0m: ";
-		std::cout << "\033[33;1mExpect: \033[0m" << str_left_value << str_operator << str_right_value << std::endl;
+		printf("\033[36;1m%s\033[0m: \033[31;1m%lu\033[0m: ", file_name, line_num);
+		printf("\033[33;1mExpect: \033[0m%s%s%s\n", str_left_value, str_operator, str_right_value);
 	}
 
 	return !condition;

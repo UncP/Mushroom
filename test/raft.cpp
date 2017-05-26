@@ -6,9 +6,9 @@
 **/
 
 #include <unistd.h>
-#include <unit.h>
 #include <map>
 
+#include "unit.h"
 #include "../src/network/signal.hpp"
 #include "../src/rpc/rpc_connection.hpp"
 #include "../src/raft/raft_server.hpp"
@@ -132,7 +132,7 @@ static bool CommittedAt(uint32_t index, uint32_t *commit, int *count)
 			return false;
 		}
 		pre = *commit;
-		++*count;
+		*count += 1;
 	}
 	return true;
 }
@@ -219,13 +219,6 @@ TEST(ElectionWithNoNetworkFaliure)
 	ASSERT_EQ(number,  1);
 }
 
-/*
-TEST(ElectionWithTotalNetworkFailure)
-{
-	MakeRaftSet(5, 1.0);
-	ASSERT_TRUE(CheckNoLeaderAfter(2));
-}
-
 
 TEST(ReelectionAfterNetworkFailure)
 {
@@ -235,11 +228,14 @@ TEST(ReelectionAfterNetworkFailure)
 	int32_t leader1;
 	CheckOneLeaderAfter(1, &number, &leader1);
 	ASSERT_EQ(number, 1);
+	// PrintRaftServer(leader1);
 
 	DisableServer(leader1);
+	WaitForElection(1);
 	int32_t leader2;
 	CheckOneLeaderAfter(2, &number, &leader2);
 	ASSERT_EQ(number, 1);
+	// PrintRaftServer(leader2);
 
 	EnableServer(leader1);
 	int32_t leader3;
@@ -253,12 +249,12 @@ TEST(ReelectionAfterNetworkFailure)
 
 	EnableServer((leader2+1)%total);
 	int32_t leader4;
-	CheckOneLeaderAfter(1, &number, &leader4);
+	CheckOneLeaderAfter(2, &number, &leader4);
 	ASSERT_EQ(number, 1);
 
 	EnableServer(leader2);
 	int32_t leader5;
-	CheckOneLeaderAfter(0.5, &number, &leader5);
+	CheckOneLeaderAfter(1, &number, &leader5);
 	ASSERT_EQ(number, 1);
 	ASSERT_EQ(leader4, leader5);
 }
@@ -282,9 +278,9 @@ TEST(AgreementWithoutNetworkFailure)
 		ASSERT_EQ(index, i);
 	}
 }
-*/
 
-/*TEST(AgreementWithFollowerDisconnected)
+
+TEST(AgreementWithFollowerDisconnected)
 {
 	uint32_t total = 3;
 	MakeRaftSet(total);
@@ -318,8 +314,8 @@ TEST(AgreementWithoutNetworkFailure)
 	CheckOneLeaderAfter(2, &number, &leader3);
 	ASSERT_EQ(number, 1);
 	ASSERT_EQ(idx++, One(lg++, total));
-}*/
-/*
+}
+
 
 TEST(AgreementWithHalfFollowerDisconnected)
 {
@@ -397,7 +393,7 @@ TEST(RejoinOfPartitionedLeader)
 
 	DisableServer(leader2);
 	EnableServer(leader);
-	WaitForElection(1);
+	WaitForElection(2);
 	ASSERT_EQ(idx++, One(lg++, total-1));
 
 	EnableServer(leader2);
@@ -520,11 +516,11 @@ loop:
 	uint32_t all3 = RpcCount();
 	ASSERT_LE(all3 - all2, 90u);
 }
-*/
-int main()
+
+int main(int argc, char **argv)
 {
 	Signal::Register(SIGINT, []() { FreeRaftSet(); });
-	int r = RUN_ALL_TESTS();
+	int r = RUN_ALL_TESTS(argc == 2 ? argv[1] : '\0');
 	FreeRaftSet();
 	return r;
 }
