@@ -42,8 +42,9 @@ static void FreeRaftSet() {
 
 static void MakeRaftSet(int number, float error_rate = 0.f) {
 	FreeRaftSet();
-	base = new EventBase(8, 64);
+	base = new EventBase(4, 32);
 	uint16_t port = 7000;
+	assert(rafts.empty());
 	for (int i = 0; i < number; ++i) {
 		rafts.push_back(new RaftServer(base, port + i, i));
 		connected.push_back(true);
@@ -140,7 +141,7 @@ static uint32_t One(uint32_t number, int expect)
 {
 	int count;
 	int64_t now = Time::Now();
-	for (; Time::Now() < (now + 10000);) {
+	for (; Time::Now() < (now + 5000);) {
 		uint32_t index = ~0u;
 		for (uint32_t j = 0; j < rafts.size(); ++j) {
 			if (!connected[j]) continue;
@@ -151,7 +152,7 @@ static uint32_t One(uint32_t number, int expect)
 			usleep(100 * 1000);
 			continue;
 		}
-		for (int k = 0; k < 40; ++k) {
+		for (int k = 0; k < 20; ++k) {
 			usleep(50 * 1000);
 			uint32_t commit;
 			if (!CommittedAt(index, &commit, &count))
@@ -209,7 +210,6 @@ static uint32_t Wait(uint32_t index, int expect, uint32_t term)
 
 using namespace RaftTest;
 
-/*
 TEST(ElectionWithNoNetworkFaliure)
 {
 	MakeRaftSet(5);
@@ -219,7 +219,7 @@ TEST(ElectionWithNoNetworkFaliure)
 	ASSERT_EQ(number,  1);
 }
 
-
+/*
 TEST(ElectionWithTotalNetworkFailure)
 {
 	MakeRaftSet(5, 1.0);
@@ -262,7 +262,7 @@ TEST(ReelectionAfterNetworkFailure)
 	ASSERT_EQ(number, 1);
 	ASSERT_EQ(leader4, leader5);
 }
-*/
+
 
 TEST(AgreementWithoutNetworkFailure)
 {
@@ -273,18 +273,18 @@ TEST(AgreementWithoutNetworkFailure)
 	CheckOneLeaderAfter(1, &number, &id);
 	ASSERT_EQ(number, 1);
 
-	for (uint32_t i = 0; i < 5; ++i) {
+	for (uint32_t i = 0; i < 3; ++i) {
 		uint32_t commit;
 		int count;
 		ASSERT_TRUE(CommittedAt(i, &commit, &count));
 		ASSERT_EQ(count, 0);
-		uint32_t index = One(100 + i, total);
+		uint32_t index = One(i, total);
 		ASSERT_EQ(index, i);
 	}
 }
+*/
 
-/*
-TEST(AgreementWithFollowerDisconnected)
+/*TEST(AgreementWithFollowerDisconnected)
 {
 	uint32_t total = 3;
 	MakeRaftSet(total);
@@ -318,8 +318,8 @@ TEST(AgreementWithFollowerDisconnected)
 	CheckOneLeaderAfter(2, &number, &leader3);
 	ASSERT_EQ(number, 1);
 	ASSERT_EQ(idx++, One(lg++, total));
-}
-
+}*/
+/*
 
 TEST(AgreementWithHalfFollowerDisconnected)
 {
@@ -388,7 +388,7 @@ TEST(RejoinOfPartitionedLeader)
 	ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
 	ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
 
-	WaitForElection(2);
+	WaitForElection(1);
 	ASSERT_EQ(idx++, One(lg++, total-1));
 
 	int32_t leader2;
@@ -397,13 +397,12 @@ TEST(RejoinOfPartitionedLeader)
 
 	DisableServer(leader2);
 	EnableServer(leader);
-	WaitForElection(2);
+	WaitForElection(1);
 	ASSERT_EQ(idx++, One(lg++, total-1));
 
 	EnableServer(leader2);
 	ASSERT_EQ(idx++, One(lg++, total));
 }
-
 
 TEST(LeaderBackupIncorrectLog)
 {
@@ -423,7 +422,7 @@ TEST(LeaderBackupIncorrectLog)
 	DisableServer((leader+3)%total);
 	DisableServer((leader+4)%total);
 
-	int all = 5;
+	int all = 3;
 	uint32_t index;
 	for (int i = 0; i < all; ++i)
 		ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
@@ -435,8 +434,6 @@ TEST(LeaderBackupIncorrectLog)
 	EnableServer((leader+2)%total);
 	EnableServer((leader+3)%total);
 	EnableServer((leader+4)%total);
-
-	WaitForElection(1);
 
 	for (int i = 0; i < all; ++i)
 		ASSERT_EQ(idx++, One(lg++, total-2));
@@ -460,7 +457,6 @@ TEST(LeaderBackupIncorrectLog)
 	EnableServer((leader+1)%total);
 	EnableServer(other);
 
-	WaitForElection(2);
 	for (int i = 0; i < all; ++i)
 		ASSERT_EQ(idx++, One(lg++, total-2));
 

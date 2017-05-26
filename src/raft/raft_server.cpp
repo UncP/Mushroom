@@ -156,6 +156,7 @@ int64_t RaftServer::GetElectionTimeout()
 
 void RaftServer::RescheduleElection()
 {
+	if (in_election_) return ;
 	event_base_->RescheduleAfter(&election_id_, GetElectionTimeout(), [this]() {
 		SendRequestVote();
 	});
@@ -237,11 +238,6 @@ void RaftServer::SendRequestVote()
 		mutex_.Unlock();
 		return ;
 	}
-	if (in_election_) {
-		RescheduleElection();
-		mutex_.Unlock();
-		return ;
-	}
 	BecomeCandidate();
 	int32_t last_idx = logs_.size() - 1;
 	RequestVoteArgs args(term_, id_, last_idx, last_idx >= 0 ? logs_[last_idx].term_ : 0);
@@ -267,13 +263,16 @@ void RaftServer::SendRequestVote()
 		}
 		delete [] futures;
 		mutex_.Lock();
-		in_election_ = 0;
 		if (state_ == Candidate) {
+			assert(in_election_);
 			state_ = Follower;
 			vote_for_ = -1;
 			mutex_.Unlock();
 			event_base_->RunNow([this]() { SendRequestVote(); });
 		} else {
+			in_election_ = 0;
+			if (state_ == Follower)
+				RescheduleElection();
 			mutex_.Unlock();
 		}
 	});

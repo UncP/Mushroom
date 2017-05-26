@@ -42,12 +42,14 @@ then
 		total=$2
 	fi
 	for i in `seq $total`; do
-		./raft_test
-		r=$?
-		if [ $r -ne 0 ]
+		echo 'Running Test '$i' of '$total''
+		./raft_test > $i
+		if [ $? -ne 0 ]
 		then
-			echo 'test failed at '$i' '
+			echo 'Test Failed at '$i' '
 			exit 1
+		else
+			rm $i
 		fi
 	done
 else

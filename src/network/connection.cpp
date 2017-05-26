@@ -14,7 +14,7 @@
 namespace Mushroom {
 
 Connection::Connection(const EndPoint &server, Poller *poller)
-:connected_(false), channel_(0), readcb_(0), writecb_(0)
+:readcb_(0), writecb_(0)
 {
 	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
 	if (!socket_.Connect(server)) {
@@ -44,7 +44,6 @@ Connection::~Connection()
 bool Connection::Close()
 {
 	if (socket_.Valid()) {
-		// Info("closing connection ;)");
 		connected_ = false;
 		delete channel_;
 		channel_ = 0;

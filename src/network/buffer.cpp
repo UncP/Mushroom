@@ -12,7 +12,11 @@
 
 namespace Mushroom {
 
-Buffer::Buffer():data_(new char[BufferSize]), size_(0), beg_(0), end_(0) { }
+Buffer::Buffer():data_(new char[BufferSize])
+{
+	memset(data_, 0, BufferSize);
+	Clear();
+}
 
 Buffer::~Buffer()
 {

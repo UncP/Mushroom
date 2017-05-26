@@ -44,7 +44,7 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller, float error
 }
 
 RpcConnection::RpcConnection(const Socket &socket, Poller *poller)
-:Connection(socket, poller), marshaller_(&input_, &output_) { }
+:Connection(socket, poller), disable_(0), error_rate_(0), marshaller_(&input_, &output_) { }
 
 RpcConnection::~RpcConnection() { }
 
