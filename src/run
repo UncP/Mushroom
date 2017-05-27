@@ -1,6 +1,36 @@
 #! /bin/sh
-
-if [ "$1" = "mushroom" ]
+if [ "$1" = "raft" ]
+then
+	make raft_test
+	total=1
+	arg=
+	if [ $2 -gt 0 ]
+	then
+		total=$2
+	else
+		arg=$2
+	fi
+	if [ $3 -gt 0 ]
+	then
+		total=$3
+	fi
+	fail=0
+	success=0
+	for i in `seq $total`; do
+		echo 'Running Test '$i' of '$total''
+		# ./raft_test $arg
+		./raft_test $arg > $i
+		if [ $? -ne 0 ]
+		then
+			fail=`expr $fail + 1`
+			echo 'Test Failed at '$i''
+		else
+			success=`expr $success + 1`
+			rm $i
+		fi
+	done
+	echo 'Total '$total'  Fail '$fail'  Success '$success''
+elif [ "$1" = "mushroom" ]
 then
 	if [ "$2" = "queue" ]
 	then
@@ -33,37 +63,6 @@ then
 	else
 		echo "wrong argument :("
 	fi
-elif [ "$1" = "raft" ]
-then
-	make raft_test
-	total=1
-	arg=
-	if [ $2 -gt 0 ]
-	then
-		total=$2
-	else
-		arg=$2
-	fi
-	if [ $3 -gt 0 ]
-	then
-		total=$3
-	fi
-	fail=0
-	success=0
-	for i in `seq $total`; do
-		echo 'Running Test '$i' of '$total''
-		./raft_test $arg
-		# ./raft_test $arg > $i
-		if [ $? -ne 0 ]
-		then
-			fail=`expr $fail + 1`
-			echo 'Test Failed at '$i''
-		else
-			success=`expr $success + 1`
-			# rm $i
-		fi
-	done
-	echo 'Total '$total'  Fail '$fail'  Success '$success''
 else
 	echo "wrong argument :("
 fi

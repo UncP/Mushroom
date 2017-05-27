@@ -29,6 +29,22 @@ static uint16_t port_base = 7000;
 
 namespace RaftTest {
 
+static void DisableServer(int32_t id) {
+	connected[id] = false;
+	for (auto e : rafts[id]->Peers())
+		e->Disable();
+	for (auto e : rafts[id]->Connections())
+		((RpcConnection *)e)->Disable();
+}
+
+static void EnableServer(int32_t id) {
+	connected[id] = true;
+	for (auto e : rafts[id]->Peers())
+		e->Enable();
+	for (auto e : rafts[id]->Connections())
+		((RpcConnection *)e)->Enable();
+}
+
 static void StartServer(uint32_t idx)
 {
 	rafts[idx] = new RaftServer(base, port_base++, idx);
@@ -40,6 +56,8 @@ static void ConnectServer(uint32_t idx)
 		if (idx == i) continue;
 		rafts[idx]->AddPeer(new RpcConnection(EndPoint(rafts[i]->Port(), "127.0.0.1"),
 			base->GetPoller(), 0));
+		rafts[i]->AddPeer(new RpcConnection(EndPoint(rafts[idx]->Port(), "127.0.0.1"),
+			base->GetPoller(), 0));
 	}
 	connected[idx] = true;
 	rafts[idx]->RescheduleElection();
@@ -49,9 +67,8 @@ static void CrashServer(uint32_t idx)
 {
 	connected[idx] = false;
 	rafts[idx]->Close();
-	delete rafts[idx];
-	// crashed.push_back(rafts[idx]);
-	// rafts[idx] = 0;
+	crashed.push_back(rafts[idx]);
+	rafts[idx] = 0;
 }
 
 static void FreeRaftSet() {
@@ -59,8 +76,6 @@ static void FreeRaftSet() {
 		if (e) e->Close();
 	if (base) base->Exit();
 	if (loop) loop->Stop();
-	for (auto e : crashed)
-		delete e;
 	for (auto e : rafts)
 		delete e;
 	delete base;
@@ -81,8 +96,16 @@ static void MakeRaftSet(int total) {
 	connected.resize(total);
 	for (int i = 0; i < total; ++i)
 		StartServer(i);
-	for (int i = 0; i < total; ++i)
-		ConnectServer(i);
+	for (int i = 0; i < total; ++i) {
+		for (int j = 0; j < total; ++j) {
+			if (i == j) continue;
+			rafts[i]->AddPeer(new RpcConnection(EndPoint(rafts[j]->Port(), "127.0.0.1"),
+				base->GetPoller(), 0));
+		}
+		connected[i] = true;
+	}
+	for (auto e : rafts)
+		e->RescheduleElection();
 }
 
 static void WaitForElection(float factor) {
@@ -118,22 +141,6 @@ static bool CheckNoLeaderAfter(float factor) {
 	int32_t  id;
 	CheckOneLeaderAfter(factor, &number, &id);
 	return number == 0;
-}
-
-static void DisableServer(int32_t id) {
-	connected[id] = false;
-	for (auto e : rafts[id]->Peers())
-		e->Disable();
-	for (auto e : rafts[id]->Connections())
-		((RpcConnection *)e)->Disable();
-}
-
-static void EnableServer(int32_t id) {
-	connected[id] = true;
-	for (auto e : rafts[id]->Peers())
-		e->Enable();
-	for (auto e : rafts[id]->Connections())
-		((RpcConnection *)e)->Enable();
 }
 
 static void DisableServerFor(float factor, int32_t id) {
@@ -191,8 +198,11 @@ static void PrintAllServer(bool print_log = true, bool print_next = true)
 {
 	for (auto e : rafts)
 		if (e) e->Status(print_log, print_next);
-	for (auto e : crashed)
-		e->Status(print_log, print_next);
+	if (crashed.size()) {
+		printf("\nCrashed Server\n");
+		for (auto e : crashed)
+			e->Status(print_log, print_next);
+	}
 }
 
 static void PrintRaftServer(int32_t index)
@@ -539,7 +549,7 @@ loop:
 }
 
 
-TEST(LeaderCrash)
+TEST(LeaderFrequentlyChange)
 {
 	uint32_t total = 5;
 	uint32_t up = total;
@@ -549,49 +559,55 @@ TEST(LeaderCrash)
 
 	ASSERT_NE(One(0, total), ~0u);
 
-	uint32_t iter = 1;
+	uint32_t iter = 100;
 	for (uint32_t i = 1; i <= iter; ++i) {
 		int32_t leader = -1;
 		for (uint32_t j = 0; j < total; ++j) {
-			if (!rafts[j]) continue;
+			if (!connected[j]) continue;
 			uint32_t index;
-			if (rafts[j]->Start(i, &index)) {
+			if (rafts[j] && rafts[j]->Start(i, &index)) {
 				leader = int32_t(j);
 				break;
 			}
 		}
-		if (dist(eng) < 100)
+		if (dist(eng) < 200)
 			usleep((dist(eng) % (RaftServer::ElectionTimeout / 2)) * 1000);
 		else
 			usleep((dist(eng) % 13) * 1000);
 
-		if (leader != -1 && up == total) {
-			CrashServer(leader);
+		if (leader != -1 && connected[leader]) {
+			DisableServer(leader);
+			WaitForElection(0.3);
 			--up;
 		}
 
 		if (up < ((total + 1) / 2)) {
 			int idx = dist(eng) % total;
-			if (!rafts[idx]) {
-				StartServer(idx);
-				ConnectServer(idx);
+			if (!connected[idx]) {
+				EnableServer(idx);
 				++up;
 			}
 		}
 	}
 
-	// for (uint32_t i = 0; i < total; ++i)
+	for (uint32_t i = 0; i < total; ++i)
+		if (!connected[i])
+			EnableServer(i);
+
+	ASSERT_NE(One(iter+1, total), ~0u);
+}
+	// if (!rafts[idx]) {
+	// 	StartServer(idx);
+	// 	ConnectServer(idx);
+	// 	++up;
+	// }
+
+	// for (uint32_t i = 0; i < total; ++i) {
 	// 	if (!rafts[i]) {
 	// 		StartServer(i);
 	// 		ConnectServer(i);
 	// 	}
-	// PrintAllServer();
-	WaitForElection(1);
-	// uint32_t idx = One(iter+1, total-1);
-	// PrintAllServer();
-	// ASSERT_NE(idx, ~0u);
-}
-
+	// }
 int main(int argc, char **argv)
 {
 	Signal::Register(SIGINT, []() { FreeRaftSet(); });

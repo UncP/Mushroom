@@ -44,11 +44,9 @@ Connection::~Connection()
 bool Connection::Close()
 {
 	if (socket_.Valid()) {
-		Info("closing connection");
 		connected_ = false;
 		delete channel_;
-		bool flag = socket_.Close();
-		return flag;
+		return socket_.Close();
 	}
 	return true;
 }

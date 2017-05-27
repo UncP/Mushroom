@@ -47,7 +47,7 @@ void RaftServer::Close()
 		return ;
 	}
 
-	Info("closing raft server %d", id_);
+	// Info("closing raft server %d", id_);
 
 	RpcServer::Close();
 
@@ -59,10 +59,8 @@ void RaftServer::Close()
 
 	in_election_ = 0;
 
-	for (auto e : peers_) {
-		Info("closing");
-		e->Close();
-	}
+	// for (auto e : peers_)
+		// e->Close();
 
 	mutex_.Unlock();
 }
@@ -251,7 +249,6 @@ void RaftServer::SendRequestVote()
 	BecomeCandidate();
 	int32_t last_idx = logs_.size() - 1;
 	RequestVoteArgs args(term_, id_, last_idx, last_idx >= 0 ? logs_[last_idx].term_ : 0);
-	mutex_.Unlock();
 
 	// Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
 	// 	args.last_term_);
@@ -265,6 +262,7 @@ void RaftServer::SendRequestVote()
 			ReceiveRequestVoteReply(fu->Value());
 		});
 	}
+	mutex_.Unlock();
 
 	event_base_->RunAfter(ElectionTimeout, [this, futures, size]() {
 		for (uint32_t i = 0; i != size; ++i) {
@@ -330,7 +328,7 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 
 	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
 		reply->success_ = 0;
-		logs_.erase(logs_.begin() + prev_i, logs_.end());
+		logs_.erase(logs_.begin() + prev_i + 1, logs_.end());
 	} else {
 		for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
 			if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
@@ -338,10 +336,18 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 				break;
 			}
 		}
+		if (prev_i != int32_t(logs_.size())) {
+			Status(true, false);
+			for (auto e : arg.entries_) {
+				printf("%u %u", e.term_, e.number_);
+			}
+			printf("\n");
+		}
+		// TODO: ???
 		assert(prev_i == int32_t(logs_.size()));
 		logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
+		reply->success_ = 1;
 	}
-	reply->success_ = 1;
 
 	if (arg.leader_commit_ > commit_)
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
