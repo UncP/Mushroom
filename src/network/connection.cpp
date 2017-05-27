@@ -44,11 +44,11 @@ Connection::~Connection()
 bool Connection::Close()
 {
 	if (socket_.Valid()) {
-		// Info("closing connection");
+		Info("closing connection");
 		connected_ = false;
 		delete channel_;
-		channel_ = 0;
-		return socket_.Close();
+		bool flag = socket_.Close();
+		return flag;
 	}
 	return true;
 }
@@ -137,7 +137,8 @@ void Connection::Send(const char *str, uint32_t len)
 void Connection::SendOutput()
 {
 	if (!connected_) {
-		Error("connection has closed :(");
+		// Error("connection has closed :(");
+		output_.Clear();
 		return ;
 	}
 	uint32_t write = socket_.Write(output_.begin(), output_.size());

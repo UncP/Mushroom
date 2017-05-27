@@ -23,6 +23,7 @@ using namespace Mushroom;
 static EventBase *base = 0;
 static Thread *loop = 0;
 static vector<RaftServer *> rafts;
+static vector<RaftServer *> crashed;
 static vector<bool> connected;
 static uint16_t port_base = 7000;
 
@@ -41,20 +42,25 @@ static void ConnectServer(uint32_t idx)
 			base->GetPoller(), 0));
 	}
 	connected[idx] = true;
+	rafts[idx]->RescheduleElection();
 }
 
 static void CrashServer(uint32_t idx)
 {
+	connected[idx] = false;
 	rafts[idx]->Close();
 	delete rafts[idx];
-	rafts[idx] = 0;
+	// crashed.push_back(rafts[idx]);
+	// rafts[idx] = 0;
 }
 
 static void FreeRaftSet() {
 	for (auto e : rafts)
-		e->Close();
+		if (e) e->Close();
 	if (base) base->Exit();
 	if (loop) loop->Stop();
+	for (auto e : crashed)
+		delete e;
 	for (auto e : rafts)
 		delete e;
 	delete base;
@@ -62,23 +68,21 @@ static void FreeRaftSet() {
 	base = 0;
 	loop = 0;
 	rafts.clear();
+	crashed.clear();
 	connected.clear();
 }
 
 static void MakeRaftSet(int total) {
 	FreeRaftSet();
 	base = new EventBase(4, 64);
+	loop = new Thread([&]() { base->Loop(); });
+	loop->Start();
 	rafts.resize(total);
 	connected.resize(total);
 	for (int i = 0; i < total; ++i)
 		StartServer(i);
 	for (int i = 0; i < total; ++i)
 		ConnectServer(i);
-
-	loop = new Thread([&]() { base->Loop(); });
-	loop->Start();
-	for (auto e : rafts)
-		e->RescheduleElection();
 }
 
 static void WaitForElection(float factor) {
@@ -140,10 +144,11 @@ static void DisableServerFor(float factor, int32_t id) {
 
 static bool CommittedAt(uint32_t index, uint32_t *commit, int *count)
 {
+	*commit = -1;
 	*count = 0;
 	uint32_t pre = ~0;
 	for (auto e : rafts) {
-		if (!e->LogAt(index, commit)) continue;
+		if (e && !e->LogAt(index, commit)) continue;
 		if (*count && pre != *commit) {
 			printf("not match at %u, %u : %u\n", index, pre, *commit);
 			return false;
@@ -160,9 +165,9 @@ static uint32_t One(uint32_t number, int expect)
 	int64_t now = Time::Now();
 	for (; Time::Now() < (now + 5000);) {
 		uint32_t index = ~0u;
-		for (uint32_t j = 0; j < rafts.size(); ++j) {
-			if (!connected[j]) continue;
-			if (rafts[j]->Start(number, &index))
+		for (uint32_t i = 0; i < rafts.size(); ++i) {
+			if (!connected[i]) continue;
+			if (rafts[i] && rafts[i]->Start(number, &index))
 				break;
 		}
 		if (index == ~0u) {
@@ -185,6 +190,8 @@ static uint32_t One(uint32_t number, int expect)
 static void PrintAllServer(bool print_log = true, bool print_next = true)
 {
 	for (auto e : rafts)
+		if (e) e->Status(print_log, print_next);
+	for (auto e : crashed)
 		e->Status(print_log, print_next);
 }
 
@@ -274,7 +281,7 @@ TEST(ReelectionAfterNetworkFailure)
 	ASSERT_EQ(leader4, leader5);
 }
 
-/*
+
 TEST(AgreementWithoutNetworkFailure)
 {
 	uint32_t total = 3;
@@ -530,17 +537,20 @@ loop:
 	uint32_t all3 = RpcCount();
 	ASSERT_LE(all3 - all2, 90u);
 }
-*/
-/*
-TEST(Figure8)
+
+
+TEST(LeaderCrash)
 {
 	uint32_t total = 5;
 	uint32_t up = total;
 	MakeRaftSet(total);
 	std::default_random_engine eng(time(0));
 	std::uniform_int_distribution<int> dist(0, 999);
-	uint32_t iter = 10;
-	for (uint32_t i = 0; i < iter; ++i) {
+
+	ASSERT_NE(One(0, total), ~0u);
+
+	uint32_t iter = 1;
+	for (uint32_t i = 1; i <= iter; ++i) {
 		int32_t leader = -1;
 		for (uint32_t j = 0; j < total; ++j) {
 			if (!rafts[j]) continue;
@@ -555,7 +565,7 @@ TEST(Figure8)
 		else
 			usleep((dist(eng) % 13) * 1000);
 
-		if (leader != -1) {
+		if (leader != -1 && up == total) {
 			CrashServer(leader);
 			--up;
 		}
@@ -570,13 +580,18 @@ TEST(Figure8)
 		}
 	}
 
-	for (uint32_t i = 0; i < total; ++i)
-		if (!rafts[i])
-			StartServer(i);
-
-	ASSERT_NE(One(iter, total), ~0u);
+	// for (uint32_t i = 0; i < total; ++i)
+	// 	if (!rafts[i]) {
+	// 		StartServer(i);
+	// 		ConnectServer(i);
+	// 	}
+	// PrintAllServer();
+	WaitForElection(1);
+	// uint32_t idx = One(iter+1, total-1);
+	// PrintAllServer();
+	// ASSERT_NE(idx, ~0u);
 }
-*/
+
 int main(int argc, char **argv)
 {
 	Signal::Register(SIGINT, []() { FreeRaftSet(); });

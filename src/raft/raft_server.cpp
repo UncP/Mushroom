@@ -25,7 +25,7 @@ uint32_t RaftServer::ElectionTimeout   = 1000;
 uint32_t RaftServer::HeartbeatInterval = 30;
 
 RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
-:RpcServer(event_base, port), id_(id), state_(Follower), running_(true), in_election_(0),
+:RpcServer(event_base, port), id_(id), state_(Follower), running_(1), in_election_(0),
 term_(0), vote_for_(-1), commit_(-1), applied_(-1)
 {
 	Register("RaftServer::Vote", this, &RaftServer::Vote);
@@ -47,18 +47,22 @@ void RaftServer::Close()
 		return ;
 	}
 
-	// Info("closing raft server %d", id_);
+	Info("closing raft server %d", id_);
 
 	RpcServer::Close();
 
-	running_ = false;
+	running_ = 0;
 	if (state_ == Follower)
 		event_base_->Cancel(election_id_);
 	else if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
 
-	for (auto e : peers_)
+	in_election_ = 0;
+
+	for (auto e : peers_) {
+		Info("closing");
 		e->Close();
+	}
 
 	mutex_.Unlock();
 }
@@ -178,6 +182,7 @@ void RaftServer::BecomeFollower(uint32_t term)
 
 void RaftServer::BecomeCandidate()
 {
+	// Info("becoming candidate %d %u", id_, term_);
 	++term_;
 	state_    = Candidate;
 	vote_for_ = id_;
@@ -207,6 +212,8 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	int32_t  last_idx  = logs_.size() - 1;
 	uint32_t last_term = (last_idx >= 0) ? logs_[last_idx].term_ : 0;
 	uint32_t prev_term = term_;
+	if (!running_)
+		goto end;
 	if (arg.term_ < term_)
 		goto end;
 
@@ -266,7 +273,7 @@ void RaftServer::SendRequestVote()
 		}
 		delete [] futures;
 		mutex_.Lock();
-		if (state_ != Leader) {
+		if (running_ && state_ != Leader) {
 			if (in_election_) {
 				in_election_ = 0;
 				RescheduleElection();
@@ -304,6 +311,8 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	int32_t  prev_i = arg.prev_index_;
 	uint32_t prev_t = arg.prev_term_;
 	uint32_t prev_j = 0;
+	if (!running_)
+		goto end;
 	if ((arg.term_ > term_) || (arg.term_ == term_ && state_ == Candidate))
 		BecomeFollower(arg.term_);
 	else
@@ -322,16 +331,16 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
 		reply->success_ = 0;
 		logs_.erase(logs_.begin() + prev_i, logs_.end());
-		goto end;
-	}
-	for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
-		if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
-			logs_.erase(logs_.begin() + prev_i, logs_.end());
-			break;
+	} else {
+		for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
+			if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
+				logs_.erase(logs_.begin() + prev_i, logs_.end());
+				break;
+			}
 		}
+		assert(prev_i == int32_t(logs_.size()));
+		logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
 	}
-	assert(prev_i == int32_t(logs_.size()));
-	logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
 	reply->success_ = 1;
 
 	if (arg.leader_commit_ > commit_)
@@ -378,7 +387,7 @@ void RaftServer::ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &rep
 {
 	mutex_.Lock();
 	uint32_t vote = 1;
-	if (state_ != Leader)
+	if (!running_|| state_ != Leader)
 		goto end;
 	if (reply.term_ > term_) {
 		BecomeFollower(reply.term_);

@@ -21,14 +21,15 @@ Server::~Server()
 	if (listen_)
 		Close();
 
-	for (auto e : connections_)
+	for (auto e : connections_) {
+		Info("income closing");
 		delete e;
+	}
 }
 
 void Server::Close()
 {
 	delete listen_;
-	listen_ = 0;
 	socket_.Close();
 }
 
