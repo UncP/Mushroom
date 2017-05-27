@@ -226,7 +226,7 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	if (arg.last_term_ == last_term && last_idx > arg.last_index_)
 		goto end;
 
-	// Info("%d vote for %d", id_, arg.id_);
+	Info("%d vote for %d", id_, arg.id_);
 
 	reply->granted_ = 1;
 	vote_for_ = arg.id_;
@@ -249,9 +249,10 @@ void RaftServer::SendRequestVote()
 	BecomeCandidate();
 	int32_t last_idx = logs_.size() - 1;
 	RequestVoteArgs args(term_, id_, last_idx, last_idx >= 0 ? logs_[last_idx].term_ : 0);
+	mutex_.Unlock();
 
-	// Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
-	// 	args.last_term_);
+	Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
+		args.last_term_);
 
 	uint32_t size = peers_.size();
 	Future<RequestVoteReply> *futures = new Future<RequestVoteReply>[size];
@@ -262,7 +263,6 @@ void RaftServer::SendRequestVote()
 			ReceiveRequestVoteReply(fu->Value());
 		});
 	}
-	mutex_.Unlock();
 
 	event_base_->RunAfter(ElectionTimeout, [this, futures, size]() {
 		for (uint32_t i = 0; i != size; ++i) {
@@ -322,30 +322,34 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	if (prev_i >= int32_t(logs_.size()))
 		goto end;
 	if (prev_i >= 0 && logs_[prev_i].term_ != prev_t) {
+		assert(commit_ < prev_i);
 		logs_.erase(logs_.begin() + prev_i, logs_.end());
 		goto end;
 	}
 
 	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
 		reply->success_ = 0;
-		logs_.erase(logs_.begin() + prev_i + 1, logs_.end());
+		assert(commit_ < prev_i);
+		logs_.erase(logs_.begin() + prev_i, logs_.end());
 	} else {
 		for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
 			if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
+				assert(commit_ < prev_i);
 				logs_.erase(logs_.begin() + prev_i, logs_.end());
 				break;
 			}
 		}
-		if (prev_i != int32_t(logs_.size())) {
-			Status(true, false);
-			for (auto e : arg.entries_) {
-				printf("%u %u", e.term_, e.number_);
-			}
-			printf("\n");
-		}
-		// TODO: ???
-		assert(prev_i == int32_t(logs_.size()));
-		logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
+		if (prev_j < arg.entries_.size())
+			logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
+		// if (prev_i != int32_t(logs_.size())) {
+		// 	Status(true, false);
+		// 	for (auto e : arg.entries_) {
+		// 		printf("%u %u", e.term_, e.number_);
+		// 	}
+		// 	printf("\n");
+		// }
+		// // TODO: ???
+		// assert(prev_i == int32_t(logs_.size()));
 		reply->success_ = 1;
 	}
 

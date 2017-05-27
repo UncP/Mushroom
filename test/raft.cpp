@@ -29,22 +29,6 @@ static uint16_t port_base = 7000;
 
 namespace RaftTest {
 
-static void DisableServer(int32_t id) {
-	connected[id] = false;
-	for (auto e : rafts[id]->Peers())
-		e->Disable();
-	for (auto e : rafts[id]->Connections())
-		((RpcConnection *)e)->Disable();
-}
-
-static void EnableServer(int32_t id) {
-	connected[id] = true;
-	for (auto e : rafts[id]->Peers())
-		e->Enable();
-	for (auto e : rafts[id]->Connections())
-		((RpcConnection *)e)->Enable();
-}
-
 static void StartServer(uint32_t idx)
 {
 	rafts[idx] = new RaftServer(base, port_base++, idx);
@@ -89,9 +73,8 @@ static void FreeRaftSet() {
 
 static void MakeRaftSet(int total) {
 	FreeRaftSet();
-	base = new EventBase(4, 64);
+	base = new EventBase(4, 32);
 	loop = new Thread([&]() { base->Loop(); });
-	loop->Start();
 	rafts.resize(total);
 	connected.resize(total);
 	for (int i = 0; i < total; ++i)
@@ -104,6 +87,7 @@ static void MakeRaftSet(int total) {
 		}
 		connected[i] = true;
 	}
+	loop->Start();
 	for (auto e : rafts)
 		e->RescheduleElection();
 }
@@ -143,6 +127,22 @@ static bool CheckNoLeaderAfter(float factor) {
 	return number == 0;
 }
 
+static void DisableServer(int32_t id) {
+	connected[id] = false;
+	for (auto e : rafts[id]->Peers())
+		e->Disable();
+	for (auto e : rafts[id]->Connections())
+		((RpcConnection *)e)->Disable();
+}
+
+static void EnableServer(int32_t id) {
+	connected[id] = true;
+	for (auto e : rafts[id]->Peers())
+		e->Enable();
+	for (auto e : rafts[id]->Connections())
+		((RpcConnection *)e)->Enable();
+}
+
 static void DisableServerFor(float factor, int32_t id) {
 	DisableServer(id);
 	WaitForElection(factor);
@@ -178,7 +178,7 @@ static uint32_t One(uint32_t number, int expect)
 				break;
 		}
 		if (index == ~0u) {
-			usleep(100 * 1000);
+			usleep(200 * 1000);
 			continue;
 		}
 		for (int k = 0; k < 20; ++k) {
@@ -250,9 +250,8 @@ TEST(ElectionWithNoNetworkFaliure)
 	int32_t number;
 	int32_t id;
 	CheckOneLeaderAfter(1, &number, &id);
-	ASSERT_EQ(number,  1);
+	ASSERT_EQ(number, 1);
 }
-
 
 TEST(ReelectionAfterNetworkFailure)
 {
@@ -291,17 +290,16 @@ TEST(ReelectionAfterNetworkFailure)
 	ASSERT_EQ(leader4, leader5);
 }
 
-
 TEST(AgreementWithoutNetworkFailure)
 {
 	uint32_t total = 3;
 	MakeRaftSet(total);
 	int32_t number;
 	int32_t id;
-	CheckOneLeaderAfter(1, &number, &id);
+	CheckOneLeaderAfter(2, &number, &id);
 	ASSERT_EQ(number, 1);
 
-	for (uint32_t i = 0; i < 5; ++i) {
+	for (uint32_t i = 0; i < 100; ++i) {
 		uint32_t commit;
 		int count;
 		ASSERT_TRUE(CommittedAt(i, &commit, &count));
@@ -311,14 +309,13 @@ TEST(AgreementWithoutNetworkFailure)
 	}
 }
 
-
 TEST(AgreementWithFollowerDisconnected)
 {
 	uint32_t total = 3;
 	MakeRaftSet(total);
 	int32_t number;
 	int32_t leader;
-	CheckOneLeaderAfter(1, &number, &leader);
+	CheckOneLeaderAfter(2, &number, &leader);
 	ASSERT_EQ(number, 1);
 
 	uint32_t lg  = 0;
@@ -348,7 +345,6 @@ TEST(AgreementWithFollowerDisconnected)
 	ASSERT_EQ(idx++, One(lg++, total));
 }
 
-
 TEST(AgreementWithHalfFollowerDisconnected)
 {
 	uint32_t total = 5;
@@ -360,7 +356,7 @@ TEST(AgreementWithHalfFollowerDisconnected)
 
 	int32_t number;
 	int32_t leader;
-	CheckOneLeaderAfter(1, &number, &leader);
+	CheckOneLeaderAfter(0, &number, &leader);
 	ASSERT_EQ(number, 1);
 
 	DisableServer((leader+1)%total);
@@ -393,7 +389,6 @@ TEST(AgreementWithHalfFollowerDisconnected)
 	WaitForElection(1);
 	ASSERT_NE(One(lg++, total), ~0u);
 }
-
 
 TEST(RejoinOfPartitionedLeader)
 {
@@ -493,7 +488,6 @@ TEST(LeaderBackupIncorrectLog)
 	ASSERT_NE(One(lg++, total), ~0u);
 }
 
-
 TEST(RpcCount)
 {
 	uint32_t total = 3;
@@ -548,7 +542,6 @@ loop:
 	ASSERT_LE(all3 - all2, 90u);
 }
 
-
 TEST(LeaderFrequentlyChange)
 {
 	uint32_t total = 5;
@@ -577,7 +570,7 @@ TEST(LeaderFrequentlyChange)
 
 		if (leader != -1 && connected[leader]) {
 			DisableServer(leader);
-			WaitForElection(0.3);
+			WaitForElection(0.5);
 			--up;
 		}
 
@@ -596,18 +589,7 @@ TEST(LeaderFrequentlyChange)
 
 	ASSERT_NE(One(iter+1, total), ~0u);
 }
-	// if (!rafts[idx]) {
-	// 	StartServer(idx);
-	// 	ConnectServer(idx);
-	// 	++up;
-	// }
 
-	// for (uint32_t i = 0; i < total; ++i) {
-	// 	if (!rafts[i]) {
-	// 		StartServer(i);
-	// 		ConnectServer(i);
-	// 	}
-	// }
 int main(int argc, char **argv)
 {
 	Signal::Register(SIGINT, []() { FreeRaftSet(); });
