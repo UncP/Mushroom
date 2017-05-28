@@ -25,7 +25,7 @@ uint32_t RaftServer::ElectionTimeout   = 1000;
 uint32_t RaftServer::HeartbeatInterval = 30;
 
 RaftServer::RaftServer(EventBase *event_base, uint16_t port, int32_t id)
-:RpcServer(event_base, port), id_(id), state_(Follower), running_(1), in_election_(0),
+:RpcServer(event_base, port), id_(id), state_(Follower), running_(0), in_election_(0),
 term_(0), vote_for_(-1), commit_(-1), applied_(-1)
 {
 	Register("RaftServer::Vote", this, &RaftServer::Vote);
@@ -115,7 +115,7 @@ void RaftServer::Status(bool print_log, bool print_next)
 bool RaftServer::Start(uint32_t number, uint32_t *index)
 {
 	mutex_.Lock();
-	if (state_ != Leader) {
+	if (!running_ || state_ != Leader) {
 		mutex_.Unlock();
 		return false;
 	}
@@ -150,6 +150,30 @@ void RaftServer::AddPeer(RpcConnection *peer)
 std::vector<RpcConnection *>& RaftServer::Peers()
 {
 	return peers_;
+}
+
+void RaftServer::Start()
+{
+	running_ = 1;
+	RescheduleElection();
+}
+
+void RaftServer::Reset()
+{
+	mutex_.Lock();
+	running_ = 0;
+	in_election_ = 0;
+	if (state_ == Follower)
+		event_base_->Cancel(election_id_);
+	else if (state_ == Leader)
+		event_base_->Cancel(heartbeat_id_);
+	state_ = Follower;
+	term_ = 0;
+	vote_for_ = -1;
+	commit_   = -1;
+	applied_  = -1;
+	logs_.clear();
+	mutex_.Unlock();
 }
 
 int64_t RaftServer::GetElectionTimeout()
@@ -210,9 +234,7 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	int32_t  last_idx  = logs_.size() - 1;
 	uint32_t last_term = (last_idx >= 0) ? logs_[last_idx].term_ : 0;
 	uint32_t prev_term = term_;
-	if (!running_)
-		goto end;
-	if (arg.term_ < term_)
+	if (!running_ || arg.term_ < term_)
 		goto end;
 
 	if (arg.term_ > term_)
@@ -226,7 +248,7 @@ void RaftServer::Vote(const RequestVoteArgs *args, RequestVoteReply *reply)
 	if (arg.last_term_ == last_term && last_idx > arg.last_index_)
 		goto end;
 
-	Info("%d vote for %d", id_, arg.id_);
+	// Info("%d vote for %d", id_, arg.id_);
 
 	reply->granted_ = 1;
 	vote_for_ = arg.id_;
@@ -251,8 +273,8 @@ void RaftServer::SendRequestVote()
 	RequestVoteArgs args(term_, id_, last_idx, last_idx >= 0 ? logs_[last_idx].term_ : 0);
 	mutex_.Unlock();
 
-	Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
-		args.last_term_);
+	// Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
+	// 	args.last_term_);
 
 	uint32_t size = peers_.size();
 	Future<RequestVoteReply> *futures = new Future<RequestVoteReply>[size];
@@ -304,7 +326,6 @@ end:
 void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply)
 {
 	mutex_.Lock();
-	reply->success_ = -1;
 	const AppendEntryArgs &arg = *args;
 	int32_t  prev_i = arg.prev_index_;
 	uint32_t prev_t = arg.prev_term_;
@@ -320,15 +341,21 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		goto end;
 
 	if (prev_i >= int32_t(logs_.size()))
-		goto end;
+		goto index;
 	if (prev_i >= 0 && logs_[prev_i].term_ != prev_t) {
 		assert(commit_ < prev_i);
 		logs_.erase(logs_.begin() + prev_i, logs_.end());
-		goto end;
+		goto index;
 	}
 
 	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
-		reply->success_ = 0;
+		if (commit_ >= prev_i) {
+			Status(true, false);
+			for (auto e : arg.entries_) {
+				printf("%u %u  ", e.term_, e.number_);
+			}
+			printf("\n");
+		}
 		assert(commit_ < prev_i);
 		logs_.erase(logs_.begin() + prev_i, logs_.end());
 	} else {
@@ -341,23 +368,15 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		}
 		if (prev_j < arg.entries_.size())
 			logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
-		// if (prev_i != int32_t(logs_.size())) {
-		// 	Status(true, false);
-		// 	for (auto e : arg.entries_) {
-		// 		printf("%u %u", e.term_, e.number_);
-		// 	}
-		// 	printf("\n");
-		// }
-		// // TODO: ???
-		// assert(prev_i == int32_t(logs_.size()));
-		reply->success_ = 1;
 	}
 
 	if (arg.leader_commit_ > commit_)
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
 
+index:
+	reply->idx_ = logs_.size() - 1;
+
 end:
-	reply->curr_idx_ = logs_.size() - 1;
 	reply->term_ = term_;
 	mutex_.Unlock();
 }
@@ -403,23 +422,18 @@ void RaftServer::ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &rep
 		BecomeFollower(reply.term_);
 		goto end;
 	}
-	if (reply.term_ != term_ || reply.success_ == 0)
+	if (reply.term_ != term_)
 		goto end;
-	if (reply.success_ == -1) {
-		if (next_[i] > 0)
-			--next_[i];
-		goto end;
-	}
-	next_[i] = reply.curr_idx_ + 1;
+	next_[i] = reply.idx_ + 1;
 	match_[i] = next_[i] - 1;
 
-	if (commit_ >= reply.curr_idx_ || logs_[reply.curr_idx_].term_ != term_)
+	if (commit_ >= reply.idx_ || logs_[reply.idx_].term_ != term_)
 		goto end;
 	for (uint32_t i = 0; i < peers_.size(); ++i)
-		if (match_[i] >= reply.curr_idx_)
+		if (match_[i] >= reply.idx_)
 			++vote;
 	if (vote > ((peers_.size() + 1) / 2))
-		commit_ = reply.curr_idx_;
+		commit_ = reply.idx_;
 end:
 	mutex_.Unlock();
 }

@@ -42,6 +42,10 @@ class RaftServer : public RpcServer
 
 		void Status(bool print_log = false, bool print_next = false);
 
+		void Start();
+
+		void Reset();
+
 		bool Start(uint32_t number, uint32_t *index);
 
 		bool LogAt(uint32_t index, uint32_t *commit);
@@ -58,14 +62,14 @@ class RaftServer : public RpcServer
 
 		static uint32_t ElectionTimeout;
 
-		void RescheduleElection();
-
 	private:
 		static uint32_t TimeoutBase;
 		static uint32_t TimeoutTop;
 		static uint32_t HeartbeatInterval;
 
 		static int64_t GetElectionTimeout();
+
+		void RescheduleElection();
 
 		void SendRequestVote();
 

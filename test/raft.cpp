@@ -23,51 +23,21 @@ using namespace Mushroom;
 static EventBase *base = 0;
 static Thread *loop = 0;
 static vector<RaftServer *> rafts;
-static vector<RaftServer *> crashed;
 static vector<bool> connected;
 static uint16_t port_base = 7000;
 
 namespace RaftTest {
-
-static void StartServer(uint32_t idx)
-{
-	rafts[idx] = new RaftServer(base, port_base++, idx);
-}
-
-static void ConnectServer(uint32_t idx)
-{
-	for (uint32_t i = 0; i < rafts.size(); ++i) {
-		if (idx == i) continue;
-		rafts[idx]->AddPeer(new RpcConnection(EndPoint(rafts[i]->Port(), "127.0.0.1"),
-			base->GetPoller(), 0));
-		rafts[i]->AddPeer(new RpcConnection(EndPoint(rafts[idx]->Port(), "127.0.0.1"),
-			base->GetPoller(), 0));
-	}
-	connected[idx] = true;
-	rafts[idx]->RescheduleElection();
-}
-
-static void CrashServer(uint32_t idx)
-{
-	connected[idx] = false;
-	rafts[idx]->Close();
-	crashed.push_back(rafts[idx]);
-	rafts[idx] = 0;
-}
 
 static void FreeRaftSet() {
 	for (auto e : rafts)
 		if (e) e->Close();
 	if (base) base->Exit();
 	if (loop) loop->Stop();
-	for (auto e : rafts)
-		delete e;
 	delete base;
 	delete loop;
 	base = 0;
 	loop = 0;
 	rafts.clear();
-	crashed.clear();
 	connected.clear();
 }
 
@@ -78,7 +48,7 @@ static void MakeRaftSet(int total) {
 	rafts.resize(total);
 	connected.resize(total);
 	for (int i = 0; i < total; ++i)
-		StartServer(i);
+		rafts[i] = new RaftServer(base, port_base++, i);
 	for (int i = 0; i < total; ++i) {
 		for (int j = 0; j < total; ++j) {
 			if (i == j) continue;
@@ -89,7 +59,7 @@ static void MakeRaftSet(int total) {
 	}
 	loop->Start();
 	for (auto e : rafts)
-		e->RescheduleElection();
+		e->Start();
 }
 
 static void WaitForElection(float factor) {
@@ -141,6 +111,20 @@ static void EnableServer(int32_t id) {
 		e->Enable();
 	for (auto e : rafts[id]->Connections())
 		((RpcConnection *)e)->Enable();
+}
+
+static void StartServer(uint32_t idx)
+{
+	rafts[idx]->Start();
+	EnableServer(idx);
+	connected[idx] = true;
+}
+
+static void CrashServer(uint32_t idx)
+{
+	connected[idx] = false;
+	DisableServer(idx);
+	rafts[idx]->Reset();
 }
 
 static void DisableServerFor(float factor, int32_t id) {
@@ -198,11 +182,6 @@ static void PrintAllServer(bool print_log = true, bool print_next = true)
 {
 	for (auto e : rafts)
 		if (e) e->Status(print_log, print_next);
-	if (crashed.size()) {
-		printf("\nCrashed Server\n");
-		for (auto e : crashed)
-			e->Status(print_log, print_next);
-	}
 }
 
 static void PrintRaftServer(int32_t index)
@@ -299,7 +278,7 @@ TEST(AgreementWithoutNetworkFailure)
 	CheckOneLeaderAfter(2, &number, &id);
 	ASSERT_EQ(number, 1);
 
-	for (uint32_t i = 0; i < 100; ++i) {
+	for (uint32_t i = 0; i < 1000; ++i) {
 		uint32_t commit;
 		int count;
 		ASSERT_TRUE(CommittedAt(i, &commit, &count));
@@ -563,12 +542,12 @@ TEST(LeaderFrequentlyChange)
 				break;
 			}
 		}
-		if (dist(eng) < 200)
+		if (dist(eng) < 100)
 			usleep((dist(eng) % (RaftServer::ElectionTimeout / 2)) * 1000);
 		else
 			usleep((dist(eng) % 13) * 1000);
 
-		if (leader != -1 && connected[leader]) {
+		if (leader != -1) {
 			DisableServer(leader);
 			WaitForElection(0.5);
 			--up;
@@ -588,6 +567,55 @@ TEST(LeaderFrequentlyChange)
 			EnableServer(i);
 
 	ASSERT_NE(One(iter+1, total), ~0u);
+}
+
+TEST(LeaderCrash)
+{
+	uint32_t total = 5;
+	uint32_t up = total;
+	MakeRaftSet(total);
+	std::default_random_engine eng(time(0));
+	std::uniform_int_distribution<int> dist(0, 999);
+
+	ASSERT_NE(One(0, total), ~0u);
+
+	uint32_t iter = 100;
+	for (uint32_t i = 1; i <= iter; ++i) {
+		int32_t leader = -1;
+		for (uint32_t j = 0; j < total; ++j) {
+			if (!connected[j]) continue;
+			uint32_t index;
+			if (rafts[j] && rafts[j]->Start(i, &index)) {
+				leader = int32_t(j);
+				break;
+			}
+		}
+		if (dist(eng) < 100)
+			usleep((dist(eng) % (RaftServer::ElectionTimeout / 2)) * 1000);
+		else
+			usleep((dist(eng) % 13) * 1000);
+
+		if (leader != -1) {
+			CrashServer(leader);
+			--up;
+		}
+
+		if (up < ((total + 1) / 2)) {
+			int idx = dist(eng) % total;
+			if (!connected[idx]) {
+				StartServer(idx);
+				++up;
+			}
+		}
+	}
+
+	for (uint32_t i = 0; i < total; ++i)
+		if (!connected[i])
+			StartServer(i);
+
+	ASSERT_NE(One(iter+1, total), ~0u);
+
+	PrintAllServer();
 }
 
 int main(int argc, char **argv)

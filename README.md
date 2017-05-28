@@ -9,7 +9,7 @@
 ### Behold, the power of Mushroom!
 
 ### Feature
-+ 并发B<sup>link</sup>树索引（前缀压缩，二次哈希页面管理器、线程池、映射队列，锁管理器）
++ 并发B<sup>link</sup>树索引（前缀压缩，二次哈希页面管理器，线程池，映射队列，锁管理器）
 + TCP通信库
 + RPC框架
 + 一致性算法——Raft

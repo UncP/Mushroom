@@ -74,11 +74,11 @@ inline void RpcConnection::Call(const char *str, const T1 *args, Future<T2> *fu)
 	fu->SetId(rid);
 	mutex_.Lock();
 	futures_.insert({rid, std::move([fu, this]() { fu->Notify(marshaller_); })});
-	mutex_.Unlock();
 	if (!disable_.get()) { // && dist(engine) > error_rate_
 		marshaller_.MarshalArgs(id, rid, args);
 		SendOutput();
 	}
+	mutex_.Unlock();
 }
 
 template<typename T>

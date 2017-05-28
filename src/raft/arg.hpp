@@ -50,8 +50,7 @@ struct AppendEntryReply
 {
 	AppendEntryReply() { }
 	uint32_t term_;
-	int32_t  success_;
-	int32_t  curr_idx_;
+	int32_t  idx_;
 };
 
 inline Marshaller& operator<<(Marshaller &marshaller, const RequestVoteArgs &args)
@@ -111,16 +110,14 @@ inline Marshaller& operator>>(Marshaller &marshaller, AppendEntryArgs &args)
 inline Marshaller& operator<<(Marshaller &marshaller, const AppendEntryReply &reply)
 {
 	marshaller << reply.term_;
-	marshaller << reply.success_;
-	marshaller << reply.curr_idx_;
+	marshaller << reply.idx_;
 	return marshaller;
 }
 
 inline Marshaller& operator>>(Marshaller &marshaller, AppendEntryReply &reply)
 {
 	marshaller >> reply.term_;
-	marshaller >> reply.success_;
-	marshaller >> reply.curr_idx_;
+	marshaller >> reply.idx_;
 	return marshaller;
 }
 
