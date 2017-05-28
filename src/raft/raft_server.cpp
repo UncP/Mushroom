@@ -164,7 +164,11 @@ void RaftServer::Reset()
 {
 	mutex_.Lock();
 	running_ = 0;
-	in_election_ = 0;
+	while (in_election_) {
+		mutex_.Unlock();
+		sched_yield();
+		mutex_.Lock();
+	}
 	if (state_ == Follower)
 		event_base_->Cancel(election_id_);
 	else if (state_ == Leader)
@@ -346,13 +350,6 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	}
 
 	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
-		// if (commit_ >= prev_i) {
-		// 	Status(true, false);
-		// 	for (auto e : arg.entries_) {
-		// 		printf("%u %u  ", e.term_, e.number_);
-		// 	}
-		// 	printf("\n");
-		// }
 		assert(commit_ < prev_i);
 		logs_.erase(logs_.begin() + prev_i, logs_.end());
 	} else {

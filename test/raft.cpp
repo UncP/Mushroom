@@ -596,6 +596,7 @@ TEST(LeaderCrashFrequently)
 			usleep((dist(eng) % 13) * 1000);
 
 		if (leader != -1) {
+			// printf("crash %d\n", leader);
 			CrashServer(leader);
 			--up;
 		}
@@ -603,6 +604,7 @@ TEST(LeaderCrashFrequently)
 		if (up < ((total + 1) / 2)) {
 			int idx = dist(eng) % total;
 			if (!connected[idx]) {
+				// printf("start %d\n", idx);
 				StartServer(idx);
 				++up;
 			}
