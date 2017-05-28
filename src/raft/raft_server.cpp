@@ -52,7 +52,7 @@ void RaftServer::Close()
 	RpcServer::Close();
 
 	running_ = 0;
-	if (state_ == Follower)
+	if (state_ == Follower || state_ == Candidate)
 		event_base_->Cancel(election_id_);
 	else if (state_ == Leader)
 		event_base_->Cancel(heartbeat_id_);
@@ -154,8 +154,10 @@ std::vector<RpcConnection *>& RaftServer::Peers()
 
 void RaftServer::Start()
 {
+	mutex_.Lock();
 	running_ = 1;
 	RescheduleElection();
+	mutex_.Unlock();
 }
 
 void RaftServer::Reset()
@@ -215,8 +217,7 @@ void RaftServer::BecomeCandidate()
 void RaftServer::BecomeLeader()
 {
 	// Info("%d becoming leader, term %u", id_, term_);
-	state_    = Leader;
-	in_election_ = 0;
+	state_ = Leader;
 	for (auto &e : next_)
 		e = commit_ + 1;
 	for (auto &e : match_)
@@ -271,7 +272,6 @@ void RaftServer::SendRequestVote()
 	BecomeCandidate();
 	int32_t last_idx = logs_.size() - 1;
 	RequestVoteArgs args(term_, id_, last_idx, last_idx >= 0 ? logs_[last_idx].term_ : 0);
-	mutex_.Unlock();
 
 	// Info("election: term %u id %d size %d lst_tm %u", args.term_, args.id_, args.last_index_,
 	// 	args.last_term_);
@@ -285,6 +285,7 @@ void RaftServer::SendRequestVote()
 			ReceiveRequestVoteReply(fu->Value());
 		});
 	}
+	mutex_.Unlock();
 
 	event_base_->RunAfter(ElectionTimeout, [this, futures, size]() {
 		for (uint32_t i = 0; i != size; ++i) {
@@ -293,18 +294,13 @@ void RaftServer::SendRequestVote()
 		}
 		delete [] futures;
 		mutex_.Lock();
+		in_election_ = 0;
 		if (running_ && state_ != Leader) {
-			if (in_election_) {
-				in_election_ = 0;
-				RescheduleElection();
-			}
 			state_ = Follower;
 			vote_for_ = -1;
-			mutex_.Unlock();
-		} else {
-			assert(!in_election_);
-			mutex_.Unlock();
+			RescheduleElection();
 		}
+		mutex_.Unlock();
 	});
 }
 
@@ -313,7 +309,7 @@ void RaftServer::ReceiveRequestVoteReply(const RequestVoteReply &reply)
 	mutex_.Lock();
 	if (!running_ || state_ != Candidate)
 		goto end;
-	if (reply.granted_) {
+	if (reply.term_ == term_ && reply.granted_) {
 		if (++votes_ > ((peers_.size() + 1) / 2))
 			BecomeLeader();
 	} else if (reply.term_ > term_) {
@@ -332,13 +328,14 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	uint32_t prev_j = 0;
 	if (!running_)
 		goto end;
+
+	if (arg.term_ < term_)
+		goto end;
+
 	if ((arg.term_ > term_) || (arg.term_ == term_ && state_ == Candidate))
 		BecomeFollower(arg.term_);
 	else
 		RescheduleElection(); // what if (arg.term_ == term_ && state_ == Leader)
-
-	if (arg.term_ < term_)
-		goto end;
 
 	if (prev_i >= int32_t(logs_.size()))
 		goto index;
@@ -349,13 +346,13 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	}
 
 	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
-		if (commit_ >= prev_i) {
-			Status(true, false);
-			for (auto e : arg.entries_) {
-				printf("%u %u  ", e.term_, e.number_);
-			}
-			printf("\n");
-		}
+		// if (commit_ >= prev_i) {
+		// 	Status(true, false);
+		// 	for (auto e : arg.entries_) {
+		// 		printf("%u %u  ", e.term_, e.number_);
+		// 	}
+		// 	printf("\n");
+		// }
 		assert(commit_ < prev_i);
 		logs_.erase(logs_.begin() + prev_i, logs_.end());
 	} else {
@@ -423,6 +420,8 @@ void RaftServer::ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &rep
 		goto end;
 	}
 	if (reply.term_ != term_)
+		goto end;
+	if (next_[i] == reply.idx_ + 1)
 		goto end;
 	next_[i] = reply.idx_ + 1;
 	match_[i] = next_[i] - 1;
