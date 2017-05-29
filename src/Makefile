@@ -31,6 +31,9 @@ client_test: $(LOBJ) $(NOBJ) ../test/network_client.cpp
 server_test: $(LOBJ) $(NOBJ) ../test/network_server.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
+page_test: $(MOBJ) ../test/page.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
 blinktree_with_queue_test: $(MOBJ) ../test/mushroom_with_queue.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 

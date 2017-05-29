@@ -15,6 +15,7 @@ namespace Mushroom {
 class KeySlice;
 class BLinkTree;
 class LSMTree;
+class Page;
 
 class MushroomDB : private NoCopy
 {
@@ -26,10 +27,9 @@ class MushroomDB : private NoCopy
 
 		bool Get(KeySlice *key);
 
-		bool Close();
+		bool BatchPut(Page *page);
 
-		MushroomDB(const MushroomDB &) = delete;
-		MushroomDB& operator=(const MushroomDB &) = delete;
+		bool Close();
 
 		~MushroomDB();
 

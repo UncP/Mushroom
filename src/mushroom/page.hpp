@@ -13,7 +13,7 @@
 
 namespace Mushroom {
 
-typedef enum { InsertOk, ExistedKey, MoveRight } InsertStatus;
+typedef enum { InsertOk = 0x0, ExistedKey = 0x1, MoveRight = 0x2 } InsertStatus;
 
 class KeySlice;
 class BLinkTree;
@@ -35,6 +35,10 @@ class Page : private NoCopy
 
 		void InsertInfiniteKey();
 
+		static Page* NewPage(uint8_t key_len);
+
+		static void DeletePage(Page *page);
+
 		Page(page_t id, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		inline page_t Next() const {
@@ -50,16 +54,17 @@ class Page : private NoCopy
 
 		InsertStatus Insert(const KeySlice *key, page_t &page_no);
 
+		bool Insert(const KeySlice *key);
+
 		void Insert(Page *that, KeySlice *key);
 
-		bool Ascend(KeySlice *key, page_t *page_no, uint16_t *index);
-
 		void Split(Page *that, KeySlice *slice);
+
+		bool Full() const;
 
 		bool NeedSplit();
 
 	private:
-
 		inline uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 		}

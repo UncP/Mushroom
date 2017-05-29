@@ -24,7 +24,6 @@ class KeySlice : private NoCopy
 		union {
 			page_t  page_no_;
 			valptr  vptr_;
-			table_t tptr_;
 		};
 		char   key_[0];
 };

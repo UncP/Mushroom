@@ -25,6 +25,22 @@ uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 	return (PageSize - offset) / (PageByte + IndexByte + key_len);
 }
 
+Page* Page::NewPage(uint8_t key_len)
+{
+	char *buf = new char[PageSize];
+	memset(buf, 0, PageSize);
+	Page *page = (Page *)buf;
+	page->key_len_ = key_len;
+	page->degree_  = CalculateDegree(key_len);
+	page->InsertInfiniteKey();
+	return page;
+}
+
+void Page::DeletePage(Page *page)
+{
+	delete [] (char *)page;
+}
+
 Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
 	memset(this, 0, PageSize);
@@ -105,7 +121,8 @@ InsertStatus Page::Insert(const KeySlice *key, page_t &page_no)
 	uint16_t pos;
 	KeySlice *slice = 0;
 	bool flag = Traverse(key, &pos, &slice);
-	if (flag) return ExistedKey;
+	if (flag)
+		return ExistedKey;
 	if (pos == total_key_ && pos) {
 		page_no = Next();
 		assert(page_no);
@@ -124,20 +141,10 @@ InsertStatus Page::Insert(const KeySlice *key, page_t &page_no)
 	return InsertOk;
 }
 
-bool Page::Ascend(KeySlice *key, page_t *page_no, uint16_t *idx)
+bool Page::Insert(const KeySlice *key)
 {
-	uint16_t *index = Index();
-	if (*idx < (total_key_ - 1)) {
-		if (pre_len_)
-			CopyPrefix(key, data_, pre_len_);
-		CopyKey(key, Key(index, *idx), pre_len_, key_len_);
-		++*idx;
-		return true;
-	} else {
-		*page_no = Key(index, *idx)->page_no_;
-		*idx = 0;
-		return false;
-	}
+	page_t page_no;
+	return Insert(key, page_no) == InsertOk;
 }
 
 void Page::Split(Page *that, KeySlice *slice)
@@ -197,9 +204,15 @@ void Page::Split(Page *that, KeySlice *slice)
 	that->total_key_ = right;
 }
 
+bool Page::Full() const
+{
+	return total_key_ == degree_;
+}
+
 bool Page::NeedSplit()
 {
-	if (total_key_ < degree_) return false;
+	if (!Full())
+		return false;
 	uint16_t *index = Index();
 	const char *first = Key(index, 0)->key_;
 	const char *last  = Key(index, total_key_ - 1)->key_;
