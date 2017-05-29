@@ -6,7 +6,7 @@
 **/
 
 #include "latch_manager.hpp"
-#include "../include/latch.hpp"
+#include "latch.hpp"
 
 namespace Mushroom {
 

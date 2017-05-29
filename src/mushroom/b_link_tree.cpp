@@ -7,7 +7,7 @@
 
 #include <cassert>
 
-#include "../include/latch.hpp"
+#include "latch.hpp"
 #include "b_link_tree.hpp"
 #include "page.hpp"
 #include "latch_manager.hpp"

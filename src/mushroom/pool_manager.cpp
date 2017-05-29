@@ -5,7 +5,7 @@
  *    > Time:  2017-03-19 13:13:52
 **/
 
-#include "../include/latch.hpp"
+#include "latch.hpp"
 #include "page.hpp"
 #include "page_pool.hpp"
 #include "pool_manager.hpp"

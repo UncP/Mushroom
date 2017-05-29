@@ -59,8 +59,8 @@ void RaftServer::Close()
 
 	in_election_ = 0;
 
-	// for (auto e : peers_)
-		// e->Close();
+	for (auto e : peers_)
+		e->Close();
 
 	mutex_.Unlock();
 }

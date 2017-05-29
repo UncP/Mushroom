@@ -24,7 +24,7 @@ static EventBase *base = 0;
 static Thread *loop = 0;
 static vector<RaftServer *> rafts;
 static vector<bool> connected;
-static uint16_t port_base = 8000;
+static uint16_t port_base = 7000;
 
 namespace RaftTest {
 
@@ -568,6 +568,7 @@ TEST(LeaderFrequentlyChange)
 
 	ASSERT_NE(One(iter+1, total), ~0u);
 }
+
 /*
 TEST(LeaderCrashFrequently)
 {
@@ -620,6 +621,7 @@ TEST(LeaderCrashFrequently)
 	PrintAllServer();
 }
 */
+
 int main(int argc, char **argv)
 {
 	Signal::Register(SIGINT, []() { FreeRaftSet(); });

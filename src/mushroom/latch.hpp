@@ -8,9 +8,9 @@
 #ifndef _LATCH_HPP_
 #define _LATCH_HPP_
 
-#include "utility.hpp"
-#include "spin_lock.hpp"
-#include "atomic.hpp"
+#include "../include/utility.hpp"
+#include "../include/spin_lock.hpp"
+#include "../include/atomic.hpp"
 
 namespace Mushroom {
 
