@@ -69,9 +69,7 @@ class Latch : private NoCopy
 		}
 
 	private:
-		inline void Unpin() {
-			--pin_;
-		}
+		inline void Unpin() { --pin_; }
 
 		atomic_16_t       pin_;
 		uint16_t          hash_;

@@ -52,7 +52,7 @@ Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_
 }
 
 void Page::InsertInfiniteKey()
-{
+{// not locked
 	TempSlice(key, key_len_);
 	memset(key->key_, 0xFF, key_len_);
 	page_t page_no = 0;
@@ -60,7 +60,7 @@ void Page::InsertInfiniteKey()
 }
 
 void Page::AssignFirst(page_t first)
-{
+{// not locked
 	first_ = first;
 }
 
@@ -138,6 +138,7 @@ InsertStatus Page::Insert(const KeySlice *key, page_t &page_no)
 	if (pos) memmove(&index[0], &index[1], pos << 1);
 	index[pos] = end;
 	++total_key_;
+	dirty_ = 1;
 	return InsertOk;
 }
 
@@ -202,6 +203,8 @@ void Page::Split(Page *that, KeySlice *slice)
 
 	this->total_key_ = left;
 	that->total_key_ = right;
+	this->dirty_ = 1;
+	that->dirty_ = 1;
 }
 
 bool Page::Full() const
@@ -243,6 +246,7 @@ bool Page::NeedSplit()
 	pre_len_ += pre_len;
 	key_len_ -= pre_len;
 	degree_  = degree;
+	dirty_   = 1;
 	return false;
 }
 

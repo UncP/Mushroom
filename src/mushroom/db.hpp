@@ -13,28 +13,33 @@
 namespace Mushroom {
 
 class KeySlice;
-class BLinkTree;
-class LSMTree;
 class Page;
+class LogManager;
+class LatchManager;
+class BLinkTree;
+class PoolManager;
 
 class MushroomDB : private NoCopy
 {
 	public:
-		MushroomDB(uint32_t key_len, uint32_t page_size, uint32_t pool_size,
+		MushroomDB(const char *name, uint32_t key_len, uint32_t page_size, uint32_t pool_size,
 			uint32_t hash_bits, uint32_t seg_bits);
 
 		bool Put(KeySlice *key);
 
-		bool Get(KeySlice *key);
-
 		bool BatchPut(Page *page);
+
+		bool Get(KeySlice *key);
 
 		bool Close();
 
 		~MushroomDB();
 
 	private:
-		BLinkTree *tree_;
+		LatchManager *latch_manager_;
+		PoolManager  *pool_manager_;
+		BLinkTree    *tree_;
+		LogManager   *log_manager_;
 };
 
 } // namespace Mushroom

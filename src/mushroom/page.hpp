@@ -46,6 +46,12 @@ class Page : private NoCopy
 			return key->page_no_;
 		}
 
+		inline bool PageNo() const { return page_no_; }
+
+		inline bool Dirty() const { return dirty_; }
+
+		inline void Clean() { dirty_ = 0; }
+
 		void AssignFirst(page_t first);
 
 		page_t Descend(const KeySlice *key) const;
@@ -79,6 +85,7 @@ class Page : private NoCopy
 		page_t   first_;
 		uint16_t total_key_;
 		uint16_t degree_;
+		uint8_t  dirty_;
 		uint8_t  type_;
 		uint8_t  level_;
 		uint8_t  key_len_;

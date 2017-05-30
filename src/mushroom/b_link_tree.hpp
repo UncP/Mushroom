@@ -24,7 +24,7 @@ class BLinkTree : private NoCopy
 	public:
 		static const uint32_t MAX_KEY_LENGTH = 255;
 
-		BLinkTree(uint32_t key_len);
+		BLinkTree(uint32_t key_len, LatchManager *latch_manager, PoolManager *pool_manager);
 
 		~BLinkTree();
 
@@ -35,8 +35,6 @@ class BLinkTree : private NoCopy
 		bool Get(KeySlice *key);
 
 	private:
-		void Initialize();
-
 		struct Set {
 			Set():depth_(0) { }
 			page_t   page_no_;
@@ -45,6 +43,8 @@ class BLinkTree : private NoCopy
 			page_t   stack_[8];
 			uint32_t depth_;
 		};
+
+		void Initialize();
 
 		void DescendToLeaf(const KeySlice *key, Set &set);
 

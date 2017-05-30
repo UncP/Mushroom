@@ -26,17 +26,11 @@ class PagePool : private NoCopy
 			SegMask = SegSize - 1;
 		}
 
-		PagePool():mem_(0) { Reset(); }
+		PagePool() { }
 
-		inline void Reset() {
-			base_ = 0;
-			next_ = 0;
-			if (mem_) memset(mem_, 0, (Page::PageSize << SegBits));
-		}
-
-		inline void Initialize(page_t page_no) {
-			base_ = page_no & ~SegMask;
-			if (!mem_) mem_ = new char[Page::PageSize << SegBits];
+		inline void Initialize(page_t base) {
+			base_ = base;
+			mem_ = new char[Page::PageSize << SegBits];
 		}
 
 		inline Page* GetPage(page_t page_no) {
@@ -44,7 +38,6 @@ class PagePool : private NoCopy
 		}
 
 		static uint32_t SegSize;
-
 	private:
 		static uint32_t SegBits;
 		static uint32_t SegMask;

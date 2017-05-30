@@ -5,8 +5,8 @@
  *    > Time:    2017-05-29 14:46:11
 **/
 
-#include <fcntl.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <cassert>
 #include <cstring>
 

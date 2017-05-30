@@ -12,12 +12,16 @@
 
 namespace Mushroom {
 
+class Page;
+
 class LogManager : private NoCopy
 {
 	public:
 		LogManager(const char *dir);
 
 		~LogManager();
+
+		void Logging(Page *page);
 
 	private:
 		int   fd_;

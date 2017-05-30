@@ -9,7 +9,8 @@
 ### Behold, the power of Mushroom!
 
 ### Feature
-+ Concurrent B<sup>link</sup> Tree Index (Prefix Compression, Two-Phase Hashing Page Manager, Thread Pool, Bounded Mapping Queue, Latch Manager)
++ Concurrent B<sup>link</sup> Tree
++ ACID Index (Batched)
 + TCP Communication Library
 + RPC Framework
 + Consensus Algorithm -- Raft
@@ -32,7 +33,7 @@
 | 0.2.0  |   two-phase lock based concurrent index   |
 | 0.2.1  |         latch manager optimization         |
 | 0.3.0  | implement  prefix compaction, reducing B<sup>link</sup> tree memory about 9.1 % |
-| 0.4.0  |  second-time mapping mulit-thread queue, reducing total program memory up to 50 %|
+| 0.4.0  |  implement **Mapping Queue**, reducing total program memory up to 50 %|
 | 0.4.1  | merge latch manager and page manager，reduce 1 lock per operation |
 | 0.4.2  |            change the way B link tree root split |
 | 0.4.3  |  new test strategy, threads conduct operations without going through the queue |
@@ -44,7 +45,8 @@
 | 0.6.4  |using posix spin lock, Optimize MushroomDB and BLinkTree structure|
 | 0.7.0  |      Log-Structured Merge Tree    |
 | 0.8.0  |     TCP Communication Library & RPC Framework    |
-| 0.9.0  |        Raft      |
+| 0.9.0  |        Raft       |
+| 0.9.1  |   ACID Index (Batched)    |
 
 ### Other
 + Version 0.6.0 is the first stable version

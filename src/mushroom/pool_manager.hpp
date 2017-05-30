@@ -16,6 +16,7 @@ namespace Mushroom {
 class Page;
 class HashEntry;
 class PagePool;
+class LatchManager;
 
 class PoolManager : private NoCopy
 {
@@ -23,13 +24,15 @@ class PoolManager : private NoCopy
 		static void SetManagerInfo(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits,
 			uint32_t seg_bits);
 
-		PoolManager();
+		PoolManager(const char *dir);
 
 		~PoolManager();
 
 		Page* GetPage(page_t page_no);
 
 		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
+
+		void Flush(LatchManager *latch_manager);
 
 		bool Free();
 
@@ -39,8 +42,9 @@ class PoolManager : private NoCopy
 
 		void Link(uint16_t hash, uint16_t victim);
 
-		Atomic<page_t> cur_;
-		atomic_16_t    tot_;
+		int            fd_;
+		Atomic<page_t> cur_page_;
+		atomic_16_t    total_pool_;
 		HashEntry     *entries_;
 		PagePool      *pool_;
 };

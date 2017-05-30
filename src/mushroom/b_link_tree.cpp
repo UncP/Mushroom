@@ -15,10 +15,9 @@
 
 namespace Mushroom {
 
-BLinkTree::BLinkTree(uint32_t key_len):key_len_((uint8_t)key_len)
+BLinkTree::BLinkTree(uint32_t key_len, LatchManager *latch_manager, PoolManager *pool_manager)
+:key_len_((uint8_t)key_len), latch_manager_(latch_manager), pool_manager_(pool_manager)
 {
-	latch_manager_ = new LatchManager();
-	pool_manager_ = new PoolManager();
 	degree_ = Page::CalculateDegree(key_len_);
 	Initialize();
 }

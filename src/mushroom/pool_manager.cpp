@@ -5,10 +5,16 @@
  *    > Time:  2017-03-19 13:13:52
 **/
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <cassert>
+#include <cstring>
+
 #include "latch.hpp"
 #include "page.hpp"
 #include "page_pool.hpp"
 #include "pool_manager.hpp"
+#include "latch_manager.hpp"
 
 namespace Mushroom {
 
@@ -24,8 +30,13 @@ void PoolManager::SetManagerInfo(uint32_t page_size, uint32_t pool_size, uint32_
 	HashMask = (1 << hash_bits) - 1;
 }
 
-PoolManager::PoolManager():cur_(0), tot_(0)
+PoolManager::PoolManager(const char *dir):cur_page_(0), total_pool_(0)
 {
+	char buf[32];
+	size_t len = strlen(dir);
+	memcpy(buf, dir, len);
+	strcpy(buf + len, "/index");
+	assert((fd_ = open(buf, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR)) != -1);
 	entries_ = new HashEntry[HashMask+1];
 	pool_ = new PagePool[PoolSize];
 }
@@ -68,10 +79,10 @@ Page* PoolManager::GetPage(page_t page_no)
 		}
 	}
 
-	uint16_t victim = ++tot_;
-
+	uint16_t victim = ++total_pool_;
 	assert(victim < PoolSize);
-	pool_[victim].Initialize(page_no);
+
+	pool_[victim].Initialize(base);
 	Link(hash, victim);
 	page = pool_[victim].GetPage(page_no);
 	entries_[hash].Unlock();
@@ -80,16 +91,34 @@ Page* PoolManager::GetPage(page_t page_no)
 
 Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
-	page_t page_no = cur_++;
+	page_t page_no = cur_page_++;
 	Page *page = GetPage(page_no);
 	return new (page) Page(page_no, type, key_len, level, degree);
 }
 
 bool PoolManager::Free()
 {
-	for (uint16_t i = 0, end = tot_.get(); i != end; ++i)
+	for (uint16_t i = 0, end = total_pool_.get(); i != end; ++i)
 		delete [] pool_[i].mem_;
 	return true;
+}
+
+void PoolManager::Flush(LatchManager *latch_manager)
+{
+	page_t cur = cur_page_.get();
+	for (page_t i = 0; i < cur;) {
+		PagePool *pool = pool_ + i / PagePool::SegSize;
+		for (page_t j = 0; i < cur && j < PagePool::SegSize; ++i, ++j) {
+			Latch *latch = latch_manager->GetLatch(i);
+			Page *page = pool->GetPage(i);
+			latch->Lock();
+			if (page->Dirty()) {
+				page->Clean();
+				assert(pwrite(fd_, page, Page::PageSize, page->PageNo() * Page::PageSize) != -1);
+			}
+			latch->Unlock();
+		}
+	}
 }
 
 } // namespace Mushroom
