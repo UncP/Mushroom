@@ -105,12 +105,12 @@ bool PoolManager::Free()
 
 void PoolManager::Flush(LatchManager *latch_manager)
 {
-	page_t cur = cur_page_.get();
-	for (page_t i = 0; i < cur;) {
-		PagePool *pool = pool_ + i / PagePool::SegSize;
-		for (page_t j = 0; i < cur && j < PagePool::SegSize; ++i, ++j) {
-			Latch *latch = latch_manager->GetLatch(i);
-			Page *page = pool->GetPage(i);
+	page_t total = cur_page_.get();
+	for (page_t cur = 0; cur < total;) {
+		PagePool *pool = pool_ + cur / PagePool::SegSize;
+		for (page_t i = 0; cur < total && i < PagePool::SegSize; ++cur, ++i) {
+			Latch *latch = latch_manager->GetLatch(cur);
+			Page *page = pool->GetPage(cur);
 			latch->Lock();
 			if (page->Dirty()) {
 				page->Clean();

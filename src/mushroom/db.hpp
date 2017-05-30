@@ -23,7 +23,7 @@ class MushroomDB : private NoCopy
 {
 	public:
 		MushroomDB(const char *name, uint32_t key_len, uint32_t page_size, uint32_t pool_size,
-			uint32_t hash_bits, uint32_t seg_bits);
+			uint32_t hash_bits, uint32_t seg_bits, uint32_t log_page);
 
 		bool Put(KeySlice *key);
 

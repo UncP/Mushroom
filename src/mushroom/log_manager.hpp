@@ -9,6 +9,7 @@
 #define _LOG_MANAGER_HPP_
 
 #include "../include/utility.hpp"
+#include "../include/mutex.hpp"
 
 namespace Mushroom {
 
@@ -21,11 +22,21 @@ class LogManager : private NoCopy
 
 		~LogManager();
 
+		Page* NeedRecover();
+
+		bool NeedFlush();
+
 		void Logging(Page *page);
 
+		static void SetManagerInfo(uint32_t log_page);
+
+		static uint32_t LogPage;
+
 	private:
-		int   fd_;
-		char *mem_;
+		int      fd_;
+		char    *mem_;
+		uint32_t cur_page_;
+		Mutex    mutex_;
 };
 
 } // namespace Mushroom

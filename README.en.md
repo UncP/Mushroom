@@ -9,8 +9,8 @@
 ### Behold, the power of Mushroom!
 
 ### Feature
-+ Concurrent B<sup>link</sup> Tree
-+ ACID Index (Batched)
++ Concurrent B<sup>link</sup> Tree Index
++ ACID (Batch Operation)
 + TCP Communication Library
 + RPC Framework
 + Consensus Algorithm -- Raft
@@ -46,7 +46,7 @@
 | 0.7.0  |      Log-Structured Merge Tree    |
 | 0.8.0  |     TCP Communication Library & RPC Framework    |
 | 0.9.0  |        Raft       |
-| 0.9.1  |   ACID Index (Batched)    |
+| 0.9.1  |   ACID (Batch Operation)    |
 
 ### Other
 + Version 0.6.0 is the first stable version

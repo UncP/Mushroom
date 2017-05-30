@@ -34,10 +34,10 @@ elif [ "$1" = "mushroom" ]
 then
 	if [ "$2" = "queue" ]
 	then
-		make blinktree_with_queue_test && ./blinktree_with_queue_test 4096 4800 10 4 $3
+		make blinktree_with_queue_test && ./blinktree_with_queue_test 4096 4800 10 4 16 $3
 	elif [ "$2" = "thread" ]
 	then
-		make blinktree_multi_thread_test && ./blinktree_multi_thread_test 4096 4800 10 4 $3
+		make blinktree_multi_thread_test && ./blinktree_multi_thread_test 4096 4800 10 4 16 $3
 		else
 			echo "wrong argument :("
 	fi

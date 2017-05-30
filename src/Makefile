@@ -48,5 +48,4 @@ tag:
 
 clean:
 	rm */*.o
-	rm *_test
-	rm -rf mushroom_test
+	rm -rf *_test

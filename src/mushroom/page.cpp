@@ -52,7 +52,7 @@ Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_
 }
 
 void Page::InsertInfiniteKey()
-{// not locked
+{
 	TempSlice(key, key_len_);
 	memset(key->key_, 0xFF, key_len_);
 	page_t page_no = 0;
@@ -60,7 +60,7 @@ void Page::InsertInfiniteKey()
 }
 
 void Page::AssignFirst(page_t first)
-{// not locked
+{
 	first_ = first;
 }
 

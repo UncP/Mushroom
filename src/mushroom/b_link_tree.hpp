@@ -44,8 +44,6 @@ class BLinkTree : private NoCopy
 			uint32_t depth_;
 		};
 
-		void Initialize();
-
 		void DescendToLeaf(const KeySlice *key, Set &set);
 
 		void SplitRoot(Set &set);

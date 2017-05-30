@@ -16,13 +16,15 @@
 #include "latch_manager.hpp"
 #include "pool_manager.hpp"
 #include "log_manager.hpp"
+#include "page.hpp"
 
 namespace Mushroom {
 
 MushroomDB::MushroomDB(const char *name, uint32_t key_len, uint32_t page_size,
-	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits)
+	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits, uint32_t log_page)
 {
 	PoolManager::SetManagerInfo(page_size, pool_size, hash_bits, seg_bits);
+	LogManager::SetManagerInfo(log_page);
 
 	if (access(name, F_OK))
 		assert(mkdir(name, S_IRUSR | S_IWUSR) >= 0);
@@ -32,6 +34,12 @@ MushroomDB::MushroomDB(const char *name, uint32_t key_len, uint32_t page_size,
 	tree_ = new BLinkTree(key_len, latch_manager_, pool_manager_);
 
 	log_manager_ = new LogManager(name);
+
+	Page *redo;
+	if ((redo = log_manager_->NeedRecover())) {
+		for (uint32_t i = 0; i < LogManager::LogPage; ++i)
+			BatchPut(redo + i * Page::PageSize);
+	}
 }
 
 MushroomDB::~MushroomDB()
@@ -47,7 +55,8 @@ bool MushroomDB::Put(KeySlice *key)
 
 bool MushroomDB::BatchPut(Page *page)
 {
-	// log_manager_->Logging(page);
+	// if (log_manager_->Logging(page));
+	assert(0);
 }
 
 bool MushroomDB::Get(KeySlice *key)
