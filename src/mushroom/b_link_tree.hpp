@@ -50,9 +50,9 @@ class BLinkTree : private NoCopy
 
 		void DescendToLeaf(const KeySlice *key, Set &set);
 
-		bool SplitAndPromote(Set &set, KeySlice *key);
+		bool Split(Set &set, KeySlice *key);
 
-		Page* Split(Set &set, KeySlice *key);
+		Page* Split(Set &set, KeySlice *key, page_t &root);
 
 		void Insert(Set &set, KeySlice *key);
 

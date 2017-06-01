@@ -60,7 +60,7 @@ void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set)
 	}
 }
 
-bool BLinkTree::SplitAndPromote(Set &set, KeySlice *key)
+bool BLinkTree::Split(Set &set, KeySlice *key)
 {
 	if (set.page_->type_ != Page::ROOT) {
 		Page *right = pool_manager_->NewPage(set.page_->type_, set.page_->key_len_,
@@ -125,7 +125,7 @@ bool BLinkTree::Put(KeySlice *key)
 
 	Insert(set, key);
 
-	for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
+	for (; set.page_->NeedSplit() && Split(set, key); )
 		continue;
 
 	set.latch_->Unlock();
@@ -174,7 +174,7 @@ void BLinkTree::LoadLeaf(const KeySlice *key, Set &set)
 	set.latch_->Upgrade();
 }
 
-Page* BLinkTree::Split(Set &set, KeySlice *key)
+Page* BLinkTree::Split(Set &set, KeySlice *key, page_t &root)
 {
 	Page *right;
 	if (set.page_->type_ != Page::ROOT) {
@@ -193,6 +193,7 @@ Page* BLinkTree::Split(Set &set, KeySlice *key)
 		set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
 		set.page_->Split(right, key);
 		set.stack_[set.depth_++] = new_root->page_no_;
+		root = new_root->page_no_;
 	}
 	return right;
 }
@@ -218,14 +219,18 @@ bool BLinkTree::BatchPut(Page *page)
 		}
 	}
 
+	char buf1[sizeof(page_t) + key_len_];
+	char buf2[sizeof(page_t) + key_len_];
+	KeySlice *mid[2];
+	mid[0] = (KeySlice *)buf1;
+	mid[1] = (KeySlice *)buf2;
 	uint16_t k = total;
 	for (int32_t i = total - 1; i >= 0; --i) {
 		if (!set[i].page_) continue;
 
+		page_t root = 0;
 		uint8_t ptr = 0;
 		Page   *pages[3]; // new pages will not be more then 2
-		TempSlice(tmp1, key_len_);
-		TempSlice(tmp2, key_len_);
 		pages[ptr++] = set[i].page_;
 		for (uint16_t j = i; j < k; ++j) {
 			KeySlice *key = page->Key(index, j);
@@ -240,10 +245,8 @@ bool BLinkTree::BatchPut(Page *page)
 			assert(cur->Insert(key, page_no) != MoveRight);
 			if (cur->NeedSplit()) {
 				set[i].page_ = cur;
-				if (ptr == 1)
-					pages[ptr++] = Split(set[i], tmp1);
-				else
-					pages[ptr++] = Split(set[i], tmp2);
+				pages[ptr] = Split(set[i], mid[ptr-1], root);
+				++ptr;
 			}
 		}
 
@@ -255,20 +258,21 @@ bool BLinkTree::BatchPut(Page *page)
 			Latch *pre = set.latch_; // this latch is write locked
 			assert(set[i].depth_);
 			page_t parent = set[i].stack_[--set[i].depth_];
-			for (int8_t j = --ptr; j >= 0 ; --j) {
-				set.latch_ = latch_manager_->GetLatch(parent);
-				set.page_ = pool_manager_->GetPage(parent);
-				set.latch_->Lock();
-				if (j == 1)
-					Insert(set, tmp1);
-				else
-					Insert(set, tmp2);
-				set.latch_->Unlock();
+			for (int8_t j = ptr-1; j >= 1; --j) {
+				set[i].latch_ = latch_manager_->GetLatch(parent);
+				set[i].page_  = pool_manager_->GetPage(parent);
+				set[i].latch_->Lock();
+				Insert(set[i], mid[j-1]);
+				uint8_t pre_depth = set[i].depth_;
+				for (; set.page_->NeedSplit() && Split(set[i], mid[j-1]))
+					continue;
+				set[i].depth_ = pre_depth;
+				set[i].latch_->Unlock();
 			}
 			pre->Unlock();
 		}
 	}
-
+	// if (root)
 	delete [] set;
 	return true;
 }
