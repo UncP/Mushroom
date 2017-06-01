@@ -55,8 +55,8 @@ inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
 };
 
 #define TempSlice(name, length)                  \
-	char buf_##name[sizeof(valptr) + length];      \
-	memset(buf_##name, 0, sizeof(valptr)+length);  \
+	char buf_##name[sizeof(page_t) + length];      \
+	memset(buf_##name, 0, sizeof(page_t)+length);  \
 	KeySlice *name = (KeySlice *)buf_##name;
 
 } // namespace Mushroom

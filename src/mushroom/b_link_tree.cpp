@@ -36,24 +36,9 @@ void BLinkTree::Free()
 	pool_manager_->Free();
 }
 
-void BLinkTree::SplitRoot(Set &set)
+void BLinkTree::FlushDirtyPages()
 {
-	uint8_t level = set.page_->level_;
-	Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level + 1, degree_);
-	Page *right = pool_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
-		set.page_->key_len_, level, degree_);
-
-	new_root->InsertInfiniteKey();
-	new_root->AssignFirst(set.page_->page_no_);
-
-	TempSlice(slice, key_len_);
-
-	set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
-	set.page_->Split(right, slice);
-
-	page_t page_no = 0;
-	assert(new_root->Insert(slice, page_no) == InsertOk);
-	root_ = new_root->page_no_;
+	pool_manager_->Flush(latch_manager_);
 }
 
 void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set)
@@ -72,6 +57,40 @@ void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set)
 		set.latch_->LockShared();
 		if (set.page_->level_ != pre_le)
 			set.stack_[set.depth_++] = pre_no;
+	}
+}
+
+bool BLinkTree::SplitAndPromote(Set &set, KeySlice *key)
+{
+	if (set.page_->type_ != Page::ROOT) {
+		Page *right = pool_manager_->NewPage(set.page_->type_, set.page_->key_len_,
+			set.page_->level_, set.page_->degree_);
+		set.page_->Split(right, key);
+		Latch *pre = set.latch_;
+		assert(set.depth_ != 0);
+		set.page_no_ = set.stack_[--set.depth_];
+		set.latch_ = latch_manager_->GetLatch(set.page_no_);
+		set.page_ = pool_manager_->GetPage(set.page_no_);
+		set.latch_->Lock();
+		Insert(set, key);
+		pre->Unlock();
+		return true;
+	} else {
+		uint8_t level = set.page_->level_;
+		Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level + 1, degree_);
+		Page *right = pool_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
+			set.page_->key_len_, level, degree_);
+
+		new_root->InsertInfiniteKey();
+		new_root->AssignFirst(set.page_->page_no_);
+
+		set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
+		set.page_->Split(right, key);
+
+		page_t page_no = 0;
+		assert(new_root->Insert(key, page_no) == InsertOk);
+		root_ = new_root->page_no_;
+		return false;
 	}
 }
 
@@ -106,24 +125,9 @@ bool BLinkTree::Put(KeySlice *key)
 
 	Insert(set, key);
 
-	for (; set.page_->NeedSplit(); ) {
-		if (set.page_->type_ != Page::ROOT) {
-			Page *right = pool_manager_->NewPage(set.page_->type_, set.page_->key_len_,
-				set.page_->level_, set.page_->degree_);
-			set.page_->Split(right, key);
-			Latch *pre = set.latch_;
-			assert(set.depth_ != 0);
-			set.page_no_ = set.stack_[--set.depth_];
-			set.latch_ = latch_manager_->GetLatch(set.page_no_);
-			set.page_ = pool_manager_->GetPage(set.page_no_);
-			set.latch_->Lock();
-			Insert(set, key);
-			pre->Unlock();
-		} else {
-			SplitRoot(set);
-			break;
-		}
-	}
+	for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
+		continue;
+
 	set.latch_->Unlock();
 	return true;
 }
@@ -151,12 +155,7 @@ bool BLinkTree::Get(KeySlice *key)
 	return true;
 }
 
-void BLinkTree::FlushDirtyPages()
-{
-	pool_manager_->Flush(latch_manager_);
-}
-
-uint16_t BLinkTree::LoadPageInLevel(uint8_t level, Set &set, const KeySlice *key)
+void BLinkTree::LoadLeaf(const KeySlice *key, Set &set)
 {
 	DescendToLeaf(key, set);
 
@@ -173,7 +172,29 @@ uint16_t BLinkTree::LoadPageInLevel(uint8_t level, Set &set, const KeySlice *key
 	}
 
 	set.latch_->Upgrade();
-	return idx;
+}
+
+Page* BLinkTree::Split(Set &set, KeySlice *key)
+{
+	Page *right;
+	if (set.page_->type_ != Page::ROOT) {
+		Page *right = pool_manager_->NewPage(set.page_->type_, set.page_->key_len_,
+			set.page_->level_, set.page_->degree_);
+		set.page_->Split(right, key);
+	} else {
+		uint8_t level = set.page_->level_;
+		Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level + 1, degree_);
+		Page *right = pool_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
+			set.page_->key_len_, level, degree_);
+
+		new_root->InsertInfiniteKey();
+		new_root->AssignFirst(set.page_->page_no_);
+
+		set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
+		set.page_->Split(right, key);
+		set.stack_[set.depth_++] = new_root->page_no_;
+	}
+	return right;
 }
 
 bool BLinkTree::BatchPut(Page *page)
@@ -186,37 +207,66 @@ bool BLinkTree::BatchPut(Page *page)
 		if (i) {
 			Page *pre = set[i-1].page_;
 			uint16_t idx;
-			if (pre->Search(key, &idx) || idx != pre->total_key_ || !pre->Next()) {
+			if (pre->Search(key, &idx) || idx != pre->total_key_) {
 				set[i].page_ = 0;
 			} else {
-				// Deadlock ?
-				LoadPageInLevel(0, set[i], key);
+				// Deadlock ???
+				LoadLeaf(key, set[i]);
 			}
 		} else {
-			LoadPageInLevel(0, set[i], key);
+			LoadLeaf(key, set[i]);
 		}
 	}
 
 	uint16_t k = total;
-	page_t page_no;
 	for (int32_t i = total - 1; i >= 0; --i) {
-		if (!set[i].page_)
-			continue;
+		if (!set[i].page_) continue;
 
+		uint8_t ptr = 0;
+		Page   *pages[3]; // new pages will not be more then 2
+		TempSlice(tmp1, key_len_);
+		TempSlice(tmp2, key_len_);
+		pages[ptr++] = set[i].page_;
 		for (uint16_t j = i; j < k; ++j) {
 			KeySlice *key = page->Key(index, j);
-			Page *cur = set[i].page_;
+			Page *cur;
+			for (uint8_t m = 0; m < ptr; ++m) {
+				cur = pages[m];
+				uint16_t idx;
+				if (cur->Search(key, &idx) || idx != cur->total_key_)
+					break;
+			}
+			page_t page_no;
 			assert(cur->Insert(key, page_no) != MoveRight);
 			if (cur->NeedSplit()) {
-				if (cur->type_ != Page::ROOT) {
-					Page *right = pool_manager_->NewPage();
-				} else {
-					SplitRoot();
-				}
+				set[i].page_ = cur;
+				if (ptr == 1)
+					pages[ptr++] = Split(set[i], tmp1);
+				else
+					pages[ptr++] = Split(set[i], tmp2);
 			}
 		}
 
 		k = i;
+
+		if (ptr == 1) { // no split
+			set.latch_->Unlock();
+		} else {
+			Latch *pre = set.latch_; // this latch is write locked
+			assert(set[i].depth_);
+			page_t parent = set[i].stack_[--set[i].depth_];
+			for (int8_t j = --ptr; j >= 0 ; --j) {
+				set.latch_ = latch_manager_->GetLatch(parent);
+				set.page_ = pool_manager_->GetPage(parent);
+				set.latch_->Lock();
+				if (j == 1)
+					Insert(set, tmp1);
+				else
+					Insert(set, tmp2);
+				set.latch_->Unlock();
+			}
+			pre->Unlock();
+		}
 	}
 
 	delete [] set;
