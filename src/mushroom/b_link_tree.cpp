@@ -15,8 +15,9 @@
 
 namespace Mushroom {
 
-BLinkTree::BLinkTree(uint32_t key_len, LatchManager *latch_manager, PoolManager *pool_manager)
-:latch_manager_(latch_manager), pool_manager_(pool_manager), root_(0), key_len_(key_len)
+BLinkTree::BLinkTree(const char *name, uint32_t key_len)
+:latch_manager_(new LatchManager()), pool_manager_(new PoolManager(name)), root_(0),
+key_len_(key_len)
 {
 	degree_ = Page::CalculateDegree(key_len_);
 	Set set;
@@ -30,10 +31,29 @@ BLinkTree::~BLinkTree()
 	delete pool_manager_;
 }
 
-bool BLinkTree::Free()
+void BLinkTree::Free()
 {
 	pool_manager_->Free();
-	return true;
+}
+
+void BLinkTree::SplitRoot(Set &set)
+{
+	uint8_t level = set.page_->level_;
+	Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level + 1, degree_);
+	Page *right = pool_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
+		set.page_->key_len_, level, degree_);
+
+	new_root->InsertInfiniteKey();
+	new_root->AssignFirst(set.page_->page_no_);
+
+	TempSlice(slice, key_len_);
+
+	set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
+	set.page_->Split(right, slice);
+
+	page_t page_no = 0;
+	assert(new_root->Insert(slice, page_no) == InsertOk);
+	root_ = new_root->page_no_;
 }
 
 void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set)
@@ -108,26 +128,6 @@ bool BLinkTree::Put(KeySlice *key)
 	return true;
 }
 
-void BLinkTree::SplitRoot(Set &set)
-{
-	uint8_t level = set.page_->level_;
-	Page *new_root = pool_manager_->NewPage(Page::ROOT, key_len_, level + 1, degree_);
-	Page *right = pool_manager_->NewPage(level ? Page::BRANCH : Page::LEAF,
-		set.page_->key_len_, level, degree_);
-
-	new_root->InsertInfiniteKey();
-	new_root->AssignFirst(set.page_->page_no_);
-
-	TempSlice(slice, key_len_);
-
-	set.page_->type_ = level ? Page::BRANCH : Page::LEAF;
-	set.page_->Split(right, slice);
-
-	page_t page_no = 0;
-	assert(new_root->Insert(slice, page_no) == InsertOk);
-	root_ = new_root->page_no_;
-}
-
 bool BLinkTree::Get(KeySlice *key)
 {
 	Set set;
@@ -148,6 +148,56 @@ bool BLinkTree::Get(KeySlice *key)
 	}
 
 	set.latch_->UnlockShared();
+	return true;
+}
+
+void BLinkTree::FlushDirtyPages()
+{
+	pool_manager_->Flush(latch_manager_);
+}
+
+uint16_t BLinkTree::LoadPageInLevel(uint8_t level, Set &set, const KeySlice *key)
+{
+	DescendToLeaf(key, set);
+
+	uint16_t idx = 0;
+	for (; !set.page_->Search(key, &idx);) {
+		if (idx != set.page_->total_key_)
+			break;
+		set.page_no_ = set.page_->Next();
+		Latch *pre = set.latch_;
+		set.latch_ = latch_manager_->GetLatch(set.page_no_);
+		set.page_ = pool_manager_->GetPage(set.page_no_);
+		set.latch_->LockShared();
+		pre->UnlockShared();
+	}
+
+	set.latch_->Upgrade();
+	return idx;
+}
+
+bool BLinkTree::BatchPut(Page *page)
+{
+	uint16_t  total = page->total_key_;
+	uint16_t *index = page->Index();
+	Set *set = new Set[total];
+	for (uint16_t i = 0; i < total; ++i) {
+		KeySlice *key = page->Key(index, i);
+		if (i) {
+			Page *pre = set[i-1].page_;
+			uint16_t idx;
+			if (page->Search(key, &idx) || idx != page->total_key_) {
+
+			} else {
+				// Deadlock ?
+				LoadPageInLevel(0, set[i], key);
+			}
+		} else {
+			LoadPageInLevel(0, set[i], key);
+		}
+	}
+
+	delete [] set;
 	return true;
 }
 

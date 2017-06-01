@@ -34,7 +34,7 @@ class PoolManager : private NoCopy
 
 		void Flush(LatchManager *latch_manager);
 
-		bool Free();
+		void Free();
 
 	private:
 		static uint32_t HashMask;

@@ -24,15 +24,19 @@ class BLinkTree : private NoCopy
 	public:
 		static const uint32_t MAX_KEY_LENGTH = 255;
 
-		BLinkTree(uint32_t key_len, LatchManager *latch_manager, PoolManager *pool_manager);
+		BLinkTree(const char *name, uint32_t key_len);
 
 		~BLinkTree();
-
-		bool Free();
 
 		bool Put(KeySlice *key);
 
 		bool Get(KeySlice *key);
+
+		bool BatchPut(Page *page);
+
+		void FlushDirtyPages();
+
+		void Free();
 
 	private:
 		struct Set {
@@ -49,6 +53,8 @@ class BLinkTree : private NoCopy
 		void SplitRoot(Set &set);
 
 		void Insert(Set &set, KeySlice *key);
+
+		uint16_t LoadPageInLevel(uint8_t level, Set &set, const KeySlice *key);
 
 		LatchManager *latch_manager_;
 		PoolManager  *pool_manager_;

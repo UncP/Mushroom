@@ -96,11 +96,10 @@ Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_
 	return new (page) Page(page_no, type, key_len, level, degree);
 }
 
-bool PoolManager::Free()
+void PoolManager::Free()
 {
 	for (uint16_t i = 0, end = total_pool_.get(); i != end; ++i)
 		delete [] pool_[i].mem_;
-	return true;
 }
 
 void PoolManager::Flush(LatchManager *latch_manager)

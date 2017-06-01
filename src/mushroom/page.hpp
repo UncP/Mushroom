@@ -56,7 +56,7 @@ class Page : private NoCopy
 
 		page_t Descend(const KeySlice *key) const;
 
-		bool Search(KeySlice *key, uint16_t *index) const;
+		bool Search(const KeySlice *key, uint16_t *index) const;
 
 		InsertStatus Insert(const KeySlice *key, page_t &page_no);
 
@@ -70,15 +70,15 @@ class Page : private NoCopy
 
 		bool NeedSplit();
 
-	private:
 		inline uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 		}
 
-		inline KeySlice* Key(const uint16_t *index, int pos) const {
+		inline KeySlice* Key(const uint16_t *index, uint16_t pos) const {
 			return (KeySlice *)(data_ + index[pos]);
 		}
 
+	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
 		page_t   page_no_;

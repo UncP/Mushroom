@@ -53,14 +53,11 @@ Page* LogManager::NeedRecover()
 bool LogManager::NeedFlush()
 {
 	mutex_.Lock();
-	bool flush = (cur_page_ == LogPage);
-	mutex_.Unlock();
-	return flush;
+	return cur_page_ == LogPage;
 }
 
 void LogManager::Logging(Page *page)
 {
-	mutex_.Lock();
 	memcpy(mem_ + cur_page_ * Page::PageSize, page, Page::PageSize);
 	assert(!msync(mem_ + cur_page_ * Page::PageSize, Page::PageSize, MS_SYNC));
 	++cur_page_;

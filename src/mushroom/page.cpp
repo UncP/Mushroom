@@ -110,7 +110,7 @@ page_t Page::Descend(const KeySlice *key) const
 	return index ? slice->page_no_ : first_;
 }
 
-bool Page::Search(KeySlice *key, uint16_t *index) const
+bool Page::Search(const KeySlice *key, uint16_t *index) const
 {
 	KeySlice *slice = 0;
 	return Traverse(key, index, &slice);

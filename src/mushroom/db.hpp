@@ -15,9 +15,7 @@ namespace Mushroom {
 class KeySlice;
 class Page;
 class LogManager;
-class LatchManager;
 class BLinkTree;
-class PoolManager;
 
 class MushroomDB : private NoCopy
 {
@@ -31,13 +29,11 @@ class MushroomDB : private NoCopy
 
 		bool Get(KeySlice *key);
 
-		bool Close();
+		void Close();
 
 		~MushroomDB();
 
 	private:
-		LatchManager *latch_manager_;
-		PoolManager  *pool_manager_;
 		BLinkTree    *tree_;
 		LogManager   *log_manager_;
 };

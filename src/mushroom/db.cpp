@@ -13,7 +13,6 @@
 #include "db.hpp"
 #include "pool_manager.hpp"
 #include "b_link_tree.hpp"
-#include "latch_manager.hpp"
 #include "pool_manager.hpp"
 #include "log_manager.hpp"
 #include "page.hpp"
@@ -24,22 +23,21 @@ MushroomDB::MushroomDB(const char *name, uint32_t key_len, uint32_t page_size,
 	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits, uint32_t log_page)
 {
 	PoolManager::SetManagerInfo(page_size, pool_size, hash_bits, seg_bits);
+
 	LogManager::SetManagerInfo(log_page);
 
 	if (access(name, F_OK))
 		assert(mkdir(name, S_IRUSR | S_IWUSR) >= 0);
 
-	latch_manager_ = new LatchManager();
-	pool_manager_  = new PoolManager(name);
-	tree_ = new BLinkTree(key_len, latch_manager_, pool_manager_);
+	tree_ = new BLinkTree(name, key_len);
 
 	log_manager_ = new LogManager(name);
 
-	Page *redo;
-	if ((redo = log_manager_->NeedRecover())) {
-		for (uint32_t i = 0; i < LogManager::LogPage; ++i)
-			BatchPut(redo + i * Page::PageSize);
-	}
+	// Page *redo;
+	// if ((redo = log_manager_->NeedRecover())) {
+	// 	for (uint32_t i = 0; i < LogManager::LogPage; ++i)
+	// 		tree_->BatchPut(redo + i * Page::PageSize);
+	// }
 }
 
 MushroomDB::~MushroomDB()
@@ -55,8 +53,10 @@ bool MushroomDB::Put(KeySlice *key)
 
 bool MushroomDB::BatchPut(Page *page)
 {
-	// if (log_manager_->Logging(page));
-	assert(0);
+	if (log_manager_->NeedFlush())
+		tree_->FlushDirtyPages();
+	log_manager_->Logging(page);
+	return tree_->BatchPut(page);
 }
 
 bool MushroomDB::Get(KeySlice *key)
@@ -64,10 +64,9 @@ bool MushroomDB::Get(KeySlice *key)
 	return tree_->Get(key);
 }
 
-bool MushroomDB::Close()
+void MushroomDB::Close()
 {
 	tree_->Free();
-	return true;
 }
 
 } // namespace Mushroom
