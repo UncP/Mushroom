@@ -186,8 +186,8 @@ bool BLinkTree::BatchPut(Page *page)
 		if (i) {
 			Page *pre = set[i-1].page_;
 			uint16_t idx;
-			if (page->Search(key, &idx) || idx != page->total_key_) {
-
+			if (pre->Search(key, &idx) || idx != pre->total_key_ || !pre->Next()) {
+				set[i].page_ = 0;
 			} else {
 				// Deadlock ?
 				LoadPageInLevel(0, set[i], key);
@@ -195,6 +195,28 @@ bool BLinkTree::BatchPut(Page *page)
 		} else {
 			LoadPageInLevel(0, set[i], key);
 		}
+	}
+
+	uint16_t k = total;
+	page_t page_no;
+	for (int32_t i = total - 1; i >= 0; --i) {
+		if (!set[i].page_)
+			continue;
+
+		for (uint16_t j = i; j < k; ++j) {
+			KeySlice *key = page->Key(index, j);
+			Page *cur = set[i].page_;
+			assert(cur->Insert(key, page_no) != MoveRight);
+			if (cur->NeedSplit()) {
+				if (cur->type_ != Page::ROOT) {
+					Page *right = pool_manager_->NewPage();
+				} else {
+					SplitRoot();
+				}
+			}
+		}
+
+		k = i;
 	}
 
 	delete [] set;
