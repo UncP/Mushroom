@@ -19,6 +19,8 @@ class PoolManager;
 class Latch;
 class LatchManager;
 
+enum LockType { WriteLock, ReadLock };
+
 class BLinkTree : private NoCopy
 {
 	public:
@@ -48,11 +50,11 @@ class BLinkTree : private NoCopy
 			uint32_t depth_;
 		};
 
-		void DescendToLeaf(const KeySlice *key, Set &set);
+		void DescendToLeaf(const KeySlice *key, Set &set, LockType type);
 
-		bool Split(Set &set, KeySlice *key);
+		bool SplitAndPromote(Set &set, KeySlice *key);
 
-		Page* Split(Set &set, KeySlice *key, page_t &root);
+		Page* Split(Set &set, KeySlice *key);
 
 		void Insert(Set &set, KeySlice *key);
 

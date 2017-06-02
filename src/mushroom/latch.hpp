@@ -55,15 +55,6 @@ class Latch : private NoCopy
 			Unpin();
 		}
 
-		inline bool TryWriteLock() {
-			return !pthread_rwlock_trywrlock(lock_);
-		}
-
-		inline void Upgrade() {
-			pthread_rwlock_unlock(lock_);
-			pthread_rwlock_wrlock(lock_);
-		}
-
 		~Latch() {
 			assert(!pthread_rwlock_destroy(lock_));
 		}
