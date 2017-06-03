@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	assert(argc > 5);
 	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
 	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
-	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 1024;
+	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 10;
 	uint32_t seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
 	uint32_t log_page  = atoi(argv[5]) ? atoi(argv[5]) : 16;
 

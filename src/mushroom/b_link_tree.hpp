@@ -40,6 +40,8 @@ class BLinkTree : private NoCopy
 
 		void Free();
 
+		bool operator==(const BLinkTree &that) const;
+
 	private:
 		struct Set {
 			Set():depth_(0) { }

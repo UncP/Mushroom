@@ -1,7 +1,7 @@
 #! /bin/sh
 if [ "$1" = "index" ]
 then
-	make distributed_index_test
+	make distributed_index_test && ./distributed_index_test 4096 4800 10 4 16 $2
 elif [ "$1" = "raft" ]
 then
 	make raft_test

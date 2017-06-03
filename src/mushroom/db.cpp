@@ -69,4 +69,9 @@ void MushroomDB::Close()
 	tree_->Free();
 }
 
+bool MushroomDB::operator==(const MushroomDB &that) const
+{
+	return *tree_ == *that.tree_;
+}
+
 } // namespace Mushroom

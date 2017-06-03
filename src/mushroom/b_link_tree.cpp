@@ -278,4 +278,9 @@ bool BLinkTree::BatchPut(Page *page)
 	return true;
 }
 
+bool BLinkTree::operator==(const BLinkTree &that) const
+{
+	return *pool_manager_ == *that.pool_manager_;
+}
+
 } // namespace Mushroom

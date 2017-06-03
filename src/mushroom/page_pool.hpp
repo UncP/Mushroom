@@ -8,6 +8,8 @@
 #ifndef _PAGE_POOL_HPP_
 #define _PAGE_POOL_HPP_
 
+#include <cstring>
+
 #include "../include/utility.hpp"
 #include "page.hpp"
 
@@ -31,6 +33,7 @@ class PagePool : private NoCopy
 		inline void Initialize(page_t base) {
 			base_ = base;
 			mem_ = new char[Page::PageSize << SegBits];
+			memset(mem_, 0, Page::PageSize << SegBits);
 		}
 
 		inline Page* GetPage(page_t page_no) {

@@ -98,7 +98,7 @@ Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_
 
 void PoolManager::Free()
 {
-	for (uint16_t i = 0, end = total_pool_.get(); i != end; ++i)
+	for (uint16_t i = 1, end = total_pool_.get(); i <= end; ++i)
 		delete [] pool_[i].mem_;
 }
 
@@ -106,7 +106,7 @@ void PoolManager::Flush(LatchManager *latch_manager)
 {
 	page_t total = cur_page_.get();
 	for (page_t cur = 0; cur < total;) {
-		PagePool *pool = pool_ + cur / PagePool::SegSize;
+		PagePool *pool = pool_ + (cur / PagePool::SegSize + 1);
 		for (page_t i = 0; cur < total && i < PagePool::SegSize; ++cur, ++i) {
 			Latch *latch = latch_manager->GetLatch(cur);
 			Page *page = pool->GetPage(cur);
@@ -118,6 +118,17 @@ void PoolManager::Flush(LatchManager *latch_manager)
 			latch->Unlock();
 		}
 	}
+}
+
+bool PoolManager::operator==(PoolManager &that)
+{
+	// printf("%u %u\n", total_pool_.get(), that.total_pool_.get());
+	if (total_pool_.get() != that.total_pool_.get())
+		return false;
+	for (uint16_t i = 1, end = total_pool_.get(); i <= end; ++i)
+		if (memcmp(pool_[i].mem_, that.pool_[i].mem_, Page::PageSize * PagePool::SegSize))
+			return false;
+	return true;
 }
 
 } // namespace Mushroom

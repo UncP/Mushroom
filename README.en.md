@@ -2,7 +2,7 @@
 [中文版 README](./README.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-0.9.2-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
@@ -44,10 +44,11 @@
 | 0.6.2  | reduce dependency on standard library, speed up compile, reduce program size about 42.1%|
 | 0.6.4  |using posix spin lock, Optimize MushroomDB and BLinkTree structure|
 | 0.7.0  |      Log-Structured Merge Tree    |
-| 0.8.0  |     TCP Communication Library & RPC Framework    |
+| 0.8.0  |   TCP Communication Library & RPC Framework    |
 | 0.9.0  |        Raft       |
 | 0.9.1  |   ACID (Batch Operation) & modify locking strategy   |
 | 0.9.2  |   optimize Raft state transfer, improve liveness   |
+| 1.0.0  |     distributed in-memory index   |
 
 ### Other
 + Version 0.6.0 is the first stable version

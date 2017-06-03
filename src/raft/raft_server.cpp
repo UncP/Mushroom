@@ -86,6 +86,17 @@ uint32_t RaftServer::Term()
 	return ret;
 }
 
+void RaftServer::Status(bool print_log, bool print_next)
+{
+	mutex_.Lock();
+	printf("leader: %d  term: %u  cmit: %d  size: %lu\n",
+		(state_ == Leader), term_, commit_, logs_.size());
+	for (auto &e : logs_)
+		printf("%u ", e.term_);
+	printf("\n");
+	mutex_.Unlock();
+}
+
 bool RaftServer::Start(MushroomLog &log, uint32_t *index)
 {
 	mutex_.Lock();
@@ -321,8 +332,11 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 			logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
 	}
 
-	if (arg.leader_commit_ > commit_)
+	if (arg.leader_commit_ > commit_) {
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
+		for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
+	}
+
 
 index:
 	reply->idx_ = logs_.size() - 1;
@@ -385,8 +399,10 @@ void RaftServer::ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &rep
 	for (uint32_t i = 0; i < peers_.size(); ++i)
 		if (match_[i] >= reply.idx_)
 			++vote;
-	if (vote > ((peers_.size() + 1) / 2))
+	if (vote > ((peers_.size() + 1) / 2)) {
 		commit_ = reply.idx_;
+		for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
+	}
 end:
 	mutex_.Unlock();
 }

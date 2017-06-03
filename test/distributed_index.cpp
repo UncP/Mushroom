@@ -46,6 +46,7 @@ static void FreeRaftSet() {
 	for (auto e : rafts)
 		e->Close();
 	if (base) base->Exit();
+	if (loop) loop->Stop();
 	for (auto e : rafts)
 		delete e;
 	delete base;
@@ -62,7 +63,7 @@ int main(int argc, char **argv)
 	assert(argc > 5);
 	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
 	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
-	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 1024;
+	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 10;
 	uint32_t seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
 	uint32_t log_page  = atoi(argv[5]) ? atoi(argv[5]) : 16;
 
@@ -83,6 +84,8 @@ int main(int argc, char **argv)
 		});
 	}
 
+	sleep(1);
+
 	MushroomLog log(key_len);
 	int fd = open(file, O_RDONLY);
 	assert(fd > 0);
@@ -100,13 +103,9 @@ int main(int argc, char **argv)
 			tmp[j] = '\0';
 			memcpy(log.key_->key_, tmp, key_len);
 			uint32_t index;
-			uint32_t term;
 			for (auto e : rafts)
-				if (e->IsLeader(&term)) {
-					e->Start(log, &index);
+				if (e->Start(log, &index))
 					break;
-				}
-
 			if (++count == total) {
 				flag = false;
 				break;
@@ -116,10 +115,20 @@ int main(int argc, char **argv)
 	}
 	close(fd);
 
+	sleep(2);
 	FreeRaftSet();
+	flag = true;
+	for (uint32_t i = 1; i < db.size(); ++i)
+		if (!(*db[0] == *db[i]))
+			flag = false;
 	for (auto e : db) {
 		e->Close();
 		delete e;
 	}
+	printf("\033[31mtotal: %d\033[0m\n", total);
+	if (!flag)
+		printf("\033[31mfailed :(\033[0m\n");
+	else
+		printf("\033[32msuccess :)\033[0m\n");
 	return 0;
 }
