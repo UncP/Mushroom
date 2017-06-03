@@ -60,12 +60,7 @@ void EventBase::Loop()
 		poller_->LoopOnce(std::min(5000, next_time_out_));
 		HandleTimeout();
 	}
-	if (next_time_out_ != MaxTimeout) {
-		poller_->LoopOnce(next_time_out_);
-		HandleTimeout();
-	} else {
-		poller_->LoopOnce(0);
-	}
+	poller_->LoopOnce(0);
 	repeat_.clear();
 	pending_.clear();
 	pool_->Clear();
@@ -156,6 +151,29 @@ void EventBase::RescheduleAfter(TimerId *id, int64_t milli_sec, Task &&task)
 		pending_.erase(it);
 	pending_.insert({nid, std::move(task)});
 	*id = nid;
+	if (pthread_self() != pid_)
+		WakeUp();
+	else
+		Refresh();
+	mutex_.Unlock();
+}
+
+void EventBase::RescheduleAfter(const TimerId &id, int64_t milli_sec)
+{
+	mutex_.Lock();
+	if (!running_) {
+		mutex_.Unlock();
+		return ;
+	}
+	TimerId nid { Time::Now() + milli_sec, seq_++};
+	auto it = pending_.find(id);
+	if (it == pending_.end()) {
+		mutex_.Unlock();
+		return ;
+	}
+	Task task = std::move(it->second);
+	pending_.erase(it);
+	pending_.insert({nid, std::move(task)});
 	if (pthread_self() != pid_)
 		WakeUp();
 	else

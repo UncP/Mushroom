@@ -30,8 +30,8 @@ RpcConnection::RpcConnection(const EndPoint &server, Poller *poller, float error
 			auto it = futures_.find(rid);
 			if (it == futures_.end()) {
 				mutex_.Unlock();
-				Info("rpc id %u not called or expired :(", rid);
 				marshaller_.Dump(packet_size - 4);
+				// Info("rpc id %u not called or expired :(", rid);
 			} else {
 				Func func(std::move(it->second));
 				futures_.erase(it);

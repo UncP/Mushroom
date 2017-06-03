@@ -33,6 +33,8 @@ static void FreeRaftSet() {
 		if (e) e->Close();
 	if (base) base->Exit();
 	if (loop) loop->Stop();
+	for (auto e : rafts)
+		delete e;
 	delete base;
 	delete loop;
 	base = 0;
@@ -65,7 +67,7 @@ static void MakeRaftSet(int total) {
 static void WaitForElection(float factor) {
 	if (factor == 0.f)
 		return ;
-	usleep(factor * RaftServer::ElectionTimeout * 1000);
+	usleep(factor * (2 * RaftServer::ElectionTimeoutBase) * 1000);
 }
 
 static void CheckOneLeaderAfter(float factor, int32_t *number, int32_t *id) {
@@ -113,6 +115,7 @@ static void EnableServer(int32_t id) {
 		((RpcConnection *)e)->Enable();
 }
 
+/*
 static void StartServer(uint32_t idx)
 {
 	rafts[idx]->Start();
@@ -126,7 +129,7 @@ static void CrashServer(uint32_t idx)
 	DisableServer(idx);
 	rafts[idx]->Reset();
 }
-
+*/
 static void DisableServerFor(float factor, int32_t id) {
 	DisableServer(id);
 	WaitForElection(factor);
@@ -278,7 +281,7 @@ TEST(AgreementWithoutNetworkFailure)
 	CheckOneLeaderAfter(2, &number, &id);
 	ASSERT_EQ(number, 1);
 
-	for (uint32_t i = 0; i < 5u; ++i) {
+	for (uint32_t i = 0; i < 10u; ++i) {
 		uint32_t commit;
 		int count;
 		ASSERT_TRUE(CommittedAt(i, &commit, &count));
@@ -423,7 +426,7 @@ TEST(LeaderBackupIncorrectLog)
 	DisableServer((leader+3)%total);
 	DisableServer((leader+4)%total);
 
-	int all = 100;
+	int all = 30;
 	uint32_t index;
 	for (int i = 0; i < all; ++i)
 		ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
@@ -531,7 +534,7 @@ TEST(LeaderFrequentlyChange)
 
 	ASSERT_NE(One(0, total), ~0u);
 
-	uint32_t iter = 100;
+	uint32_t iter = 30;
 	for (uint32_t i = 1; i <= iter; ++i) {
 		int32_t leader = -1;
 		for (uint32_t j = 0; j < total; ++j) {
@@ -543,7 +546,7 @@ TEST(LeaderFrequentlyChange)
 			}
 		}
 		if (dist(eng) < 100)
-			usleep((dist(eng) % (RaftServer::ElectionTimeout / 2)) * 1000);
+			usleep((dist(eng) % RaftServer::ElectionTimeoutBase) * 1000);
 		else
 			usleep((dist(eng) % 13) * 1000);
 

@@ -42,9 +42,9 @@ class RaftServer : public RpcServer
 
 		void Status(bool print_log = false, bool print_next = false);
 
-		void Start();
+		void SetApplyFunc(Func &&func);
 
-		void Reset();
+		void Start();
 
 		bool Start(uint32_t number, uint32_t *index);
 
@@ -60,7 +60,7 @@ class RaftServer : public RpcServer
 
 		void AppendEntry(const AppendEntryArgs *args, AppendEntryReply *reply);
 
-		static uint32_t ElectionTimeout;
+		static uint32_t ElectionTimeoutBase;
 
 	private:
 		static uint32_t TimeoutBase;
@@ -96,7 +96,6 @@ class RaftServer : public RpcServer
 
 		uint8_t  state_;
 		uint8_t  running_;
-		uint8_t  in_election_;
 
 		uint32_t term_;
 		int32_t  vote_for_;
@@ -116,6 +115,9 @@ class RaftServer : public RpcServer
 
 		TimerId  election_id_;
 		TimerId  heartbeat_id_;
+		TimerId  timeout_id_;
+
+		Func apply_func_;
 };
 
 } // namespace Mushroom

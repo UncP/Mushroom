@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
 	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 1024;
 	uint32_t seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
-	uint32_t log_page  = atoi(argv[5]) ? atoi(argv[4]) : 16;
+	uint32_t log_page  = atoi(argv[5]) ? atoi(argv[5]) : 16;
 
 	total = (argc == 7) ? atoi(argv[6]) : 1;
 
