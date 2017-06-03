@@ -42,6 +42,11 @@ class Marshaller
 		Buffer *output_;
 };
 
+inline Marshaller& operator<<(Marshaller &marshaller, const uint8_t &v) {
+	marshaller.Read(&v, 1);
+	return marshaller;
+}
+
 inline Marshaller& operator<<(Marshaller &marshaller, const int32_t &v) {
 	marshaller.Read(&v, 4);
 	return marshaller;
@@ -58,6 +63,11 @@ inline Marshaller& operator<<(Marshaller &marshaller, const std::vector<T> &v) {
 	marshaller << e;
 	for (uint32_t i = 0; i < e; ++i)
 		marshaller << v[i];
+	return marshaller;
+}
+
+inline Marshaller& operator>>(Marshaller &marshaller, uint8_t &v) {
+	marshaller.Write(&v, 1);
 	return marshaller;
 }
 

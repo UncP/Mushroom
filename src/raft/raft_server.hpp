@@ -18,7 +18,7 @@
 
 namespace Mushroom {
 
-class Log;
+class MushroomLog;
 class RpcConnection;
 class RequestVoteArgs;
 class RequestVoteReply;
@@ -29,6 +29,8 @@ class RaftServer : public RpcServer
 {
 	public:
 		enum State { Follower = 0x0, Candidate, Leader };
+
+		typedef std::function<bool(const MushroomLog &log)> ApplyFunc;
 
 		RaftServer(EventBase *event_base, uint16_t port, int32_t id);
 
@@ -42,13 +44,13 @@ class RaftServer : public RpcServer
 
 		void Status(bool print_log = false, bool print_next = false);
 
-		void SetApplyFunc(Func &&func);
+		void SetApplyFunc(ApplyFunc &&func);
 
 		void Start();
 
-		bool Start(uint32_t number, uint32_t *index);
+		bool Start(MushroomLog &log, uint32_t *index);
 
-		bool LogAt(uint32_t index, uint32_t *commit);
+		bool LogAt(uint32_t index, MushroomLog &log);
 
 		void Close();
 
@@ -104,7 +106,7 @@ class RaftServer : public RpcServer
 
 		uint32_t votes_;
 
-		std::vector<Log> logs_;
+		std::vector<MushroomLog> logs_;
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;
@@ -117,7 +119,7 @@ class RaftServer : public RpcServer
 		TimerId  heartbeat_id_;
 		TimerId  timeout_id_;
 
-		Func apply_func_;
+		ApplyFunc apply_func_;
 };
 
 } // namespace Mushroom

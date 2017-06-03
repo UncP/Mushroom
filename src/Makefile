@@ -16,6 +16,9 @@ RpcOBJ = $(RpcFile:.cpp=.o)
 
 all: blinktree_with_queue_test blinktree_multi_thread_test
 
+distributed_index_test:$(MOBJ) $(LOBJ) $(NOBJ) $(RpcOBJ) $(RaftOBJ) ../test/distributed_index.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
 raft_test: $(LOBJ) $(NOBJ) $(RpcOBJ) $(RaftOBJ) ../test/raft.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 

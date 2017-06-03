@@ -13,7 +13,7 @@
 #include "../rpc/future.hpp"
 #include "../rpc/rpc_connection.hpp"
 #include "../network/time.hpp"
-#include "log.hpp"
+#include "mushroom_log.hpp"
 #include "arg.hpp"
 
 namespace Mushroom {
@@ -86,32 +86,7 @@ uint32_t RaftServer::Term()
 	return ret;
 }
 
-void RaftServer::Status(bool print_log, bool print_next)
-{
-	mutex_.Lock();
-	Info("\033[31mid: %d\033[0m  \033[34mstate: %s\033[0m  \033[33mterm: %u\033[0m  "
-		"\033[32mcommit: %d\033[0m",
-		id_, (state_ != Follower) ? (state_ == Leader ? "Leader" : "Candidate") : "Follower",
-		term_, commit_);
-	if (print_log) {
-		for (auto &e : logs_) {
-			printf("%u %u  ", e.term_, e.number_);
-		}
-		printf("\n");
-	}
-	if (state_ == Leader && print_next) {
-		printf("next : ");
-		for (auto e : next_)
-			printf("%-2d ", e);
-		printf("\nmatch: ");
-		for (auto e : match_)
-			printf("%-2d ", e);
-		printf("\n");
-	}
-	mutex_.Unlock();
-}
-
-bool RaftServer::Start(uint32_t number, uint32_t *index)
+bool RaftServer::Start(MushroomLog &log, uint32_t *index)
 {
 	mutex_.Lock();
 	if (!running_ || state_ != Leader) {
@@ -119,20 +94,21 @@ bool RaftServer::Start(uint32_t number, uint32_t *index)
 		return false;
 	}
 	*index = logs_.size();
-	logs_.push_back(Log(term_, number));
+	log.term_ = term_;
+	logs_.push_back(log);
 	mutex_.Unlock();
 	event_base_->RunNow([this]() { SendAppendEntry(); });
 	return true;
 }
 
-bool RaftServer::LogAt(uint32_t index, uint32_t *commit)
+bool RaftServer::LogAt(uint32_t index, MushroomLog &log)
 {
 	mutex_.Lock();
 	if (int32_t(index) > commit_) {
 		mutex_.Unlock();
 		return false;
 	}
-	*commit = logs_[index].number_;
+	log = logs_[index];
 	mutex_.Unlock();
 	return true;
 }
@@ -151,7 +127,7 @@ std::vector<RpcConnection *>& RaftServer::Peers()
 	return peers_;
 }
 
-void RaftServer::SetApplyFunc(Func &&func)
+void RaftServer::SetApplyFunc(ApplyFunc &&func)
 {
 	apply_func_ = func;
 }
@@ -378,7 +354,7 @@ void RaftServer::SendAppendEntry()
 		});
 	}
 	mutex_.Unlock();
-	event_base_->RunAfter(TimeoutBase, [this, futures, size]() {
+	event_base_->RunAfter(TimeoutTop, [this, futures, size]() {
 		for (uint32_t i = 0; i != size; ++i) {
 			peers_[i]->RemoveFuture(&futures[i]);
 			futures[i].Cancel();

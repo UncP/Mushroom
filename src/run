@@ -1,5 +1,8 @@
 #! /bin/sh
-if [ "$1" = "raft" ]
+if [ "$1" = "index" ]
+then
+	make distributed_index_test
+elif [ "$1" = "raft" ]
 then
 	make raft_test
 	total=1
