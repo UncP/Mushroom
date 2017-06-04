@@ -31,6 +31,11 @@ BLinkTree::~BLinkTree()
 	delete pool_manager_;
 }
 
+bool BLinkTree::operator==(const BLinkTree &that) const
+{
+	return *pool_manager_ == *that.pool_manager_;
+}
+
 void BLinkTree::Free()
 {
 	pool_manager_->Free();
@@ -104,19 +109,15 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 {
 	InsertStatus status;
 	for (; (status = set.page_->Insert(key, set.page_no_));) {
-		switch (status) {
-			case MoveRight: {
-				Latch *pre = set.latch_;
-				set.latch_ = latch_manager_->GetLatch(set.page_no_);
-				set.page_ = pool_manager_->GetPage(set.page_no_);
-				set.latch_->Lock();
-				pre->Unlock();
-				break;
-			}
-			default: {
-				printf("existed key :(\n");
-				assert(0);
-			}
+		if (status == MoveRight) {
+			Latch *pre = set.latch_;
+			set.latch_ = latch_manager_->GetLatch(set.page_no_);
+			set.page_ = pool_manager_->GetPage(set.page_no_);
+			set.latch_->Lock();
+			pre->Unlock();
+		} else {
+			printf("existed key :(\n");
+			assert(0);
 		}
 	}
 }
@@ -145,6 +146,7 @@ bool BLinkTree::Get(KeySlice *key)
 	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
 			set.latch_->UnlockShared();
+			assert(0);
 			return false;
 		}
 		set.page_no_ = set.page_->Next();
@@ -176,6 +178,7 @@ void BLinkTree::LoadLeaf(const KeySlice *key, Set &set)
 	}
 }
 
+// Batch Operation
 Page* BLinkTree::Split(Set &set, KeySlice *key)
 {
 	Page *right;
@@ -276,11 +279,6 @@ bool BLinkTree::BatchPut(Page *page)
 	}
 	delete [] set;
 	return true;
-}
-
-bool BLinkTree::operator==(const BLinkTree &that) const
-{
-	return *pool_manager_ == *that.pool_manager_;
 }
 
 } // namespace Mushroom

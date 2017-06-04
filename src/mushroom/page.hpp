@@ -8,6 +8,8 @@
 #ifndef _BTREE_PAGE_HPP_
 #define _BTREE_PAGE_HPP_
 
+#include <string>
+
 #include "../include/utility.hpp"
 #include "slice.hpp"
 
@@ -66,9 +68,13 @@ class Page : private NoCopy
 
 		void Split(Page *that, KeySlice *slice);
 
+		void Split(Page *that, KeySlice *slice, uint16_t split);
+
 		bool Full() const;
 
 		bool NeedSplit();
+
+		std::string ToString() const;
 
 		inline uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));

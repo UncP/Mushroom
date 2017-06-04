@@ -6,6 +6,7 @@
 **/
 
 #include <cassert>
+#include <sstream>
 
 #include "page.hpp"
 
@@ -162,7 +163,7 @@ void Page::Split(Page *that, KeySlice *slice)
 	}
 
 	slice->page_no_ = that->page_no_;
-	memcpy(slice->key_ + pre_len_, fence->key_, key_len_);
+	CopySuffix(slice, fence->key_, pre_len_, key_len_);
 
 	if (level_) {
 		that->AssignFirst(fence->page_no_);
@@ -207,6 +208,76 @@ void Page::Split(Page *that, KeySlice *slice)
 	that->dirty_ = 1;
 }
 
+void Page::Split(Page *that, KeySlice *slice, uint16_t split)
+{
+	uint16_t left = total_key_ - split, right = total_key_ - left, index = left;
+	uint16_t *l_idx = this->Index();
+	uint16_t *r_idx = that->Index();
+	KeySlice *fence = Key(l_idx, left++);
+
+	if (that->pre_len_) {
+		uint16_t min = pre_len_ < that->pre_len_ ? pre_len_ : that->pre_len_;
+		assert(!memcmp(that->data_, this->data_, min));
+	}
+
+	if (pre_len_) {
+		memcpy(that->data_, this->data_, pre_len_);
+		that->pre_len_ = this->pre_len_;
+		CopyPrefix(slice, data_, pre_len_);
+	}
+
+	slice->page_no_ = that->page_no_;
+	CopySuffix(slice, fence->key_, pre_len_, key_len_);
+
+	if (level_) {
+		that->AssignFirst(fence->page_no_);
+		memcpy(fence->key_, Key(l_idx, left)->key_, key_len_);
+		r_idx -= --right;
+		++index;
+	} else {
+		r_idx -= right;
+	}
+
+	fence->page_no_ = that->page_no_;
+
+	if (that->total_key_) {
+		uint16_t min = key_len_ < that->key_len_ ? key_len_ : that->key_len_;
+		assert(!memcmp(this->Key(l_idex, total_key_-1)->key_, that->Key(r_idx, 0)->key_, min);
+	}
+
+	uint16_t slot_len = PageByte + key_len_;
+	uint16_t limit = that->total_key_ * slot_len + that->pre_len_;
+	for (uint16_t i = index, j = 0; i != total_key_; ++i, ++j) {
+		r_idx[j] = limit + j * slot_len;
+		KeySlice *l = this->Key(l_idx, i);
+		KeySlice *r = that->Key(r_idx, j);
+		CopyKey(r, l, 0, key_len_);
+	}
+	limit = left * slot_len + pre_len_;
+	for (uint16_t i = left, j = 0; i < total_key_ && j < left; ++i) {
+		if (l_idx[i] < limit) {
+			for (; j < left; ++j) {
+				if (l_idx[j] >= limit) {
+					KeySlice *o = this->Key(l_idx, i);
+					KeySlice *n = this->Key(l_idx, j);
+					l_idx[j] = l_idx[i];
+					CopyKey(o, n, 0, key_len_);
+					++j;
+					break;
+				}
+			}
+		}
+	}
+
+	uint16_t offset = total_key_ - left;
+	memmove(&l_idx[offset], &l_idx[0], left << 1);
+
+	this->total_key_ -= split;
+	that->total_key_ += right;
+	this->dirty_ = 1;
+	that->dirty_ = 1;
+}
+
 bool Page::Full() const
 {
 	return total_key_ == degree_;
@@ -214,8 +285,7 @@ bool Page::Full() const
 
 bool Page::NeedSplit()
 {
-	if (!Full())
-		return false;
+	if (!Full()) return false;
 	uint16_t *index = Index();
 	const char *first = Key(index, 0)->key_;
 	const char *last  = Key(index, total_key_ - 1)->key_;
@@ -248,6 +318,36 @@ bool Page::NeedSplit()
 	degree_  = degree;
 	dirty_   = 1;
 	return false;
+}
+
+std::string Page::ToString() const
+{
+	std::ostringstream os;
+	os << "type: ";
+	if (type_ == LEAF)   os << "leaf  ";
+	if (type_ == BRANCH) os << "branch  ";
+	if (type_ == ROOT)   os << "root  ";
+	os << "page_no: " << page_no_ << " ";
+	os << "first: " << first_ << " ";
+	os << "tot_key: " << total_key_ << " ";
+	os << "level: " << (int)level_ << " ";
+	os << "key_len: " << (int)key_len_ << "\n";
+
+	if (pre_len_) {
+		os << "pre_len: " << (int)pre_len_ << " ";
+		os << "prefix: " << std::string(data_, pre_len_) << "\n";
+	}
+
+	uint16_t *index = Index();
+	for (uint16_t i = 0; i != total_key_; ++i)
+		os << index[i] << " ";
+	os << "\n";
+	for (uint16_t i = 0; i != total_key_; ++i) {
+		KeySlice *key = Key(index, i);
+		os << key->ToString(key_len_);
+	}
+	os << "\nnext: " << Key(index, total_key_-1)->page_no_ << "\n";
+	return os.str();
 }
 
 } // namespace Mushroom

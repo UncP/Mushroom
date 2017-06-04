@@ -1,5 +1,8 @@
 #! /bin/sh
-if [ "$1" = "index" ]
+if [ "$1" = "page" ]
+then
+	make page_test && ./page_test $2
+elif [ "$1" = "index" ]
 then
 	make distributed_index_test && ./distributed_index_test 4096 4800 10 4 16 $2
 elif [ "$1" = "raft" ]
