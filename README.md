@@ -50,3 +50,4 @@
 ### 其他
 + 版本0.6.0是第一个稳定版本
 + 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到**Mushroom**的介绍
++ master分支是开发分支，如果编译不通过请尝试其它分支
