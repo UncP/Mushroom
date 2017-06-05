@@ -242,7 +242,7 @@ void Page::Split(Page *that, KeySlice *slice, uint16_t split)
 
 	if (that->total_key_) {
 		uint16_t min = key_len_ < that->key_len_ ? key_len_ : that->key_len_;
-		assert(!memcmp(this->Key(l_idex, total_key_-1)->key_, that->Key(r_idx, 0)->key_, min);
+		assert(!memcmp(this->Key(l_idx, total_key_-1)->key_, that->Key(r_idx, 0)->key_, min));
 	}
 
 	uint16_t slot_len = PageByte + key_len_;
