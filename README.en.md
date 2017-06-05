@@ -46,7 +46,7 @@
 | 0.7.0  |      Log-Structured Merge Tree    |
 | 0.8.0  |   TCP Communication Library & RPC Framework    |
 | 0.9.0  |        Raft       |
-| 0.9.1  |   ACID (Batch Operation) & modify locking strategy   |
+| 0.9.1  |   ACID (batch operation) & modify locking strategy   |
 | 0.9.2  |   optimize Raft state transfer, improve liveness   |
 | 1.0.0  |     distributed in-memory index   |
 

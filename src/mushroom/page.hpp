@@ -68,13 +68,18 @@ class Page : private NoCopy
 
 		void Split(Page *that, KeySlice *slice);
 
-		void Split(Page *that, KeySlice *slice, uint16_t split);
+		bool Move(Page *that, KeySlice *slice);
+
+		bool Update(const KeySlice *old_key, const KeySlice *new_key);
 
 		bool Full() const;
 
 		bool NeedSplit();
 
 		std::string ToString() const;
+
+	private:
+		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
 		inline uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
@@ -83,9 +88,6 @@ class Page : private NoCopy
 		inline KeySlice* Key(const uint16_t *index, uint16_t pos) const {
 			return (KeySlice *)(data_ + index[pos]);
 		}
-
-	private:
-		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
 		page_t   page_no_;
 		page_t   first_;

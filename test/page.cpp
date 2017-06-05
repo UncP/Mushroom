@@ -36,38 +36,184 @@ TEST(PageInsert)
 	Page::DeletePage(page);
 }
 
-TEST(PageSplit)
+TEST(PageMoveWithNoPrefixWithEmptySlot)
 {
 	srand(time(0));
-	const uint8_t key_len = 16;
+	const uint8_t key_len = 10;
 	Page *left = Page::NewPage(key_len);
 	Page *right = Page::NewPage(key_len);
 
 	char buf[sizeof(page_t) + key_len] = {0};
 	KeySlice *key = (KeySlice *)buf;
-	string str = "0123456789012345";
-	string max = str;
-	int total1 = 10;
-	for (int i = 0; i < total1; ++i) {
-		memcpy(key->key_, str.c_str(), key_len);
-		left->Insert(key);
-		str[rand()%key_len] = '0' + rand() % 10;
-		if (str > max)
-			max = str;
+	string str(key_len, '8');
+	for (;;) {
+		if (left->Full()) {
+			str = string(key_len, '9');
+			memcpy(key->key_, str.c_str(), key_len);
+			char buf[sizeof(page_t) + key_len] = {0};
+			KeySlice *tmp = (KeySlice *)buf;
+			memset(tmp->key_, 0xFF, key_len);
+			ASSERT_TRUE(left->Update(tmp, key));
+			break;
+		} else {
+			str[rand()%key_len] -= 1 + rand() % 3;
+			memcpy(key->key_, str.c_str(), key_len);
+			left->Insert(key);
+		}
 	}
-	int total2 = 10;
-	str = max;
-	for (int i = 0; i < total2; ++i) {
+	for (int i = 0; i < 9; ++i) {
 		memcpy(key->key_, str.c_str(), key_len);
 		right->Insert(key);
-		if (i == 0) str = "abcdefghijklmopq";
-		str[rand()%key_len] = 'a' + rand() % 26;
+		if (i == 0) str = string(key_len, 'z');
+		str[rand()%key_len] -= 1 + rand() % 3;
 	}
 
 	printf("%s\n", left->ToString().c_str());
 	printf("%s\n", right->ToString().c_str());
 
-	left->Split(right, key, 3);
+	ASSERT_TRUE(left->Move(right, key));
+
+	printf("%s\n", left->ToString().c_str());
+	printf("%s\n", right->ToString().c_str());
+	printf("%s", key->ToString(key_len).c_str());
+	Page::DeletePage(left);
+	Page::DeletePage(right);
+}
+
+TEST(PageMoveWithSamePrefix)
+{
+	srand(time(0));
+	const uint8_t key_len = 10;
+	Page *left = Page::NewPage(key_len);
+	Page *right = Page::NewPage(key_len);
+
+	char buf[sizeof(page_t) + key_len] = {0};
+	KeySlice *key = (KeySlice *)buf;
+	string str(key_len, '8');
+	str[2] = '0';
+	for (;;) {
+		if (left->Full()) {
+			str[2] = '7';
+			memcpy(key->key_, str.c_str(), key_len);
+			char buf[sizeof(page_t) + key_len] = {0};
+			KeySlice *tmp = (KeySlice *)buf;
+			memset(tmp->key_, 0xFF, key_len);
+			ASSERT_TRUE(left->Update(tmp, key));
+			break;
+		} else {
+			str[2 + rand()%(key_len-2)] -= 1 + rand() % 3;
+			memcpy(key->key_, str.c_str(), key_len);
+			left->Insert(key);
+		}
+	}
+
+	ASSERT_FALSE(left->NeedSplit());
+	for (int i = 2; !left->Full();) {
+		string tmp = str;
+		tmp[i++] -= 3;
+		memcpy(key->key_, tmp.c_str(), key_len);
+		ASSERT_TRUE(left->Insert(key));
+	}
+
+	memcpy(key->key_, str.c_str(), key_len);
+	for (;;) {
+		if (right->Full()) {
+			for (int i = 2; i != key_len; ++i)
+				if (str[i] != '8') {
+					str[i] = '8';
+					break;
+				}
+			memcpy(key->key_, str.c_str(), key_len);
+			char buf[sizeof(page_t) + key_len] = {0};
+			KeySlice *tmp = (KeySlice *)buf;
+			memset(tmp->key_, 0xFF, key_len);
+			ASSERT_TRUE(right->Update(tmp, key));
+			break;
+		} else {
+			right->Insert(key);
+			str[2] = '8';
+			str[3 + rand()%(key_len-3)] -= 1 + rand() % 3;
+			memcpy(key->key_, str.c_str(), key_len);
+		}
+	}
+
+	ASSERT_FALSE(right->NeedSplit());
+
+	printf("%s\n", left->ToString().c_str());
+	printf("%s\n", right->ToString().c_str());
+
+	ASSERT_TRUE(left->Move(right, key));
+
+	printf("%s\n", left->ToString().c_str());
+	printf("%s\n", right->ToString().c_str());
+	printf("%s", key->ToString(key_len).c_str());
+	Page::DeletePage(left);
+	Page::DeletePage(right);
+}
+
+TEST(PageMoveWithDifferentPrefix1)
+{
+	srand(time(0));
+	const uint8_t key_len = 10;
+	Page *left = Page::NewPage(key_len);
+	Page *right = Page::NewPage(key_len);
+
+	char buf[sizeof(page_t) + key_len] = {0};
+	KeySlice *key = (KeySlice *)buf;
+	string str(key_len, '7');
+	str[3] = '0';
+	for (;;) {
+		if (left->Full()) {
+			str[3] = '7';
+			memcpy(key->key_, str.c_str(), key_len);
+			char buf[sizeof(page_t) + key_len] = {0};
+			KeySlice *tmp = (KeySlice *)buf;
+			memset(tmp->key_, 0xFF, key_len);
+			ASSERT_TRUE(left->Update(tmp, key));
+			break;
+		} else {
+			str[3 + rand()%(key_len-3)] -= 1 + rand() % 3;
+			memcpy(key->key_, str.c_str(), key_len);
+			left->Insert(key);
+		}
+	}
+
+	ASSERT_FALSE(left->NeedSplit());
+	for (int i = 3; !left->Full();) {
+		string tmp = str;
+		tmp[i++] -= 3;
+		memcpy(key->key_, tmp.c_str(), key_len);
+		ASSERT_TRUE(left->Insert(key));
+	}
+
+	memcpy(key->key_, str.c_str(), key_len);
+	for (;;) {
+		if (right->Full()) {
+			for (int i = 3; i != key_len; ++i)
+				if (str[i] != '8') {
+					str[i] = '8';
+					break;
+				}
+			memcpy(key->key_, str.c_str(), key_len);
+			char buf[sizeof(page_t) + key_len] = {0};
+			KeySlice *tmp = (KeySlice *)buf;
+			memset(tmp->key_, 0xFF, key_len);
+			ASSERT_TRUE(right->Update(tmp, key));
+			break;
+		} else {
+			right->Insert(key);
+			str[2] = '8';
+			str[3 + rand()%(key_len-3)] -= 1 + rand() % 3;
+			memcpy(key->key_, str.c_str(), key_len);
+		}
+	}
+
+	ASSERT_FALSE(right->NeedSplit());
+
+	printf("%s\n", left->ToString().c_str());
+	printf("%s\n", right->ToString().c_str());
+
+	ASSERT_TRUE(left->Move(right, key));
 
 	printf("%s\n", left->ToString().c_str());
 	printf("%s\n", right->ToString().c_str());
@@ -78,6 +224,6 @@ TEST(PageSplit)
 
 int main(int argc, char **argv)
 {
-	Page::SetPageInfo(4096);
+	Page::SetPageInfo(256);
 	return RUN_ALL_TESTS(argc == 2 ? argv[1] : '\0');
 }
