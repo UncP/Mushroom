@@ -70,9 +70,11 @@ class Page : private NoCopy
 
 		void Split(Page *that, KeySlice *slice);
 
+		void Expand(uint8_t to);
+
 		bool Move(Page *that, KeySlice *old_key, KeySlice *new_key);
 
-		void Expand(uint8_t to);
+		void Combine(Page *left, Page *right);
 
 		bool Full() const;
 

@@ -46,6 +46,22 @@ void BLinkTree::FlushDirtyPages()
 	pool_manager_->Flush(latch_manager_);
 }
 
+void BLinkTree::GetParent(Set &set)
+{
+	assert(set.depth_);
+	set.page_no_ = set.stack_[--set.depth_];
+	set.latch_ = latch_manager_->GetLatch(set.page_no_);
+	set.page_ = pool_manager_->GetPage(set.page_no_);
+	set.latch_->Lock();
+}
+
+void BLinkTree::GetNext(Set &set)
+{
+	set.latch_ = latch_manager_->GetLatch(set.page_no_);
+	set.page_ = pool_manager_->GetPage(set.page_no_);
+	set.latch_->Lock();
+}
+
 void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set, LockType type)
 {
 	set.page_no_ = root_.get();
@@ -78,11 +94,7 @@ bool BLinkTree::SplitAndPromote(Set &set, KeySlice *key)
 			set.page_->level_, set.page_->degree_);
 		set.page_->Split(right, key);
 		set.latch_->Unlock();
-		assert(set.depth_);
-		set.page_no_ = set.stack_[--set.depth_];
-		set.latch_ = latch_manager_->GetLatch(set.page_no_);
-		set.page_ = pool_manager_->GetPage(set.page_no_);
-		set.latch_->Lock();
+		GetParent(set);
 		Insert(set, key);
 		return true;
 	} else {
@@ -108,16 +120,10 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 {
 	InsertStatus status;
 	for (; (status = set.page_->Insert(key, set.page_no_));) {
-		if (status == MoveRight) {
-			Latch *pre = set.latch_;
-			set.latch_ = latch_manager_->GetLatch(set.page_no_);
-			set.page_ = pool_manager_->GetPage(set.page_no_);
-			set.latch_->Lock();
-			pre->Unlock();
-		} else {
-			printf("existed key :(\n");
-			assert(0);
-		}
+		assert(status == MoveRight);
+		Latch *pre = set.latch_;
+		GetNext(set);
+		pre->Unlock();
 	}
 }
 
@@ -125,9 +131,7 @@ void BLinkTree::Update(Set &set, KeySlice *old_key, KeySlice *new_key)
 {
 	for (; !set.page_->Update(old_key, new_key, set.page_no_);) {
 		Latch *pre = set.latch_;
-		set.latch_ = latch_manager_->GetLatch(set.page_no_);
-		set.page_ = pool_manager_->GetPage(set.page_no_);
-		set.latch_->Lock();
+		GetNext(set);
 		pre->Unlock();
 	}
 }
@@ -140,30 +144,42 @@ bool BLinkTree::Put(KeySlice *key)
 
 	Insert(set, key);
 
-	// if (set.page_->NeedSplit()) {
-	// 	page_t page_no = set.page_->Next();
-	// 	TempSlice(tmp, key_len_);
-	// 	if (next) {
-	// 		Latch *latch = latch_manager_->GetLatch(page_no);
-	// 		Page *next = pool_manager_->GetPage(page_no);
-	// 		latch->Lock();
-	// 		if (set.page_->Move(next, tmp, slice)) {
-	// 			latch->Unlock();
-	// 			assert(set.depth_);
-	// 			Latch *pre = set.latch_;
-	// 			set.page_no_ = set.stack_[--set.depth_];
-	// 			set.latch_ = latch_manager_->GetLatch(set.page_no_);
-	// 			set.page_ = pool_manager_->GetPage(set.page_no_);
-	// 			Update(set, tmp, slice);
-	// 			pre->Unlock();
-	// 		} else {
-
-	// 			latch->Unlock();
-	// 		}
-	// 	}
-	// }
-	for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
-		continue;
+	if (set.page_->NeedSplit()) {
+		page_t page_no = set.page_->Next();
+		if (next) {
+			Latch *latch = latch_manager_->GetLatch(page_no);
+			Page *next = pool_manager_->GetPage(page_no);
+			latch->Lock();
+			TempSlice(tmp, key_len_);
+			if (set.page_->Move(next, tmp, slice)) {
+				latch->Unlock();
+				set.latch_->Unlock();
+				GetParent(set);
+				Update(set, tmp, slice);
+			} else {
+				Page *right = pool_manager_->NewPage(set.page_->type_, set.page_->key_len_,
+					set.page_->level_, set.page_->degree_);
+				TempSlice(tmp2, key_len_);
+				right->Combine(set.page_, next, tmp, tmp2, slice);
+				latch->Unlock();
+				set.latch_->Unlock();
+				GetParent(set);
+				page_t parent = set.page_no_;
+				Update(set, tmp, tmp2);
+				if (set.page_->page_no_ != parent) {
+					set.latch_->Unlock();
+					set.page_no_ = parent;
+					GetParent(set);
+				}
+				Insert(set, slice);
+				for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
+					continue;
+			}
+		} else {
+			for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
+				continue;
+		}
+	}
 
 	set.latch_->Unlock();
 	return true;

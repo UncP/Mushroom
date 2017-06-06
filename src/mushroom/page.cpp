@@ -293,7 +293,7 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 	}
 
 	// copy old fence key for parent update
-	KeySlice *fence = Key(l_idx, total_key_-1);
+	KeySlice *fence = Key(l_idx, total_key_ - 1);
 	if (this->pre_len_) CopyPrefix(old_key, data_, this->pre_len_);
 	old_key->page_no_ = that->page_no_;
 	CopyKey(old_key, fence, pre_len_, key_len_);
@@ -366,6 +366,77 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 	this->dirty_ = 1;
 	that->dirty_ = 1;
 	return true;
+}
+
+void Page::Combine(Page *left, Page *right, KeySlice *old_key, KeySlice *new_key,
+	KeySlice *slice)
+{
+	pre_len_ = std::min(left->pre_len_, right->pre_len_);
+	if (pre_len_) {
+		assert(!memcmp(left->data_, right->data_, pre_len_));
+		memcpy(this->data_, left->data_, pre_len_);
+		key_len_ -= pre_len_;
+		CalculateDegree(key_len_, pre_len_);
+	}
+
+	uint16_t *l_idx = left->Index();
+	uint16_t *r_idx = right->Index();
+
+	KeySlice *fence = left->Key(l_idx, left->total_key_ - 1);
+	if (left->pre_len_) CopyPrefix(old_key, left->data_, left->pre_len_);
+	old_key->page_no_ = fence->page_no_;
+	CopyKey(old_key, fence, left->pre_len_, left->key_len_);
+
+	uint16_t l = left->total_key_ / 3;
+	uint16_t r = right->total_key_ / 3;
+
+	char *curr = data_ + pre_len_;
+	uint16_t *index = Index();
+	index -= l + r;
+	uint16_t pre = left->pre_len_ - pre_len_;
+	uint16_t len = std::min(pre_len_, left->pre_len_);
+	for (uint16_t i = left->total_key_ - l - 1; i < left->total_key_ - 1; ++i) {
+		KeySlice *key = left->Key(l_idx, i);
+		*index++ = curr - data_;
+		memcpy(curr, key->page_no_, PageByte);
+		curr += PageByte;
+		if (pre) {
+			memcpy(curr, left->data_ + pre_len_, pre);
+			curr += pre;
+		}
+		memcpy(curr, key->key_, len);
+		curr += len;
+	}
+
+	fence = left->Key(l_idx, left->total_key_ - l - 1);
+	if (left->pre_len_) CopyPrefix(slice, left->data_, left->pre_len_);
+	slice->page_no_ = page_no_;
+	CopyKey(slice, fence, left->pre_len_, left->key_len_);
+
+	pre = right->pre_len_ - pre_len_;
+	len = std::min(pre_len_, right->pre_len_);
+	for (uint16_t i = 0; i < r; ++i) {
+		KeySlice *key = right->Key(r_idx, i);
+		*index++ = curr - data_;
+		memcpy(curr, key->page_no_, PageByte);
+		if (pre) {
+			memcpy(curr, right->data_ + pre_len_, pre);
+			curr += pre;
+		}
+		memcpy(curr, key->key_, len);
+		curr += len;
+	}
+
+	total_key_ = l + r;
+	fence = Key(Index(), total_key_ - 1);
+	fence->page_no_ = right->page_no_;
+	if (pre_len_) CopyPrefix(new_key, data_, pre_len_);
+	new_key->page_no_ = fence->page_no_;
+	CopyKey(new_key, fence, pre_len_, key_len_);
+
+	dirty_ = 1;
+	left->dirty_ = 1;
+	left->dirty_ = 1;
 }
 
 bool Page::Full() const

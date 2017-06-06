@@ -52,6 +52,10 @@ class BLinkTree : private NoCopy
 			uint32_t depth_;
 		};
 
+		void GetParent(Set &set);
+
+		void GetNext(Set &set);
+
 		void DescendToLeaf(const KeySlice *key, Set &set, LockType type);
 
 		bool SplitAndPromote(Set &set, KeySlice *key);
@@ -67,7 +71,7 @@ class BLinkTree : private NoCopy
 		LatchManager *latch_manager_;
 		PoolManager  *pool_manager_;
 
-		Atomic<page_t>  root_;
+		Atomic<page_t> root_;
 
 		uint8_t      key_len_;
 		uint16_t     degree_;
