@@ -48,7 +48,7 @@ class Page : private NoCopy
 			return key->page_no_;
 		}
 
-		inline bool PageNo() const { return page_no_; }
+		inline page_t PageNo() const { return page_no_; }
 
 		inline bool Dirty() const { return dirty_; }
 
@@ -66,11 +66,13 @@ class Page : private NoCopy
 
 		void Insert(Page *that, KeySlice *key);
 
+		bool Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no);
+
 		void Split(Page *that, KeySlice *slice);
 
-		bool Move(Page *that, KeySlice *slice);
+		bool Move(Page *that, KeySlice *old_key, KeySlice *new_key);
 
-		bool Update(const KeySlice *old_key, const KeySlice *new_key);
+		void Expand(uint8_t to);
 
 		bool Full() const;
 

@@ -60,6 +60,8 @@ class BLinkTree : private NoCopy
 
 		void Insert(Set &set, KeySlice *key);
 
+		void Update(Set &set, KeySlice *old_key, KeySlice *new_key);
+
 		void LoadLeaf(const KeySlice *key, Set &set);
 
 		LatchManager *latch_manager_;

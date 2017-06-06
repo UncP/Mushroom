@@ -151,6 +151,26 @@ bool Page::Insert(const KeySlice *key)
 	return Insert(key, page_no) == InsertOk;
 }
 
+bool Page::Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no)
+{
+	uint16_t pos;
+	KeySlice *slice = 0;
+	bool flag = Traverse(old_key, &pos, &slice);
+	if (flag) {
+		// what if prefix is not same ?
+		if (pre_len_) assert(!memcmp(new_key->key_, data_, pre_len_));
+		slice->page_no_ = new_key->page_no_;
+		memcpy(slice->key_, new_key->key_ + pre_len_, key_len_);
+		return true;
+	}
+	if (pos == total_key_ && pos) {
+		page_no = Next();
+		assert(page_no);
+		return false;
+	}
+	assert(0);
+}
+
 void Page::Split(Page *that, KeySlice *slice)
 {
 	uint16_t left = total_key_ >> 1, right = total_key_ - left, index = left;
@@ -209,45 +229,35 @@ void Page::Split(Page *that, KeySlice *slice)
 	this->dirty_ = 1;
 	that->dirty_ = 1;
 }
-/*
-void BTreePage::Insert(BTreePage *that, KeySlice *key)
+
+void Page::Expand(uint8_t to)
 {
-	assert(pre_len_ && ComparePrefix(key, data_, pre_len_) < 0);
-	char buf[PageByte + key_len_ + pre_len_];
-	KeySlice *slice = (KeySlice *)buf;
-	CopyKey(slice, key, 0, key_len_ + pre_len_);
-	Split(that, key);
-	char prefix[pre_len_];
-	memcpy(prefix, data_, pre_len_);
+	assert(pre_len_ > to);
+	uint8_t pre = pre_len_ - to;
+	char prefix[pre];
+	memcpy(prefix, data_ + to, pre);
 	char tmp[PageSize];
-	BTreePage *copy = (BTreePage *)tmp;
+	Page *copy = (Page *)tmp;
 	memcpy(copy, this, PageSize);
 	uint16_t *index = Index();
-	char *curr = data_;
-	--index;
-	*index++ = 0;
-	memcpy(curr, slice, PageByte + key_len_ + pre_len_);
-	curr += PageByte + key_len_ + pre_len_;
+	char *curr = data_ + to;
 	uint16_t *cindex = copy->Index();
-	for (uint16_t i = 0; i != total_key_; ++i, ++index) {
-		KeySlice *k = Key(cindex, i);
-		page_id page_no = k->PageNo();
-		*index = curr - data_;
-		memcpy(curr, &page_no, PageByte);
+	for (uint16_t i = 0; i < total_key_; ++i) {
+		KeySlice *key = copy->Key(cindex, i);
+		index[i] = curr - data_;
+		memcpy(curr, &key->page_no_, PageByte);
 		curr += PageByte;
-		memcpy(curr, prefix, pre_len_);
-		curr += pre_len_;
-		memcpy(curr, k->Data(), key_len_);
+		memcpy(curr, prefix, pre);
+		curr += pre;
+		memcpy(curr, key->key_, key_len_);
 		curr += key_len_;
 	}
-	key_len_ += pre_len_;
-	pre_len_ = 0;
-	degree_ = CalculateDegree(key_len_);
-	++total_key_;
+	pre_len_ = to;
+	key_len_ += pre;
+	degree_ = CalculateDegree(key_len_, pre_len_);
 }
-*/
 
-bool Page::Move(Page *that, KeySlice *slice)
+bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 {
 	assert(this->type_ == LEAF && that->type_ == LEAF);
 	uint16_t max_key = this->pre_len_ < that->pre_len_ ? this->degree_ : that->degree_;
@@ -261,7 +271,7 @@ bool Page::Move(Page *that, KeySlice *slice)
 	uint16_t *l_idx = this->Index();
 	uint16_t *r_idx = that->Index();
 
-	// last key must equal next page's first key
+	// TEST last key must equal next page's first key
 	KeySlice *last  = this->Key(l_idx, total_key_ - 1);
 	KeySlice *first = that->Key(r_idx, 0);
 	if (this->pre_len_ == that->pre_len_) {
@@ -274,19 +284,25 @@ bool Page::Move(Page *that, KeySlice *slice)
 		uint16_t left = that->pre_len_ - this->pre_len_;
 		assert(!memcmp(last->key_, that->data_ + this->pre_len_, left));
 		assert(!memcmp(last->key_ + left, first->key_, that->key_len_));
-	} else {
+	} else { // this->pre_len_ > that->pre_len_
 		if (that->pre_len_)
 			assert(!memcmp(this->data_, that->data_, that->pre_len_));
 		uint16_t left = this->pre_len_ - that->pre_len_;
-		assert(!memcmp(first->key_, this->data_ + that->pre_len_, left));
+		assert(!memcmp(this->data_ + that->pre_len_, first->key_, left));
 		assert(!memcmp(last->key_, first->key_ + left, this->key_len_));
 	}
 
-	// copy fence key for parent modification
-	KeySlice *fence = Key(l_idx, index);
-	if (this->pre_len_) CopyPrefix(slice, data_, this->pre_len_);
-	slice->page_no_ = that->page_no_;
-	CopyKey(slice, fence, pre_len_, key_len_);
+	// copy old fence key for parent update
+	KeySlice *fence = Key(l_idx, total_key_-1);
+	if (this->pre_len_) CopyPrefix(old_key, data_, this->pre_len_);
+	old_key->page_no_ = that->page_no_;
+	CopyKey(old_key, fence, pre_len_, key_len_);
+
+	// copy new fence key for parent update
+	fence = Key(l_idx, index);
+	if (this->pre_len_) CopyPrefix(new_key, data_, this->pre_len_);
+	new_key->page_no_ = that->page_no_;
+	CopyKey(new_key, fence, pre_len_, key_len_);
 
 	if (this->pre_len_ == that->pre_len_) {
 		r_idx -= move;
@@ -309,6 +325,17 @@ bool Page::Move(Page *that, KeySlice *slice)
 			KeySlice *r = that->Key(r_idx, j);
 			CopyPrefix(r, data_ + that->pre_len_, left);
 			CopyKey(r, l, left, key_len_);
+		}
+	} else { // this->pre_len_ < that->pre_len_
+		that->Expand(this->pre_len_);
+		r_idx -= move;
+		uint16_t slot_len = PageByte + that->key_len_;
+		uint16_t limit = that->total_key_ * slot_len + that->pre_len_;
+		for (uint16_t i = index, j = 0, end = index + move; i != end; ++i, ++j) {
+			r_idx[j] = limit + j * slot_len;
+			KeySlice *l = this->Key(l_idx, i);
+			KeySlice *r = that->Key(r_idx, j);
+			CopyKey(r, l, 0, key_len_);
 		}
 	}
 
@@ -339,20 +366,6 @@ bool Page::Move(Page *that, KeySlice *slice)
 	this->dirty_ = 1;
 	that->dirty_ = 1;
 	return true;
-}
-
-bool Page::Update(const KeySlice *old_key, const KeySlice *new_key)
-{
-	uint16_t pos;
-	KeySlice *key = 0;
-	if (Traverse(old_key, &pos, &key)) {
-		if (pre_len_)
-			assert(!ComparePrefix(new_key, data_, pre_len_));
-		key->page_no_ = new_key->page_no_;
-		memcpy(key->key_, new_key->key_ + pre_len_, key_len_);
-		return true;
-	}
-	return false;
 }
 
 bool Page::Full() const
@@ -404,11 +417,12 @@ std::string Page::ToString() const
 	if (type_ == LEAF)   os << "leaf  ";
 	if (type_ == BRANCH) os << "branch  ";
 	if (type_ == ROOT)   os << "root  ";
-	os << "page_no: " << page_no_ << " ";
-	os << "first: " << first_ << " ";
-	os << "tot_key: " << total_key_ << " ";
-	os << "level: " << (int)level_ << " ";
-	os << "key_len: " << (int)key_len_ << "\n";
+	os << "no: " << page_no_ << "  ";
+	os << "fir: " << first_ << "  ";
+	os << "tot: " << total_key_ << "  ";
+	os << "lvl: " << (int)level_ << "  ";
+	os << "keylen: " << (int)key_len_ << "  ";
+	os << "deg: " << degree_ << "\n";
 
 	if (pre_len_) {
 		os << "pre_len: " << (int)pre_len_ << " ";

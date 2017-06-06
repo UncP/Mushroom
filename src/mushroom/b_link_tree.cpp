@@ -77,14 +77,13 @@ bool BLinkTree::SplitAndPromote(Set &set, KeySlice *key)
 		Page *right = pool_manager_->NewPage(set.page_->type_, set.page_->key_len_,
 			set.page_->level_, set.page_->degree_);
 		set.page_->Split(right, key);
-		Latch *pre = set.latch_;
+		set.latch_->Unlock();
 		assert(set.depth_);
 		set.page_no_ = set.stack_[--set.depth_];
 		set.latch_ = latch_manager_->GetLatch(set.page_no_);
 		set.page_ = pool_manager_->GetPage(set.page_no_);
 		set.latch_->Lock();
 		Insert(set, key);
-		pre->Unlock();
 		return true;
 	} else {
 		uint8_t level = set.page_->level_;
@@ -122,6 +121,17 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 	}
 }
 
+void BLinkTree::Update(Set &set, KeySlice *old_key, KeySlice *new_key)
+{
+	for (; !set.page_->Update(old_key, new_key, set.page_no_);) {
+		Latch *pre = set.latch_;
+		set.latch_ = latch_manager_->GetLatch(set.page_no_);
+		set.page_ = pool_manager_->GetPage(set.page_no_);
+		set.latch_->Lock();
+		pre->Unlock();
+	}
+}
+
 bool BLinkTree::Put(KeySlice *key)
 {
 	Set set;
@@ -130,6 +140,28 @@ bool BLinkTree::Put(KeySlice *key)
 
 	Insert(set, key);
 
+	// if (set.page_->NeedSplit()) {
+	// 	page_t page_no = set.page_->Next();
+	// 	TempSlice(tmp, key_len_);
+	// 	if (next) {
+	// 		Latch *latch = latch_manager_->GetLatch(page_no);
+	// 		Page *next = pool_manager_->GetPage(page_no);
+	// 		latch->Lock();
+	// 		if (set.page_->Move(next, tmp, slice)) {
+	// 			latch->Unlock();
+	// 			assert(set.depth_);
+	// 			Latch *pre = set.latch_;
+	// 			set.page_no_ = set.stack_[--set.depth_];
+	// 			set.latch_ = latch_manager_->GetLatch(set.page_no_);
+	// 			set.page_ = pool_manager_->GetPage(set.page_no_);
+	// 			Update(set, tmp, slice);
+	// 			pre->Unlock();
+	// 		} else {
+
+	// 			latch->Unlock();
+	// 		}
+	// 	}
+	// }
 	for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
 		continue;
 
@@ -178,7 +210,6 @@ void BLinkTree::LoadLeaf(const KeySlice *key, Set &set)
 	}
 }
 
-// Batch Operation
 Page* BLinkTree::Split(Set &set, KeySlice *key)
 {
 	Page *right;
