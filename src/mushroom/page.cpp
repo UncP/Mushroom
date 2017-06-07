@@ -168,7 +168,33 @@ bool Page::Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page
 		assert(page_no);
 		return false;
 	}
+	printf("%s", old_key->ToString(key_len_ + pre_len_).c_str());
+	printf("%s", new_key->ToString(key_len_ + pre_len_).c_str());
+	printf("%s\n", this->ToString(true).c_str());
 	assert(0);
+}
+
+void Page::FillFrom(uint16_t above)
+{
+	uint16_t *index = Index();
+	uint16_t limit = above * (PageByte + key_len_) + pre_len_, j = 0;
+	for (uint16_t i = above; i < total_key_ && j < above; ++i) {
+		if (index[i] < limit) {
+			for (; j < above; ++j) {
+				if (index[j] >= limit) {
+					KeySlice *o = Key(index, i);
+					KeySlice *n = Key(index, j);
+					index[j] = index[i];
+					CopyKey(o, n, 0, key_len_);
+					++j;
+					break;
+				}
+			}
+		}
+	}
+	uint16_t offset = total_key_ - above;
+	memmove(&index[offset], &index[0], above << 1);
+	total_key_ = above;
 }
 
 void Page::Split(Page *that, KeySlice *slice)
@@ -205,26 +231,9 @@ void Page::Split(Page *that, KeySlice *slice)
 		KeySlice *r = that->Key(r_idx, j);
 		CopyKey(r, l, 0, key_len_);
 	}
-	uint16_t limit = left * slot_len + pre_len_, j = 0;
-	for (uint16_t i = left; i < total_key_ && j < left; ++i) {
-		if (l_idx[i] < limit) {
-			for (; j < left; ++j) {
-				if (l_idx[j] >= limit) {
-					KeySlice *o = this->Key(l_idx, i);
-					KeySlice *n = this->Key(l_idx, j);
-					l_idx[j] = l_idx[i];
-					CopyKey(o, n, 0, key_len_);
-					++j;
-					break;
-				}
-			}
-		}
-	}
 
-	uint16_t offset = total_key_ - left;
-	memmove(&l_idx[offset], &l_idx[0], left << 1);
+	FillFrom(left);
 
-	this->total_key_ = left;
 	that->total_key_ = right;
 	this->dirty_ = 1;
 	that->dirty_ = 1;
@@ -261,23 +270,24 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 {
 	assert(this->type_ == LEAF && that->type_ == LEAF);
 	uint16_t max_key = this->pre_len_ < that->pre_len_ ? this->degree_ : that->degree_;
-	// there is no room in next page
 	if (that->total_key_ + 2 > max_key)
 		return false;
 
-	// keyslice number that needs to be moved
 	uint16_t move = (max_key - that->total_key_) >> 1;
 	uint16_t index = total_key_ - 1 - move;
 	uint16_t *l_idx = this->Index();
 	uint16_t *r_idx = that->Index();
-
-	// TEST last key must equal next page's first key
+	printf("move %u %u %u\n", this->page_no_, that->page_no_, move);
 	KeySlice *last  = this->Key(l_idx, total_key_ - 1);
 	KeySlice *first = that->Key(r_idx, 0);
 	if (this->pre_len_ == that->pre_len_) {
 		if (this->pre_len_)
 			assert(!memcmp(this->data_, that->data_, this->pre_len_));
-		assert(!memcmp(last->key_, first->key_, key_len_));
+		if (memcmp(last->key_, first->key_, this->key_len_)) {
+			printf("%s\n", this->ToString(true).c_str());
+			printf("%s\n", that->ToString(true).c_str());
+			assert(0);
+		}
 	} else if (this->pre_len_ < that->pre_len_) {
 		if (this->pre_len_)
 			assert(!memcmp(this->data_, that->data_, this->pre_len_));
@@ -292,13 +302,11 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 		assert(!memcmp(last->key_, first->key_ + left, this->key_len_));
 	}
 
-	// copy old fence key for parent update
 	KeySlice *fence = Key(l_idx, total_key_ - 1);
 	if (this->pre_len_) CopyPrefix(old_key, data_, this->pre_len_);
 	old_key->page_no_ = that->page_no_;
 	CopyKey(old_key, fence, pre_len_, key_len_);
 
-	// copy new fence key for parent update
 	fence = Key(l_idx, index);
 	if (this->pre_len_) CopyPrefix(new_key, data_, this->pre_len_);
 	new_key->page_no_ = that->page_no_;
@@ -341,27 +349,8 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 
 	fence->page_no_ = that->page_no_;
 
-	// the index of the first empty slot
-	uint16_t left = total_key_ - move;
-	uint16_t limit = left * (PageByte + key_len_) + pre_len_;
-	for (uint16_t i = left, j = 0; i < total_key_ && j < left; ++i) {
-		if (l_idx[i] < limit) {
-			for (; j < left; ++j) {
-				if (l_idx[j] >= limit) {
-					KeySlice *o = this->Key(l_idx, i);
-					KeySlice *n = this->Key(l_idx, j);
-					l_idx[j] = l_idx[i];
-					CopyKey(o, n, 0, key_len_);
-					++j;
-					break;
-				}
-			}
-		}
-	}
+	FillFrom(total_key_ - move);
 
-	memmove(&l_idx[move], &l_idx[0], left << 1);
-
-	this->total_key_ -= move;
 	that->total_key_ += move;
 	this->dirty_ = 1;
 	that->dirty_ = 1;
@@ -371,6 +360,7 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 void Page::Combine(Page *left, Page *right, KeySlice *old_key, KeySlice *new_key,
 	KeySlice *slice)
 {
+	total_key_ = 0;
 	pre_len_ = std::min(left->pre_len_, right->pre_len_);
 	if (pre_len_) {
 		assert(!memcmp(left->data_, right->data_, pre_len_));
@@ -389,45 +379,67 @@ void Page::Combine(Page *left, Page *right, KeySlice *old_key, KeySlice *new_key
 
 	uint16_t l = left->total_key_ / 3;
 	uint16_t r = right->total_key_ / 3;
+	assert(degree_ > l + r);
 
 	char *curr = data_ + pre_len_;
 	uint16_t *index = Index();
 	index -= l + r;
 	uint16_t pre = left->pre_len_ - pre_len_;
-	uint16_t len = std::min(pre_len_, left->pre_len_);
 	for (uint16_t i = left->total_key_ - l - 1; i < left->total_key_ - 1; ++i) {
 		KeySlice *key = left->Key(l_idx, i);
 		*index++ = curr - data_;
-		memcpy(curr, key->page_no_, PageByte);
+		memcpy(curr, &key->page_no_, PageByte);
 		curr += PageByte;
 		if (pre) {
 			memcpy(curr, left->data_ + pre_len_, pre);
 			curr += pre;
 		}
-		memcpy(curr, key->key_, len);
-		curr += len;
+		memcpy(curr, key->key_, left->key_len_);
+		curr += left->key_len_;
 	}
 
 	fence = left->Key(l_idx, left->total_key_ - l - 1);
+	fence->page_no_ = page_no_;
 	if (left->pre_len_) CopyPrefix(slice, left->data_, left->pre_len_);
-	slice->page_no_ = page_no_;
+	slice->page_no_ = fence->page_no_;
 	CopyKey(slice, fence, left->pre_len_, left->key_len_);
 
+	left->FillFrom(left->total_key_ - l);
+
 	pre = right->pre_len_ - pre_len_;
-	len = std::min(pre_len_, right->pre_len_);
 	for (uint16_t i = 0; i < r; ++i) {
 		KeySlice *key = right->Key(r_idx, i);
 		*index++ = curr - data_;
-		memcpy(curr, key->page_no_, PageByte);
+		memcpy(curr, &key->page_no_, PageByte);
+		curr += PageByte;
 		if (pre) {
 			memcpy(curr, right->data_ + pre_len_, pre);
 			curr += pre;
 		}
-		memcpy(curr, key->key_, len);
-		curr += len;
+		memcpy(curr, key->key_, right->key_len_);
+		curr += right->key_len_;
 	}
 
-	total_key_ = l + r;
+	total_key_ = l + r--;
+
+	uint16_t above = right->total_key_ - r;
+	uint16_t limit = above * (PageByte + right->key_len_) + right->pre_len_, j = r;
+	for (uint16_t i = 0; i < r && j < right->total_key_; ++i) {
+		if (r_idx[i] < limit) {
+			for (; j < right->total_key_; ++j) {
+				if (r_idx[j] >= limit) {
+					KeySlice *o = right->Key(r_idx, i);
+					KeySlice *n = right->Key(r_idx, j);
+					r_idx[j] = r_idx[i];
+					CopyKey(o, n, 0, right->key_len_);
+					++j;
+					break;
+				}
+			}
+		}
+	}
+	right->total_key_ = above;
+
 	fence = Key(Index(), total_key_ - 1);
 	fence->page_no_ = right->page_no_;
 	if (pre_len_) CopyPrefix(new_key, data_, pre_len_);
@@ -436,7 +448,7 @@ void Page::Combine(Page *left, Page *right, KeySlice *old_key, KeySlice *new_key
 
 	dirty_ = 1;
 	left->dirty_ = 1;
-	left->dirty_ = 1;
+	right->dirty_ = 1;
 }
 
 bool Page::Full() const
@@ -481,7 +493,7 @@ bool Page::NeedSplit()
 	return false;
 }
 
-std::string Page::ToString() const
+std::string Page::ToString(bool f) const
 {
 	std::ostringstream os;
 	os << "type: ";
@@ -501,12 +513,17 @@ std::string Page::ToString() const
 	}
 
 	uint16_t *index = Index();
-	for (uint16_t i = 0; i != total_key_; ++i)
-		os << index[i] << " ";
-	os << "\n";
-	for (uint16_t i = 0; i != total_key_; ++i) {
-		KeySlice *key = Key(index, i);
-		os << key->ToString(key_len_);
+	if (!f) {
+		os << Key(index, 0)->ToString(key_len_);
+		os << Key(index, total_key_ - 1)->ToString(key_len_);
+	} else {
+		for (uint16_t i = 0; i != total_key_; ++i)
+			os << index[i] << " ";
+		os << "\n";
+		for (uint16_t i = 0; i != total_key_; ++i) {
+			KeySlice *key = Key(index, i);
+			os << key->ToString(key_len_);
+		}
 	}
 	os << "\nnext: " << Key(index, total_key_-1)->page_no_ << "\n";
 	return os.str();

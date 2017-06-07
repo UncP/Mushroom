@@ -48,6 +48,8 @@ class Page : private NoCopy
 			return key->page_no_;
 		}
 
+		inline void SetPageNo(page_t page_no) { page_no_ = page_no; }
+
 		inline page_t PageNo() const { return page_no_; }
 
 		inline bool Dirty() const { return dirty_; }
@@ -74,16 +76,18 @@ class Page : private NoCopy
 
 		bool Move(Page *that, KeySlice *old_key, KeySlice *new_key);
 
-		void Combine(Page *left, Page *right);
+		void Combine(Page *left, Page *right, KeySlice *old_key, KeySlice *new_key,KeySlice *slice);
 
 		bool Full() const;
 
 		bool NeedSplit();
 
-		std::string ToString() const;
+		std::string ToString(bool f) const;
 
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
+
+		void FillFrom(uint16_t above);
 
 		inline uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
