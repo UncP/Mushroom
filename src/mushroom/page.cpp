@@ -277,7 +277,9 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 	uint16_t index = total_key_ - 1 - move;
 	uint16_t *l_idx = this->Index();
 	uint16_t *r_idx = that->Index();
-	printf("move %u %u %u\n", this->page_no_, that->page_no_, move);
+
+	// printf("move %u %u %u\n", this->page_no_, that->page_no_, move);
+
 	KeySlice *last  = this->Key(l_idx, total_key_ - 1);
 	KeySlice *first = that->Key(r_idx, 0);
 	if (this->pre_len_ == that->pre_len_) {

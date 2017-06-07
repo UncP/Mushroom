@@ -49,7 +49,7 @@
 | 0.9.1  |   ACID (batch operation) & modify locking strategy   |
 | 0.9.2  |   optimize Raft state transfer, improve liveness   |
 | 1.0.0  |     distributed in-memory index   |
-| 1.1.0  |    B<sup>link</sup> tree node occupies 2/3 of node's space, originally 1/2 |
+| 1.1.0  |    B<sup>link</sup> tree node occupies 2/3 of node's space, originally 1/2 (TODO) |
 
 ### Other
 + Version 0.6.0 is the first stable version

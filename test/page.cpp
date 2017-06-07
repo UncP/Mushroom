@@ -34,7 +34,7 @@ TEST(PageInsert)
 	Page::DeletePage(page);
 }
 
-TEST(PageMoveWithNoPrefixWithEmptySlot)
+TEST(PageMoveWithNoPrefix)
 {
 	srand(time(0));
 	const uint8_t key_len = 10;
@@ -54,27 +54,28 @@ TEST(PageMoveWithNoPrefixWithEmptySlot)
 			ASSERT_TRUE(left->Update(tmp, key, page_no));
 			break;
 		} else {
-			str[rand()%key_len] -= 1 + rand() % 3;
+			str[1 + rand()%(key_len-1)] -= (1 + rand() % 3) * ((rand() % 2) ? -1 : 1);
 			memcpy(key->key_, str.c_str(), key_len);
 			left->Insert(key);
 		}
 	}
-	for (int i = 0; i < 9; ++i) {
+	for (int i = 0; i < 20; ++i) {
 		memcpy(key->key_, str.c_str(), key_len);
 		right->Insert(key);
 		if (i == 0) str = string(key_len, 'z');
-		str[rand()%key_len] -= 1 + rand() % 3;
+		str[rand()%key_len] -= (1 + rand() % 3) * ((rand() % 2) ? -1 : 1);
 	}
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 
 	TempSlice(new_key, key_len);
 	ASSERT_TRUE(left->Move(right, key, new_key));
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(false).c_str());
+	printf("%s\n", right->ToString(false).c_str());
 	printf("%s", key->ToString(key_len).c_str());
+	printf("%s", new_key->ToString(key_len).c_str());
 	Page::DeletePage(left);
 	Page::DeletePage(right);
 }
@@ -140,14 +141,14 @@ TEST(PageMoveWithSamePrefix)
 
 	ASSERT_FALSE(right->NeedSplit());
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 
 	TempSlice(new_key, key_len);
 	ASSERT_TRUE(left->Move(right, key, new_key));
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 	printf("%s", key->ToString(key_len).c_str());
 	Page::DeletePage(left);
 	Page::DeletePage(right);
@@ -215,14 +216,14 @@ TEST(PageMoveWithDifferentPrefix1)
 
 	ASSERT_FALSE(right->NeedSplit());
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 
 	TempSlice(new_key, key_len);
 	ASSERT_TRUE(left->Move(right, key, new_key));
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 	printf("%s", key->ToString(key_len).c_str());
 	Page::DeletePage(left);
 	Page::DeletePage(right);
@@ -256,9 +257,9 @@ TEST(PageExpand)
 	}
 
 	ASSERT_FALSE(left->NeedSplit());
-	printf("%s\n", left->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
 	left->Expand(2);
-	printf("%s\n", left->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
 	Page::DeletePage(left);
 }
 
@@ -319,14 +320,14 @@ TEST(PageMoveWithDifferentPrefix2)
 
 	ASSERT_FALSE(right->NeedSplit());
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 
 	TempSlice(new_key, key_len);
 	ASSERT_TRUE(left->Move(right, key, new_key));
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 	printf("%s", key->ToString(key_len).c_str());
 	Page::DeletePage(left);
 	Page::DeletePage(right);
@@ -352,29 +353,29 @@ TEST(PageCombineWithNoPrefix)
 			ASSERT_TRUE(left->Update(tmp, key, page_no));
 			break;
 		} else {
-			str[rand()%key_len] -= 1 + rand() % 3;
+			str[1+rand()%(key_len-1)] -= (1 + rand() % 3) * ((rand() % 2) ? 1 : -1);
 			memcpy(key->key_, str.c_str(), key_len);
 			left->Insert(key);
 		}
 	}
-	for (int i = 0; i < 9; ++i) {
+	for (int i = 0; i < 28; ++i) {
 		memcpy(key->key_, str.c_str(), key_len);
 		right->Insert(key);
 		if (i == 0) str = string(key_len, 'z');
-		str[rand()%key_len] -= 1 + rand() % 3;
+		str[rand()%key_len] -= (1 + rand() % 3) * ((rand() % 2) ? 1 : -1);
 	}
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 
 	Page *mid = Page::NewPage(key_len);
 	TempSlice(old_key, key_len);
 	TempSlice(new_key, key_len);
 	mid->Combine(left, right, old_key, new_key, key);
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", mid->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", mid->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 	printf("%u %s", old_key->page_no_, old_key->ToString(key_len).c_str());
 	printf("%u %s", new_key->page_no_, new_key->ToString(key_len).c_str());
 	printf("%u %s", key->page_no_, key->ToString(key_len).c_str());
@@ -407,7 +408,7 @@ TEST(PageCombineWithSamePrefix)
 			key->page_no_ = 0;
 			break;
 		} else {
-			str[1 + rand()%(key_len-1)] -= 1 + rand() % 3;
+			str[2 + rand()%(key_len-2)] -= (1 + rand() % 3) * ((rand() % 2) ? 1 : -1);
 			memcpy(key->key_, str.c_str(), key_len);
 			left->Insert(key);
 		}
@@ -433,7 +434,7 @@ TEST(PageCombineWithSamePrefix)
 			ASSERT_TRUE(right->Update(tmp, key, page_no));
 			break;
 		} else {
-			str[2 + rand()%(key_len-2)] -= 1 + rand() % 3;
+			str[3 + rand()%(key_len-3)] -= (1 + rand() % 3) * ((rand() % 2) ? 1 : -1);
 			memcpy(key->key_, str.c_str(), key_len);
 			str[1] = '9';
 			right->Insert(key);
@@ -442,8 +443,8 @@ TEST(PageCombineWithSamePrefix)
 
 	ASSERT_FALSE(right->NeedSplit());
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 
 	Page *mid = Page::NewPage(key_len);
 	mid->SetPageNo(3);
@@ -451,9 +452,9 @@ TEST(PageCombineWithSamePrefix)
 	TempSlice(new_key, key_len);
 	mid->Combine(left, right, old_key, new_key, key);
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", mid->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", mid->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 	printf("%u %s", old_key->page_no_, old_key->ToString(key_len).c_str());
 	printf("%u %s", new_key->page_no_, new_key->ToString(key_len).c_str());
 	printf("%u %s", key->page_no_, key->ToString(key_len).c_str());
@@ -521,8 +522,8 @@ TEST(PageCombineWithDifferentPrefix)
 
 	ASSERT_FALSE(right->NeedSplit());
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 
 	Page *mid = Page::NewPage(key_len);
 	mid->SetPageNo(3);
@@ -530,9 +531,9 @@ TEST(PageCombineWithDifferentPrefix)
 	TempSlice(new_key, key_len);
 	mid->Combine(left, right, old_key, new_key, key);
 
-	printf("%s\n", left->ToString().c_str());
-	printf("%s\n", mid->ToString().c_str());
-	printf("%s\n", right->ToString().c_str());
+	printf("%s\n", left->ToString(true).c_str());
+	printf("%s\n", mid->ToString(true).c_str());
+	printf("%s\n", right->ToString(true).c_str());
 	printf("%u %s", old_key->page_no_, old_key->ToString(key_len).c_str());
 	printf("%u %s", new_key->page_no_, new_key->ToString(key_len).c_str());
 	printf("%u %s", key->page_no_, key->ToString(key_len).c_str());
@@ -543,6 +544,6 @@ TEST(PageCombineWithDifferentPrefix)
 
 int main(int argc, char **argv)
 {
-	Page::SetPageInfo(256);
+	Page::SetPageInfo(512);
 	return RUN_ALL_TESTS(argc == 2 ? argv[1] : '\0');
 }

@@ -38,18 +38,18 @@ bool BLinkTree::operator==(const BLinkTree &that) const
 
 void BLinkTree::Free()
 {
-	Set set;
-	set.page_no_ = root_.get();
-	for (; set.page_no_; ) {
-		set.page_ = pool_manager_->GetPage(set.page_no_);
-		set.page_no_ = set.page_->first_;
-	}
-	for (;;) {
-		set.page_ = pool_manager_->GetPage(set.page_no_);
-		printf("%s\n", set.page_->ToString(false).c_str());
-		set.page_no_ = set.page_->Next();
-		if (!set.page_no_) break;
-	}
+// 	Set set;
+// 	set.page_no_ = root_.get();
+// 	for (; set.page_no_; ) {
+// 		set.page_ = pool_manager_->GetPage(set.page_no_);
+// 		set.page_no_ = set.page_->first_;
+// 	}
+// 	for (;;) {
+// 		set.page_ = pool_manager_->GetPage(set.page_no_);
+// 		printf("%s\n", set.page_->ToString(false).c_str());
+// 		set.page_no_ = set.page_->Next();
+// 		if (!set.page_no_) break;
+// 	}
 	pool_manager_->Free();
 }
 
@@ -155,7 +155,7 @@ bool BLinkTree::Put(KeySlice *key)
 	DescendToLeaf(key, set, WriteLock);
 
 	Insert(set, key);
-
+/*
 	if (set.page_->NeedSplit()) {
 		page_t page_no = set.page_->Next();
 		if (page_no) {
@@ -175,7 +175,7 @@ bool BLinkTree::Put(KeySlice *key)
 			} else {
 				Page *right = pool_manager_->NewPage(set.page_->type_, key_len_,
 					set.page_->level_, degree_);
-				printf("combine %u %u %u\n", set.page_no_, right->page_no_, page_no);
+				// printf("combine %u %u %u\n", set.page_no_, right->page_no_, page_no);
 				TempSlice(tmp2, key_len_);
 				right->Combine(set.page_, next, tmp, tmp2, key);
 				// latch->Unlock();
@@ -200,9 +200,9 @@ bool BLinkTree::Put(KeySlice *key)
 				continue;
 		}
 	}
-
-	// for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
-		// continue;
+*/
+	for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
+		continue;
 
 	set.latch_->Unlock();
 	return true;
