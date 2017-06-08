@@ -28,7 +28,7 @@ class MushroomTask : private NoCopy
 		inline void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
 			fun_ = fun;
 			db_  = db;
-			CopyKey(key_, key, 0, key_len_ + sizeof(valptr));
+			CopyKey(key_, key, 0, sizeof(valptr) + key_len_);
 		}
 
 		bool operator()() { return (db_->*fun_)(key_); }

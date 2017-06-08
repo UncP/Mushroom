@@ -157,20 +157,23 @@ bool Page::Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page
 	KeySlice *slice = 0;
 	bool flag = Traverse(old_key, &pos, &slice);
 	if (flag) {
-		// what if prefix is not same ?
-		if (pre_len_) assert(!memcmp(new_key->key_, data_, pre_len_));
 		slice->page_no_ = new_key->page_no_;
 		memcpy(slice->key_, new_key->key_ + pre_len_, key_len_);
 		return true;
 	}
 	if (pos == total_key_ && pos) {
 		page_no = Next();
-		assert(page_no);
+		if (!page_no) {
+			printf("%s", old_key->ToString(key_len_ + pre_len_).c_str());
+			printf("%s", new_key->ToString(key_len_ + pre_len_).c_str());
+			printf("%s\n", this->ToString(true, false).c_str());
+			assert(0);
+		}
 		return false;
 	}
 	printf("%s", old_key->ToString(key_len_ + pre_len_).c_str());
 	printf("%s", new_key->ToString(key_len_ + pre_len_).c_str());
-	printf("%s\n", this->ToString(true).c_str());
+	printf("%s\n", this->ToString(true, false).c_str());
 	assert(0);
 }
 
@@ -215,14 +218,12 @@ void Page::Split(Page *that, KeySlice *slice)
 
 	if (level_) {
 		that->AssignFirst(fence->page_no_);
-		memcpy(fence->key_, Key(l_idx, left)->key_, key_len_);
+		// memcpy(fence->key_, Key(l_idx, left)->key_, key_len_);
 		r_idx -= --right;
 		++index;
 	} else {
 		r_idx -= right;
 	}
-
-	fence->page_no_ = that->page_no_;
 
 	uint16_t slot_len = PageByte + key_len_;
 	for (uint16_t i = index, j = 0; i != total_key_; ++i, ++j) {
@@ -231,6 +232,8 @@ void Page::Split(Page *that, KeySlice *slice)
 		KeySlice *r = that->Key(r_idx, j);
 		CopyKey(r, l, 0, key_len_);
 	}
+
+	fence->page_no_ = that->page_no_;
 
 	FillFrom(left);
 
@@ -241,10 +244,11 @@ void Page::Split(Page *that, KeySlice *slice)
 
 void Page::Expand(uint8_t to)
 {
-	assert(pre_len_ > to);
+	assert(pre_len_ >= to);
 	uint8_t pre = pre_len_ - to;
 	char prefix[pre];
-	memcpy(prefix, data_ + to, pre);
+	if (pre)
+		memcpy(prefix, data_ + to, pre);
 	char tmp[PageSize];
 	Page *copy = (Page *)tmp;
 	memcpy(copy, this, PageSize);
@@ -256,8 +260,10 @@ void Page::Expand(uint8_t to)
 		index[i] = curr - data_;
 		memcpy(curr, &key->page_no_, PageByte);
 		curr += PageByte;
-		memcpy(curr, prefix, pre);
-		curr += pre;
+		if (pre) {
+			memcpy(curr, prefix, pre);
+			curr += pre;
+		}
 		memcpy(curr, key->key_, key_len_);
 		curr += key_len_;
 	}
@@ -268,7 +274,6 @@ void Page::Expand(uint8_t to)
 
 bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 {
-	assert(this->type_ == LEAF && that->type_ == LEAF);
 	uint16_t max_key = this->pre_len_ < that->pre_len_ ? this->degree_ : that->degree_;
 	if (that->total_key_ + 2 > max_key)
 		return false;
@@ -278,46 +283,47 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 	uint16_t *l_idx = this->Index();
 	uint16_t *r_idx = that->Index();
 
-	// printf("move %u %u %u\n", this->page_no_, that->page_no_, move);
-
-	KeySlice *last  = this->Key(l_idx, total_key_ - 1);
-	KeySlice *first = that->Key(r_idx, 0);
-	if (this->pre_len_ == that->pre_len_) {
-		if (this->pre_len_)
-			assert(!memcmp(this->data_, that->data_, this->pre_len_));
-		if (memcmp(last->key_, first->key_, this->key_len_)) {
-			printf("%s\n", this->ToString(true).c_str());
-			printf("%s\n", that->ToString(true).c_str());
-			assert(0);
-		}
-	} else if (this->pre_len_ < that->pre_len_) {
-		if (this->pre_len_)
-			assert(!memcmp(this->data_, that->data_, this->pre_len_));
-		uint16_t left = that->pre_len_ - this->pre_len_;
-		assert(!memcmp(last->key_, that->data_ + this->pre_len_, left));
-		assert(!memcmp(last->key_ + left, first->key_, that->key_len_));
-	} else { // this->pre_len_ > that->pre_len_
-		if (that->pre_len_)
-			assert(!memcmp(this->data_, that->data_, that->pre_len_));
-		uint16_t left = this->pre_len_ - that->pre_len_;
-		assert(!memcmp(this->data_ + that->pre_len_, first->key_, left));
-		assert(!memcmp(last->key_, first->key_ + left, this->key_len_));
-	}
+	// KeySlice *last  = this->Key(l_idx, total_key_ - 1);
+	// KeySlice *first = that->Key(r_idx, 0);
+	// if (this->pre_len_ == that->pre_len_) {
+	// 	if (this->pre_len_)
+	// 		assert(!memcmp(this->data_, that->data_, this->pre_len_));
+	// 	if (memcmp(last->key_, first->key_, this->key_len_)) {
+	// 		printf("%s\n", this->ToString(true).c_str());
+	// 		printf("%s\n", that->ToString(true).c_str());
+	// 		assert(0);
+	// 	}
+	// } else if (this->pre_len_ < that->pre_len_) {
+	// 	if (this->pre_len_)
+	// 		assert(!memcmp(this->data_, that->data_, this->pre_len_));
+	// 	uint16_t left = that->pre_len_ - this->pre_len_;
+	// 	assert(!memcmp(last->key_, that->data_ + this->pre_len_, left));
+	// 	assert(!memcmp(last->key_ + left, first->key_, that->key_len_));
+	// } else { // this->pre_len_ > that->pre_len_
+	// 	if (that->pre_len_)
+	// 		assert(!memcmp(this->data_, that->data_, that->pre_len_));
+	// 	uint16_t left = this->pre_len_ - that->pre_len_;
+	// 	assert(!memcmp(this->data_ + that->pre_len_, first->key_, left));
+	// 	assert(!memcmp(last->key_, first->key_ + left, this->key_len_));
+	// }
 
 	KeySlice *fence = Key(l_idx, total_key_ - 1);
 	if (this->pre_len_) CopyPrefix(old_key, data_, this->pre_len_);
-	old_key->page_no_ = that->page_no_;
 	CopyKey(old_key, fence, pre_len_, key_len_);
+	old_key->page_no_ = that->page_no_;
 
 	fence = Key(l_idx, index);
 	if (this->pre_len_) CopyPrefix(new_key, data_, this->pre_len_);
-	new_key->page_no_ = that->page_no_;
 	CopyKey(new_key, fence, pre_len_, key_len_);
+	new_key->page_no_ = that->page_no_;
+	// printf("%s\n", this->ToString(true, true).c_str());
+	// printf("%u %s", old_key->page_no_, old_key->ToString(key_len_+pre_len_).c_str());
+	// printf("%u %s", new_key->page_no_, new_key->ToString(key_len_+pre_len_).c_str());
 
+	uint16_t slot_len = PageByte + that->key_len_;
+	uint16_t limit = that->total_key_ * slot_len + that->pre_len_;
 	if (this->pre_len_ == that->pre_len_) {
 		r_idx -= move;
-		uint16_t slot_len = PageByte + that->key_len_;
-		uint16_t limit = that->total_key_ * slot_len + that->pre_len_;
 		for (uint16_t i = index, j = 0, end = index + move; i != end; ++i, ++j) {
 			r_idx[j] = limit + j * slot_len;
 			KeySlice *l = this->Key(l_idx, i);
@@ -326,8 +332,6 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 		}
 	} else if (this->pre_len_ > that->pre_len_) {
 		r_idx -= move;
-		uint16_t slot_len = PageByte + that->key_len_;
-		uint16_t limit = that->total_key_ * slot_len + that->pre_len_;
 		uint16_t left = this->pre_len_ - that->pre_len_;
 		for (uint16_t i = index, j = 0, end = index + move; i != end; ++i, ++j) {
 			r_idx[j] = limit + j * slot_len;
@@ -339,8 +343,6 @@ bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 	} else { // this->pre_len_ < that->pre_len_
 		that->Expand(this->pre_len_);
 		r_idx -= move;
-		uint16_t slot_len = PageByte + that->key_len_;
-		uint16_t limit = that->total_key_ * slot_len + that->pre_len_;
 		for (uint16_t i = index, j = 0, end = index + move; i != end; ++i, ++j) {
 			r_idx[j] = limit + j * slot_len;
 			KeySlice *l = this->Key(l_idx, i);
@@ -495,7 +497,7 @@ bool Page::NeedSplit()
 	return false;
 }
 
-std::string Page::ToString(bool f) const
+std::string Page::ToString(bool f, bool f2) const
 {
 	std::ostringstream os;
 	os << "type: ";
@@ -524,6 +526,8 @@ std::string Page::ToString(bool f) const
 		os << "\n";
 		for (uint16_t i = 0; i != total_key_; ++i) {
 			KeySlice *key = Key(index, i);
+			if (f2)
+				os << key->page_no_ << " ";
 			os << key->ToString(key_len_);
 		}
 	}

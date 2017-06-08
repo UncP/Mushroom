@@ -82,7 +82,7 @@ class Page : private NoCopy
 
 		bool NeedSplit();
 
-		std::string ToString(bool f) const;
+		std::string ToString(bool f, bool f2) const;
 
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
