@@ -161,6 +161,8 @@ void BLinkTree::Update(Set &set, KeySlice *old_key, KeySlice *new_key)
 
 bool BLinkTree::Put(KeySlice *key)
 {
+	TempSlice(copy, key_len_);
+	CopyKey(copy, key, 0, key_len_);
 	Set set;
 
 	DescendToLeaf(key, set, WriteLock);
@@ -181,24 +183,29 @@ bool BLinkTree::Put(KeySlice *key)
 				// printf("move %u %u\n", set.page_no_, page_no);
 				// printf("%s\n", set.page_->ToString(false).c_str());
 				// printf("%s\n", next->ToString(false).c_str());
-				if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+				/*if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
 					printf("%s\n", set.page_->ToString(true, false).c_str());
 					printf("%s\n", next->ToString(true, false).c_str());
-				} else if (!memcmp(tmp->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-					printf("%s\n", set.page_->ToString(true, false).c_str());
-					printf("%s\n", next->ToString(true, false).c_str());
+				} else */if (!memcmp(tmp->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+					printf("%s\n", set.page_->ToString(true, true).c_str());
+					printf("%s\n", next->ToString(true, true).c_str());
 				}
 				GetParent(set);
 				// if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
 					// printf("%s\n", set.page_->ToString(true, false).c_str());
 				// }
 				Update(set, tmp, key);
-				if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+				/*if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
 					printf("%s\n", set.page_->ToString(true, false).c_str());
-				} else if (!memcmp(tmp->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-					printf("%s\n", set.page_->ToString(true, false).c_str());
+				} else */if (!memcmp(tmp->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+					printf("%s\n", set.page_->ToString(true, true).c_str());
 					Page *page = pool_manager_->GetPage(set.page_->Next());
-					printf("%s\n", page->ToString(true, false).c_str());
+					printf("%s\n", page->ToString(true, true).c_str());
+					page = pool_manager_->GetPage(root_.get());
+					printf("%s\n", page->ToString(true, true).c_str());
+					printf("%s", copy->ToString(key_len_).c_str());
+					page = pool_manager_->GetPage(1631);
+					printf("%s\n", page->ToString(true, true).c_str());
 				}
 				pre->Unlock();
 			} else {
