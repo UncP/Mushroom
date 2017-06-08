@@ -106,7 +106,14 @@ bool BLinkTree::SplitAndPromote(Set &set, KeySlice *key)
 			set.page_->level_, set.page_->degree_);
 		set.page_->Split(right, key);
 		set.latch_->Unlock();
+		// if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+			// printf("%s\n", set.page_->ToString(true, false).c_str());
+			// printf("%s\n", right->ToString(true, false).c_str());
+		// }
 		GetParent(set);
+		// if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+		// 	printf("%s\n", set.page_->ToString(true, false).c_str());
+		// }
 		Insert(set, key);
 		return true;
 	} else {
@@ -132,6 +139,10 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 {
 	InsertStatus status;
 	for (; (status = set.page_->Insert(key, set.page_no_));) {
+		// if (status != MoveRight) {
+			// printf("%s\n", set.page_->ToString(true, false).c_str());
+			// printf("%u %s", key->page_no_, key->ToString(key_len_).c_str());
+		// }
 		assert(status == MoveRight);
 		Latch *pre = set.latch_;
 		GetNext(set);
@@ -155,7 +166,7 @@ bool BLinkTree::Put(KeySlice *key)
 	DescendToLeaf(key, set, WriteLock);
 
 	Insert(set, key);
-/*
+
 	if (set.page_->NeedSplit()) {
 		page_t page_no = set.page_->Next();
 		if (page_no) {
@@ -164,15 +175,31 @@ bool BLinkTree::Put(KeySlice *key)
 			latch->Lock();
 			TempSlice(tmp, key_len_);
 			if (set.page_->Move(next, tmp, key)) {
-				// latch->Unlock(); // crucial
+				latch->Unlock();
 				Latch *pre = set.latch_;
 				// latch = set.latch_;
 				// printf("move %u %u\n", set.page_no_, page_no);
 				// printf("%s\n", set.page_->ToString(false).c_str());
 				// printf("%s\n", next->ToString(false).c_str());
+				if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+					printf("%s\n", set.page_->ToString(true, false).c_str());
+					printf("%s\n", next->ToString(true, false).c_str());
+				} else if (!memcmp(tmp->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+					printf("%s\n", set.page_->ToString(true, false).c_str());
+					printf("%s\n", next->ToString(true, false).c_str());
+				}
 				GetParent(set);
+				// if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+					// printf("%s\n", set.page_->ToString(true, false).c_str());
+				// }
 				Update(set, tmp, key);
-				latch->Unlock();
+				if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+					printf("%s\n", set.page_->ToString(true, false).c_str());
+				} else if (!memcmp(tmp->key_, "NiplGIeQ2Vc1XPVf", 16)) {
+					printf("%s\n", set.page_->ToString(true, false).c_str());
+					Page *page = pool_manager_->GetPage(set.page_->Next());
+					printf("%s\n", page->ToString(true, false).c_str());
+				}
 				pre->Unlock();
 			} else {
 				latch->Unlock();
@@ -203,9 +230,9 @@ bool BLinkTree::Put(KeySlice *key)
 				continue;
 		}
 	}
-*/
-	for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
-		continue;
+
+	// for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
+		// continue;
 
 	set.latch_->Unlock();
 	return true;
@@ -220,6 +247,8 @@ bool BLinkTree::Get(KeySlice *key)
 	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
 			set.latch_->UnlockShared();
+			// printf("%s\n", set.page_->ToString(true, true).c_str());
+			// printf("%s", key->ToString(key_len_).c_str());
 			assert(0);
 			return false;
 		}
@@ -231,6 +260,7 @@ bool BLinkTree::Get(KeySlice *key)
 		pre->UnlockShared();
 	}
 
+	assert(!key->page_no_);
 	set.latch_->UnlockShared();
 	return true;
 }
