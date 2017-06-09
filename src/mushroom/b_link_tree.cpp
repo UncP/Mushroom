@@ -116,10 +116,6 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 {
 	InsertStatus status;
 	for (; (status = set.page_->Insert(key, set.page_no_));) {
-		// if (status != MoveRight) {
-			// printf("%s\n", set.page_->ToString(true, false).c_str());
-			// printf("%u %s", key->page_no_, key->ToString(key_len_).c_str());
-		// }
 		assert(status == MoveRight);
 		Latch *pre = set.latch_;
 		GetNext(set);
@@ -138,8 +134,6 @@ void BLinkTree::Update(Set &set, KeySlice *old_key, KeySlice *new_key)
 
 bool BLinkTree::Put(KeySlice *key)
 {
-	TempSlice(copy, key_len_);
-	CopyKey(copy, key, 0, key_len_);
 	Set set;
 
 	DescendToLeaf(key, set, WriteLock);
@@ -153,46 +147,53 @@ bool BLinkTree::Put(KeySlice *key)
 			Page *next = pool_manager_->GetPage(page_no);
 			latch->Lock();
 			TempSlice(tmp, key_len_);
+			TempSlice(t, key_len_);
+			uint16_t idx;
+			// if (set.page_->page_no_ == 313 || next->page_no_ == 313) {
+			// 	memcpy(t->key_, "FyVuour7PEf9oGFY", 16);
+			// 	printf("has FyVuour7PEf9oGFY %d\n", set.page_->Search(t, &idx));
+			// 	printf("has FyVuour7PEf9oGFY %d\n", next->Search(t, &idx));
+			// 	printf("%s\n", set.page_->ToString(true, true).c_str());
+			// 	printf("%s\n", next->ToString(true, true).c_str());
+			// }
 			if (set.page_->Move(next, tmp, key)) {
 				latch->Unlock();
 				Latch *pre = set.latch_;
-				// if (!memcmp(key->key_, "V8FwS0tClW7PB8bN", 16)) {
+				GetParent(set);
+				Update(set, tmp, key);
+				pre->Unlock(); // crucial
+			} else {
+				// latch->Unlock();
+				Page *right = pool_manager_->NewPage(set.page_->type_, key_len_,
+					set.page_->level_, degree_);
+				// printf("combine %u %u %u\n", set.page_no_, right->page_no_, page_no);
+				TempSlice(tmp2, key_len_);
+				right->Combine(set.page_, next, tmp, tmp2, key);
+				// if (set.page_->page_no_ == 313 || next->page_no_ == 313) {
 				// 	printf("%s\n", set.page_->ToString(true, true).c_str());
-				// 	ShowPage(set.page_->Next());
+				// 	printf("%s\n", right->ToString(true, true).c_str());
+				// 	printf("%s\n", next->ToString(true, true).c_str());
+				// 	printf("combine\n");
+				// 	printf("has FyVuour7PEf9oGFY %d\n", set.page_->Search(t, &idx));
+				// 	printf("has FyVuour7PEf9oGFY %d\n", next->Search(t, &idx));
 				// 	getchar();
 				// }
-				GetParent(set);
-				// if (!memcmp(key->key_, "V8FwS0tClW7PB8bN", 16)) {
-				// 	printf("%s\n", set.page_->ToString(true, true).c_str());
-				// 	ShowPage(set.page_->Next());
-				// }
-				Update(set, tmp, key);
-				pre->Unlock();
-			} else {
 				latch->Unlock();
-				// Page *right = pool_manager_->NewPage(set.page_->type_, key_len_,
-				// 	set.page_->level_, degree_);
-				// // printf("combine %u %u %u\n", set.page_no_, right->page_no_, page_no);
-				// TempSlice(tmp2, key_len_);
-				// right->Combine(set.page_, next, tmp, tmp2, key);
-				// // latch->Unlock();
-				// Latch *pre = set.latch_;
-				// // latch = set.latch_;
-				// GetParent(set);
+				latch = set.latch_;
+				GetParent(set);
 				// page_t parent = set.page_no_;
-				// Update(set, tmp, tmp2);
-				// latch->Unlock();
-				// pre->Unlock();
+				Insert(set, key);
+				Update(set, tmp, tmp2);
 				// if (set.page_->page_no_ != parent) {
 				// 	set.latch_->Unlock();
 				// 	set.stack_[set.depth_++] = parent;
 				// 	GetParent(set);
 				// }
-				// Insert(set, key);
+				latch->Unlock();
 				for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
 					continue;
 			}
-		} else {
+		} else { // last leaf
 			for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
 				continue;
 		}
@@ -213,8 +214,13 @@ bool BLinkTree::Get(KeySlice *key)
 	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
 			set.latch_->UnlockShared();
+			printf("fuck !!!\n");
+			// ShowPage(457);
+			// ShowPage(1);
+			// ShowPage(set.stack_[set.depth_-1]);
 			// printf("%s\n", set.page_->ToString(true, true).c_str());
-			// printf("%s", key->ToString(key_len_).c_str());
+			ShowPage(root_.get());
+			printf("%s", key->ToString(key_len_).c_str());
 			assert(0);
 			return false;
 		}
