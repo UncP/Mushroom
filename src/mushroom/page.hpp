@@ -18,6 +18,8 @@ namespace Mushroom {
 
 typedef enum { InsertOk = 0x0, ExistedKey = 0x1, MoveRight = 0x2 } InsertStatus;
 
+typedef enum { UpdateOk = 0x0, Promote = 0x1, MoveNext = 0x2 } UpdateStatus;
+
 class KeySlice;
 class BLinkTree;
 
@@ -69,7 +71,7 @@ class Page : private NoCopy
 
 		void Insert(Page *that, KeySlice *key);
 
-		bool Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no);
+		UpdateStatus Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no);
 
 		void Split(Page *that, KeySlice *slice);
 

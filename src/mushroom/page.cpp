@@ -151,7 +151,7 @@ bool Page::Insert(const KeySlice *key)
 	return Insert(key, page_no) == InsertOk;
 }
 
-bool Page::Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no)
+UpdateStatus Page::Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no)
 {
 	uint16_t pos;
 	KeySlice *slice = 0;
@@ -159,14 +159,15 @@ bool Page::Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page
 	if (pos == total_key_) {
 		page_no = Next();
 		assert(page_no);
-		return false;
+		return MoveNext;
 	}
 	if (flag) {
 		if (pos != total_key_-1)
 			slice->page_no_ = new_key->page_no_;
 		memcpy(slice->key_, new_key->key_ + pre_len_, key_len_);
+		return Promote;
 	}
-	return true;
+	return UpdateOk;
 }
 
 void Page::FillFrom(uint16_t above)

@@ -123,13 +123,19 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 	}
 }
 
-void BLinkTree::Update(Set &set, KeySlice *old_key, KeySlice *new_key)
+bool BLinkTree::Update(Set &set, KeySlice *old_key, KeySlice *new_key)
 {
-	for (; !set.page_->Update(old_key, new_key, set.page_no_);) {
-		Latch *pre = set.latch_;
-		GetNext(set);
-		pre->Unlock();
+	UpdateStatus status;
+	for (; (status = set.page_->Update(old_key, new_key, set.page_no_));) {
+		if (status == MoveNext) {
+			Latch *pre = set.latch_;
+			GetNext(set);
+			pre->Unlock();
+		} else {
+			return true;
+		}
 	}
+	return false;
 }
 
 bool BLinkTree::Put(KeySlice *key)
@@ -147,15 +153,6 @@ bool BLinkTree::Put(KeySlice *key)
 			Page *next = pool_manager_->GetPage(page_no);
 			latch->Lock();
 			TempSlice(tmp, key_len_);
-			TempSlice(t, key_len_);
-			uint16_t idx;
-			// if (set.page_->page_no_ == 313 || next->page_no_ == 313) {
-			// 	memcpy(t->key_, "FyVuour7PEf9oGFY", 16);
-			// 	printf("has FyVuour7PEf9oGFY %d\n", set.page_->Search(t, &idx));
-			// 	printf("has FyVuour7PEf9oGFY %d\n", next->Search(t, &idx));
-			// 	printf("%s\n", set.page_->ToString(true, true).c_str());
-			// 	printf("%s\n", next->ToString(true, true).c_str());
-			// }
 			if (set.page_->Move(next, tmp, key)) {
 				latch->Unlock();
 				Latch *pre = set.latch_;
@@ -163,33 +160,26 @@ bool BLinkTree::Put(KeySlice *key)
 				Update(set, tmp, key);
 				pre->Unlock(); // crucial
 			} else {
-				// latch->Unlock();
-				Page *right = pool_manager_->NewPage(set.page_->type_, key_len_,
-					set.page_->level_, degree_);
-				// printf("combine %u %u %u\n", set.page_no_, right->page_no_, page_no);
-				TempSlice(tmp2, key_len_);
-				right->Combine(set.page_, next, tmp, tmp2, key);
-				// if (set.page_->page_no_ == 313 || next->page_no_ == 313) {
-				// 	printf("%s\n", set.page_->ToString(true, true).c_str());
-				// 	printf("%s\n", right->ToString(true, true).c_str());
-				// 	printf("%s\n", next->ToString(true, true).c_str());
-				// 	printf("combine\n");
-				// 	printf("has FyVuour7PEf9oGFY %d\n", set.page_->Search(t, &idx));
-				// 	printf("has FyVuour7PEf9oGFY %d\n", next->Search(t, &idx));
-				// 	getchar();
-				// }
 				latch->Unlock();
-				latch = set.latch_;
-				GetParent(set);
-				// page_t parent = set.page_no_;
-				Insert(set, key);
-				Update(set, tmp, tmp2);
+				// Page *right = pool_manager_->NewPage(set.page_->type_, key_len_,
+				// 	set.page_->level_, degree_);
+				// // printf("combine %u %u %u\n", set.page_no_, right->page_no_, page_no);
+				// TempSlice(tmp2, key_len_);
+				// right->Combine(set.page_, next, tmp, tmp2, key);
+				// Page *pre_page = set.page_;
+				// page_t pre = set.page_no_;
+				// latch->Unlock();
+				// latch = set.latch_;
+				// GetParent(set);
+				// // page_t parent = set.page_no_;
+				// Insert(set, key);
+				// Update(set, tmp, tmp2);
 				// if (set.page_->page_no_ != parent) {
 				// 	set.latch_->Unlock();
 				// 	set.stack_[set.depth_++] = parent;
 				// 	GetParent(set);
 				// }
-				latch->Unlock();
+				// latch->Unlock();
 				for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
 					continue;
 			}
@@ -218,7 +208,7 @@ bool BLinkTree::Get(KeySlice *key)
 			// ShowPage(457);
 			// ShowPage(1);
 			// ShowPage(set.stack_[set.depth_-1]);
-			// printf("%s\n", set.page_->ToString(true, true).c_str());
+			printf("%s\n", set.page_->ToString(true, true).c_str());
 			ShowPage(root_.get());
 			printf("%s", key->ToString(key_len_).c_str());
 			assert(0);
@@ -299,6 +289,5 @@ void BLinkTree::ShowPage(page_t page_no)
 {
 	printf("%s\n", pool_manager_->GetPage(page_no)->ToString(true, true).c_str());
 }
-
 
 } // namespace Mushroom
