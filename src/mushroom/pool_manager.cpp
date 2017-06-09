@@ -6,7 +6,6 @@
 **/
 
 #include <unistd.h>
-#include <fcntl.h>
 #include <cassert>
 #include <cstring>
 
@@ -30,13 +29,8 @@ void PoolManager::SetManagerInfo(uint32_t page_size, uint32_t pool_size, uint32_
 	HashMask = (1 << hash_bits) - 1;
 }
 
-PoolManager::PoolManager(const char *dir):cur_page_(0), total_pool_(0)
+PoolManager::PoolManager():cur_page_(0), total_pool_(0)
 {
-	char buf[32];
-	size_t len = strlen(dir);
-	memcpy(buf, dir, len);
-	strcpy(buf + len, "/index");
-	assert((fd_ = open(buf, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR)) != -1);
 	entries_ = new HashEntry[HashMask+1];
 	pool_ = new PagePool[PoolSize];
 }
@@ -100,24 +94,6 @@ void PoolManager::Free()
 {
 	for (uint16_t i = 1, end = total_pool_.get(); i <= end; ++i)
 		delete [] pool_[i].mem_;
-}
-
-void PoolManager::Flush(LatchManager *latch_manager)
-{
-	page_t total = cur_page_.get();
-	for (page_t cur = 0; cur < total;) {
-		PagePool *pool = pool_ + (cur / PagePool::SegSize + 1);
-		for (page_t i = 0; cur < total && i < PagePool::SegSize; ++cur, ++i) {
-			Latch *latch = latch_manager->GetLatch(cur);
-			Page *page = pool->GetPage(cur);
-			latch->Lock();
-			if (page->Dirty()) {
-				page->Clean();
-				assert(pwrite(fd_, page, Page::PageSize, page->PageNo() * Page::PageSize) != -1);
-			}
-			latch->Unlock();
-		}
-	}
 }
 
 bool PoolManager::operator==(PoolManager &that)

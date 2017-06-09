@@ -13,8 +13,6 @@
 namespace Mushroom {
 
 class KeySlice;
-class Page;
-class LogManager;
 class BLinkTree;
 
 class MushroomDB : private NoCopy
@@ -24,8 +22,6 @@ class MushroomDB : private NoCopy
 			uint32_t hash_bits, uint32_t seg_bits, uint32_t log_page);
 
 		bool Put(KeySlice *key);
-
-		bool BatchPut(Page *page);
 
 		bool Get(KeySlice *key);
 
@@ -37,7 +33,6 @@ class MushroomDB : private NoCopy
 
 	private:
 		BLinkTree    *tree_;
-		LogManager   *log_manager_;
 };
 
 } // namespace Mushroom

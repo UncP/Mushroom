@@ -24,15 +24,13 @@ class PoolManager : private NoCopy
 		static void SetManagerInfo(uint32_t page_size, uint32_t pool_size, uint32_t hash_bits,
 			uint32_t seg_bits);
 
-		PoolManager(const char *dir);
+		PoolManager();
 
 		~PoolManager();
 
 		Page* GetPage(page_t page_no);
 
 		Page* NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
-
-		void Flush(LatchManager *latch_manager);
 
 		void Free();
 

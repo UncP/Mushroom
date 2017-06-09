@@ -26,7 +26,7 @@ class BLinkTree : private NoCopy
 	public:
 		static const uint32_t MAX_KEY_LENGTH = 255;
 
-		BLinkTree(const char *name, uint32_t key_len);
+		BLinkTree(uint32_t key_len);
 
 		~BLinkTree();
 
@@ -35,10 +35,6 @@ class BLinkTree : private NoCopy
 		bool Put(KeySlice *key);
 
 		bool Get(KeySlice *key);
-
-		bool BatchPut(Page *page);
-
-		void FlushDirtyPages();
 
 		void Free();
 
@@ -67,6 +63,10 @@ class BLinkTree : private NoCopy
 		void Update(Set &set, KeySlice *old_key, KeySlice *new_key);
 
 		void LoadLeaf(const KeySlice *key, Set &set);
+
+		void Audit();
+
+		void ShowPage(page_t page_no);
 
 		LatchManager *latch_manager_;
 		PoolManager  *pool_manager_;

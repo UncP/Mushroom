@@ -15,8 +15,8 @@
 
 namespace Mushroom {
 
-BLinkTree::BLinkTree(const char *name, uint32_t key_len)
-:latch_manager_(new LatchManager()), pool_manager_(new PoolManager(name)), root_(0),
+BLinkTree::BLinkTree(uint32_t key_len)
+:latch_manager_(new LatchManager()), pool_manager_(new PoolManager()), root_(0),
 key_len_(key_len)
 {
 	degree_ = Page::CalculateDegree(key_len_);
@@ -38,24 +38,8 @@ bool BLinkTree::operator==(const BLinkTree &that) const
 
 void BLinkTree::Free()
 {
-	// Set set;
-	// set.page_no_ = root_.get();
-	// for (; set.page_no_; ) {
-	// 	set.page_ = pool_manager_->GetPage(set.page_no_);
-	// 	set.page_no_ = set.page_->first_;
-	// }
-	// for (;;) {
-	// 	set.page_ = pool_manager_->GetPage(set.page_no_);
-	// 	printf("%s\n", set.page_->ToString(true, true).c_str());
-	// 	set.page_no_ = set.page_->Next();
-	// 	if (!set.page_no_) break;
-	// }
+	Audit();
 	pool_manager_->Free();
-}
-
-void BLinkTree::FlushDirtyPages()
-{
-	pool_manager_->Flush(latch_manager_);
 }
 
 void BLinkTree::GetParent(Set &set)
@@ -106,14 +90,7 @@ bool BLinkTree::SplitAndPromote(Set &set, KeySlice *key)
 			set.page_->level_, set.page_->degree_);
 		set.page_->Split(right, key);
 		set.latch_->Unlock();
-		// if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-			// printf("%s\n", set.page_->ToString(true, false).c_str());
-			// printf("%s\n", right->ToString(true, false).c_str());
-		// }
 		GetParent(set);
-		// if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-		// 	printf("%s\n", set.page_->ToString(true, false).c_str());
-		// }
 		Insert(set, key);
 		return true;
 	} else {
@@ -179,34 +156,17 @@ bool BLinkTree::Put(KeySlice *key)
 			if (set.page_->Move(next, tmp, key)) {
 				latch->Unlock();
 				Latch *pre = set.latch_;
-				// latch = set.latch_;
-				// printf("move %u %u\n", set.page_no_, page_no);
-				// printf("%s\n", set.page_->ToString(false).c_str());
-				// printf("%s\n", next->ToString(false).c_str());
-				/*if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-					printf("%s\n", set.page_->ToString(true, false).c_str());
-					printf("%s\n", next->ToString(true, false).c_str());
-				} else */if (!memcmp(tmp->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-					printf("%s\n", set.page_->ToString(true, true).c_str());
-					printf("%s\n", next->ToString(true, true).c_str());
-				}
+				// if (!memcmp(key->key_, "V8FwS0tClW7PB8bN", 16)) {
+				// 	printf("%s\n", set.page_->ToString(true, true).c_str());
+				// 	ShowPage(set.page_->Next());
+				// 	getchar();
+				// }
 				GetParent(set);
-				// if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-					// printf("%s\n", set.page_->ToString(true, false).c_str());
+				// if (!memcmp(key->key_, "V8FwS0tClW7PB8bN", 16)) {
+				// 	printf("%s\n", set.page_->ToString(true, true).c_str());
+				// 	ShowPage(set.page_->Next());
 				// }
 				Update(set, tmp, key);
-				/*if (!memcmp(key->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-					printf("%s\n", set.page_->ToString(true, false).c_str());
-				} else */if (!memcmp(tmp->key_, "NiplGIeQ2Vc1XPVf", 16)) {
-					printf("%s\n", set.page_->ToString(true, true).c_str());
-					Page *page = pool_manager_->GetPage(set.page_->Next());
-					printf("%s\n", page->ToString(true, true).c_str());
-					page = pool_manager_->GetPage(root_.get());
-					printf("%s\n", page->ToString(true, true).c_str());
-					printf("%s", copy->ToString(key_len_).c_str());
-					page = pool_manager_->GetPage(1631);
-					printf("%s\n", page->ToString(true, true).c_str());
-				}
 				pre->Unlock();
 			} else {
 				latch->Unlock();
@@ -237,9 +197,8 @@ bool BLinkTree::Put(KeySlice *key)
 				continue;
 		}
 	}
-
 	// for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
-		// continue;
+	// 	continue;
 
 	set.latch_->Unlock();
 	return true;
@@ -314,81 +273,26 @@ Page* BLinkTree::Split(Set &set, KeySlice *key)
 	return right;
 }
 
-bool BLinkTree::BatchPut(Page *page)
+void BLinkTree::Audit()
 {
-	uint16_t  total = page->total_key_;
-	uint16_t *index = page->Index();
-	Set *set = new Set[total];
-	for (uint16_t i = 0; i < total; ++i) {
-		KeySlice *key = page->Key(index, i);
-		if (i) {
-			Page *pre = set[i-1].page_;
-			uint16_t idx;
-			if (pre->Search(key, &idx) || idx != pre->total_key_) {
-				set[i].page_ = 0;
-			} else {
-				// Deadlock ???
-				LoadLeaf(key, set[i]);
-			}
-		} else {
-			LoadLeaf(key, set[i]);
+	Page *root = pool_manager_->GetPage(root_.get());
+	int level = root->level_ - 1;
+	for (; level >= 0; --level) {
+		Page *page = pool_manager_->GetPage(root->first_);
+		for (; page->Next();) {
+			Page *pre = page;
+			Page *cur = pool_manager_->GetPage(pre->Next());
+			assert(pre->level_ == cur->level_);
+			assert(pre->FenceKeyLessEqual(cur));
+			page = cur;
 		}
 	}
-
-	char buf1[sizeof(page_t) + key_len_];
-	char buf2[sizeof(page_t) + key_len_];
-	KeySlice *mid[2];
-	mid[0] = (KeySlice *)buf1;
-	mid[1] = (KeySlice *)buf2;
-	uint16_t k = total;
-	for (int32_t i = total - 1; i >= 0; --i) {
-		if (!set[i].page_) continue;
-
-		uint8_t ptr = 0;
-		Page   *pages[3]; // new pages will not be more then 2
-		pages[ptr++] = set[i].page_;
-		for (uint16_t j = i; j < k; ++j) {
-			KeySlice *key = page->Key(index, j);
-			Page *cur;
-			for (uint8_t m = 0; m < ptr; ++m) {
-				cur = pages[m];
-				uint16_t idx;
-				if (cur->Search(key, &idx) || idx != cur->total_key_)
-					break;
-			}
-			page_t page_no;
-			assert(cur->Insert(key, page_no) != MoveRight);
-			if (cur->NeedSplit()) {
-				set[i].page_ = cur;
-				pages[ptr] = Split(set[i], mid[ptr-1]);
-				++ptr;
-			}
-		}
-
-		k = i;
-
-		if (ptr == 1) {
-			set[i].latch_->Unlock();
-		} else {
-			Latch *pre = set[i].latch_;
-			assert(set[i].depth_);
-			page_t parent = set[i].stack_[--set[i].depth_];
-			for (int8_t j = ptr-1; j >= 1; --j) {
-				set[i].latch_ = latch_manager_->GetLatch(parent);
-				set[i].page_  = pool_manager_->GetPage(parent);
-				set[i].latch_->Lock();
-				Insert(set[i], mid[j-1]);
-				uint8_t pre_depth = set[i].depth_;
-				for (; set[i].page_->NeedSplit() && SplitAndPromote(set[i], mid[j-1]);)
-					continue;
-				set[i].depth_ = pre_depth;
-				set[i].latch_->Unlock();
-			}
-			pre->Unlock();
-		}
-	}
-	delete [] set;
-	return true;
 }
+
+void BLinkTree::ShowPage(page_t page_no)
+{
+	printf("%s\n", pool_manager_->GetPage(page_no)->ToString(true, true).c_str());
+}
+
 
 } // namespace Mushroom

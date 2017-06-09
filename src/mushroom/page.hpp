@@ -9,6 +9,7 @@
 #define _BTREE_PAGE_HPP_
 
 #include <string>
+#include <cassert>
 
 #include "../include/utility.hpp"
 #include "slice.hpp"
@@ -83,6 +84,10 @@ class Page : private NoCopy
 		bool NeedSplit();
 
 		std::string ToString(bool f, bool f2) const;
+
+		bool FenceKeyEqual(const Page *that) const;
+
+		bool FenceKeyLessEqual(const Page *that) const;
 
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
