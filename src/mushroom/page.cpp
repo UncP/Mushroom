@@ -162,8 +162,8 @@ UpdateStatus Page::Update(const KeySlice *old_key, const KeySlice *new_key, page
 		return MoveNext;
 	}
 	if (flag) {
-		if (pos != total_key_-1)
-			slice->page_no_ = new_key->page_no_;
+		// if (pos != total_key_-1)
+			// slice->page_no_ = new_key->page_no_;
 		memcpy(slice->key_, new_key->key_ + pre_len_, key_len_);
 		return Promote;
 	}
@@ -262,7 +262,6 @@ void Page::Expand(uint8_t to)
 
 bool Page::Move(Page *that, KeySlice *old_key, KeySlice *new_key)
 {
-	// if (!this->FenceKeyEqual(that)) return false;
 	assert(this->FenceKeyEqual(that));
 	uint16_t max_key = this->pre_len_ < that->pre_len_ ? this->degree_ : that->degree_;
 	// make sure at least move 2 keys
