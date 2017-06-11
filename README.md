@@ -2,7 +2,7 @@
 [English Version of README](./README.en.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](https://github.com/UncP)
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
@@ -46,7 +46,7 @@
 | 0.9.1  |     ACID (批操作)、修改加锁策略      |
 | 0.9.2  |   优化Raft状态变化，提高Liveness      |
 | 1.0.0  |    分布式内存索引    |
-| 1.1.0  |    B<sup>link</sup>树结点从1/2满提高到2/3满（TODO）    |
+| 1.1.0  |    B<sup>link</sup>树结点从1/2满提高到2/3满（不可行）    |
 
 ### 其他
 + 版本0.6.0是第一个稳定版本

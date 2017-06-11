@@ -40,10 +40,6 @@ class Page : private NoCopy
 
 		void InsertInfiniteKey();
 
-		static Page* NewPage(uint8_t key_len);
-
-		static void DeletePage(Page *page);
-
 		Page(page_t id, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree);
 
 		inline page_t Next() const {
@@ -67,19 +63,9 @@ class Page : private NoCopy
 
 		InsertStatus Insert(const KeySlice *key, page_t &page_no);
 
-		bool Insert(const KeySlice *key);
-
 		void Insert(Page *that, KeySlice *key);
 
-		UpdateStatus Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no);
-
 		void Split(Page *that, KeySlice *slice);
-
-		void Expand(uint8_t to);
-
-		bool Move(Page *that, KeySlice *old_key, KeySlice *new_key);
-
-		void Combine(Page *left, Page *right, KeySlice *old_key, KeySlice *new_key,KeySlice *slice);
 
 		bool Full() const;
 
@@ -93,8 +79,6 @@ class Page : private NoCopy
 
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
-
-		void FillFrom(uint16_t above);
 
 		inline uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));

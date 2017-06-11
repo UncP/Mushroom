@@ -48,25 +48,11 @@ class BLinkTree : private NoCopy
 			uint32_t depth_;
 		};
 
-		void GetParent(Set &set);
-
-		void GetNext(Set &set);
-
 		void DescendToLeaf(const KeySlice *key, Set &set, LockType type);
 
-		bool SplitAndPromote(Set &set, KeySlice *key);
-
-		Page* Split(Set &set, KeySlice *key);
+		bool Split(Set &set, KeySlice *key);
 
 		void Insert(Set &set, KeySlice *key);
-
-		bool Update(Set &set, KeySlice *old_key, KeySlice *new_key);
-
-		void LoadLeaf(const KeySlice *key, Set &set);
-
-		void Audit();
-
-		void ShowPage(page_t page_no);
 
 		LatchManager *latch_manager_;
 		PoolManager  *pool_manager_;

@@ -2,7 +2,7 @@
 [中文版 README](./README.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
@@ -49,7 +49,7 @@
 | 0.9.1  |   ACID (batch operation) & modify locking strategy   |
 | 0.9.2  |   optimize Raft state transfer, improve liveness   |
 | 1.0.0  |     distributed in-memory index   |
-| 1.1.0  |    B<sup>link</sup> tree node occupies 2/3 of node's space, originally 1/2 (TODO) |
+| 1.1.0  |    B<sup>link</sup> tree node occupies 2/3 of node's space, originally 1/2 (Aborted) |
 
 ### Other
 + Version 0.6.0 is the first stable version
