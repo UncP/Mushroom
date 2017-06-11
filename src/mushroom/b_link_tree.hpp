@@ -30,8 +30,6 @@ class BLinkTree : private NoCopy
 
 		~BLinkTree();
 
-		bool operator==(const BLinkTree &that) const;
-
 		bool Put(KeySlice *key);
 
 		bool Get(KeySlice *key);

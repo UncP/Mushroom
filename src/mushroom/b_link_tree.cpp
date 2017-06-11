@@ -31,11 +31,6 @@ BLinkTree::~BLinkTree()
 	delete pool_manager_;
 }
 
-bool BLinkTree::operator==(const BLinkTree &that) const
-{
-	return *pool_manager_ == *that.pool_manager_;
-}
-
 void BLinkTree::Free()
 {
 	Audit();
@@ -145,7 +140,7 @@ bool BLinkTree::Put(KeySlice *key)
 	DescendToLeaf(key, set, WriteLock);
 
 	Insert(set, key);
-/*
+
 	if (set.page_->NeedSplit()) {
 		page_t page_no = set.page_->Next();
 		if (page_no) {
@@ -160,10 +155,8 @@ bool BLinkTree::Put(KeySlice *key)
 				Update(set, tmp, key);
 				pre->Unlock(); // crucial
 			} else {
-				// latch->Unlock();
 				Page *right = pool_manager_->NewPage(set.page_->type_, key_len_,
 					set.page_->level_, degree_);
-				// printf("combine %u %u %u\n", set.page_no_, right->page_no_, page_no);
 				TempSlice(tmp2, key_len_);
 				right->Combine(set.page_, next, tmp, tmp2, key);
 				latch->Unlock();
@@ -191,9 +184,6 @@ bool BLinkTree::Put(KeySlice *key)
 				continue;
 		}
 	}
-	*/
-	for (; set.page_->NeedSplit() && SplitAndPromote(set, key); )
-		continue;
 
 	set.latch_->Unlock();
 	return true;

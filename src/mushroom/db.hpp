@@ -27,8 +27,6 @@ class MushroomDB : private NoCopy
 
 		void Close();
 
-		bool operator==(const MushroomDB &that) const;
-
 		~MushroomDB();
 
 	private:
