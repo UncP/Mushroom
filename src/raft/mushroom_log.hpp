@@ -28,10 +28,12 @@ struct MushroomLog
 	}
 
 	MushroomLog& operator=(const MushroomLog &that) {
-		if (key_) delete [] (char *)key_;
+		if (len_ != that.len_) {
+			delete [] (char *)key_;
+			len_  = that.len_;
+			key_  = NewKeySlice(len_);
+		}
 		term_ = that.term_;
-		len_  = that.len_;
-		key_  = NewKeySlice(len_);
 		CopyKey(key_, that.key_, 0, len_);
 		return *this;
 	}

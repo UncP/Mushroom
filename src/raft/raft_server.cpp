@@ -337,7 +337,6 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
 	}
 
-
 index:
 	reply->idx_ = logs_.size() - 1;
 
