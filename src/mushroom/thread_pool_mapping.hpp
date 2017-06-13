@@ -8,9 +8,9 @@
 #ifndef _THREAD_POOL_MAPPING_HPP_
 #define _THREAD_POOL_MAPPING_HPP_
 
-#include "utility.hpp"
+#include "../include/utility.hpp"
+#include "../include/thread.hpp"
 #include "bounded_mapping_queue.hpp"
-#include "thread.hpp"
 
 namespace Mushroom {
 

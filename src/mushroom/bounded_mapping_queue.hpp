@@ -8,9 +8,9 @@
 #ifndef _BOUNDED_MAPPING_QUEUE_HPP_
 #define _BOUNDED_MAPPING_QUEUE_HPP_
 
-#include "utility.hpp"
-#include "mutex.hpp"
-#include "cond.hpp"
+#include "../include/utility.hpp"
+#include "../include/mutex.hpp"
+#include "../include/cond.hpp"
 
 namespace Mushroom {
 
