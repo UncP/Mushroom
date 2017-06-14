@@ -23,7 +23,7 @@ uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 {
 	Page *page = 0;
 	uint16_t offset = (char *)page->data_ - (char *)page + pre_len;
-	return (PageSize - offset) / (PageByte + IndexByte + key_len);
+	return (PageSize - offset) / (KeySlice::ValLen + IndexByte + key_len);
 }
 
 Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
@@ -38,7 +38,7 @@ Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_
 
 void Page::InsertInfiniteKey()
 {
-	TempSlice(key, key_len_);
+	TempSlice(key);
 	memset(key->key_, 0xFF, key_len_);
 	page_t page_no = 0;
 	assert(Insert(key, page_no) == InsertOk);
@@ -54,7 +54,7 @@ bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int ty
 	uint16_t low = 0, high = total_key_, mid = 0;
 	uint16_t *index = Index();
 	if (pre_len_) {
-		int res = ComparePrefix(key, data_, pre_len_);
+		int res = memcmp(key->key_, data_, pre_len_);
 		if (res < 0) {
 			*idx = 0;
 			return false;
@@ -68,7 +68,7 @@ bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int ty
 	while (low != high) {
 		mid = low + ((high - low) >> 1);
 		curr = Key(index, mid);
-		int res = CompareSuffix(key, curr, pre_len_, key_len_);
+		int res = memcmp(key->key_ + pre_len_, curr->key_, key_len_);
 		if (res < 0) {
 			high = mid;
 		} else if (res > 0) {
@@ -115,9 +115,9 @@ InsertStatus Page::Insert(const KeySlice *key, page_t &page_no)
 		return MoveRight;
 	}
 
-	uint16_t end = total_key_ * (PageByte + key_len_) + pre_len_;
-	memcpy(data_ + end, &key->page_no_, PageByte);
-	memcpy(data_ + end + PageByte, key->key_ + pre_len_, key_len_);
+	uint16_t end = total_key_ * (KeySlice::ValLen + key_len_) + pre_len_;
+	memcpy(data_ + end, &key->page_no_, KeySlice::ValLen);
+	memcpy(data_ + end + KeySlice::ValLen, key->key_ + pre_len_, key_len_);
 
 	uint16_t *index = Index();
 	--index;
@@ -138,11 +138,11 @@ void Page::Split(Page *that, KeySlice *slice)
 	if (pre_len_) {
 		memcpy(that->data_, this->data_, pre_len_);
 		that->pre_len_ = this->pre_len_;
-		CopyPrefix(slice, data_, pre_len_);
+		memcpy(slice->key_, data_, pre_len_);
 	}
 
 	slice->page_no_ = that->page_no_;
-	CopySuffix(slice, fence->key_, pre_len_, key_len_);
+	memcpy(slice->key_ + pre_len_, fence->key_, key_len_);
 
 	if (level_) {
 		that->AssignFirst(fence->page_no_);
@@ -152,17 +152,17 @@ void Page::Split(Page *that, KeySlice *slice)
 		r_idx -= right;
 	}
 
-	uint16_t slot_len = PageByte + key_len_;
+	uint16_t slot_len = KeySlice::ValLen + key_len_;
 	for (uint16_t i = index, j = 0; i != total_key_; ++i, ++j) {
 		r_idx[j] = that->pre_len_ + j * slot_len;
 		KeySlice *l = this->Key(l_idx, i);
 		KeySlice *r = that->Key(r_idx, j);
-		CopyKey(r, l, 0, key_len_);
+		memcpy(r, l, KeySlice::ValLen + key_len_);
 	}
 
 	fence->page_no_ = that->page_no_;
 
-	uint16_t limit = left * (PageByte + this->key_len_) + this->pre_len_, j = 0;
+	uint16_t limit = left * (KeySlice::ValLen + this->key_len_) + this->pre_len_, j = 0;
 	for (uint16_t i = left; i < total_key_ && j < left; ++i) {
 		if (l_idx[i] < limit) {
 			for (; j < left; ++j) {
@@ -170,7 +170,7 @@ void Page::Split(Page *that, KeySlice *slice)
 					KeySlice *o = Key(l_idx, i);
 					KeySlice *n = Key(l_idx, j);
 					l_idx[j] = l_idx[i];
-					CopyKey(o, n, 0, key_len_);
+					memcpy(o, n, KeySlice::ValLen + key_len_);
 					++j;
 					break;
 				}
@@ -216,8 +216,8 @@ bool Page::NeedSplit()
 	for (uint16_t i = 0; i != total_key_; ++i, ++index) {
 		KeySlice *key = copy->Key(cindex, i);
 		*index = curr - data_;
-		memcpy(curr, &key->page_no_, PageByte);
-		curr += PageByte;
+		memcpy(curr, &key->page_no_, KeySlice::ValLen);
+		curr += KeySlice::ValLen;
 		memcpy(curr, key->key_ + pre_len, suf_len);
 		curr += suf_len;
 	}

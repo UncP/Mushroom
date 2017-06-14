@@ -24,12 +24,12 @@ static int total;
 double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *))
 {
 	BoundedMappingQueue<MushroomTask> *queue = new BoundedMappingQueue<MushroomTask>(1024, []() {
-		return new MushroomTask(key_len);
+		return new MushroomTask();
 	});
 
 	ThreadPoolMapping<MushroomTask> pool(queue, 4);
 
-	TempSlice(key, key_len);
+	TempSlice(key);
 	int fd = open(file, O_RDONLY);
 	assert(fd > 0);
 	char buf[8192];
@@ -87,12 +87,12 @@ int main(int argc, char **argv)
 
 	double t1 = Do(file, &db, &MushroomDB::Put);
 
-	// double t2 = Do(file, &db, &MushroomDB::Get);
+	double t2 = Do(file, &db, &MushroomDB::Get);
 
 	db.Close();
 
 	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", total, t1);
-	// printf("\033[34mget time: %f  s\033[0m\n", t2);
+	printf("\033[34mget time: %f  s\033[0m\n", t2);
 
 	return 0;
 }

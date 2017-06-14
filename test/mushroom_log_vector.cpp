@@ -16,10 +16,32 @@ TEST(Append)
 	MushroomLog *log = NewMushroomLog();
 	log->term_ = 1234;
 	const char *str = "hello world ! :)";
+	log->key_->page_no_ = 4321;
 	memcpy(log->key_->key_, str, 16);
-	vec.Append(*log);
+	int total = 100;
+	for (int i = 0; i < total; ++i)
+		vec.Append(*log);
 	DeleteMushroomLog(log);
-	ASSERT_TRUE(vec.size() == 1);
+	ASSERT_TRUE(vec.size() == 100);
+}
+
+TEST(Get)
+{
+	MushroomLogVector vec;
+	MushroomLog *log = NewMushroomLog();
+	log->term_ = 1234;
+	const char *str = "hello world ! :)";
+	log->key_->page_no_ = 43210;
+	memcpy(log->key_->key_, str, 16);
+	int total = 100;
+	for (int i = 0; i < total; ++i)
+		vec.Append(*log);
+	for (int i = 0; i < total; ++i) {
+		MushroomLog &l = vec[total - 1];
+		ASSERT_TRUE(l.term_ == log->term_);
+		ASSERT_TRUE(!memcmp(&l, log, KeySlice::KeySize));
+	}
+	DeleteMushroomLog(log);
 }
 
 int main()

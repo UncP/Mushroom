@@ -18,45 +18,29 @@ namespace Mushroom {
 class KeySlice : private NoCopy
 {
 	public:
-		std::string ToString(uint8_t len) const {
+		static const uint32_t KeyLen  = 16;
+		static const uint32_t ValLen  = sizeof(page_t);
+		static const uint32_t KeySize = KeyLen + ValLen;
+
+		std::string ToString(uint32_t len = KeyLen) const {
 			return std::string(key_, len) + "\n";
 		}
-		union {
-			page_t  page_no_;
-			valptr  vptr_;
-		};
+
+		page_t  page_no_;
 		char   key_[0];
 };
 
-inline int ComparePrefix(const KeySlice *key, const char *prefix, size_t len) {
-	return memcmp(key->key_, prefix, len);
-};
+inline KeySlice* NewKeySlice() {
+	return (KeySlice *)new char[KeySlice::KeySize];
+}
 
-inline int CompareSuffix(const KeySlice *a, const KeySlice *b, size_t pre, size_t len)
-{
-	return memcmp(a->key_ + pre, b->key_, len);
-};
+inline void DeleteKeySlice(KeySlice *key) {
+	delete [] (char *)key;
+}
 
-inline void CopyPrefix(KeySlice *a, const char *prefix, size_t len) {
-	memcpy(a->key_, prefix, len);
-};
-
-inline void CopySuffix(KeySlice *a, const char *suffix, size_t pre, size_t len) {
-	memcpy(a->key_ + pre, suffix, len);
-};
-
-inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
-	if (!pre) {
-		memcpy(a, b, len + sizeof(valptr));
-	} else {
-		a->page_no_ = b->page_no_;
-		memcpy(a->key_ + pre, b->key_, len);
-	}
-};
-
-#define TempSlice(name, length)                  \
-	char buf_##name[sizeof(page_t) + length];      \
-	memset(buf_##name, 0, sizeof(page_t)+length);  \
+#define TempSlice(name)                      \
+	char buf_##name[KeySlice::KeySize];        \
+	memset(buf_##name, 0, KeySlice::KeySize);  \
 	KeySlice *name = (KeySlice *)buf_##name;
 
 } // namespace Mushroom

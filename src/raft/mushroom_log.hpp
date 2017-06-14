@@ -18,17 +18,16 @@ namespace Mushroom {
 
 struct MushroomLog : private NoCopy
 {
-	static const uint32_t KeyLen  = 16;
-	static const uint32_t LogSize = KeyLen + sizeof(page_t) + sizeof(uint32_t);
+	static const uint32_t LogSize = KeySlice::KeySize + sizeof(uint32_t);
 
 	MushroomLog& operator=(const MushroomLog &that) {
 		term_ = that.term_;
-		CopyKey(key_, that.key_, 0, KeyLen);
+		memcpy(key_, that.key_, KeySlice::KeySize);
 		return *this;
 	}
 
 	std::string ToString() const {
-		return std::to_string(term_) + ' ' + key->ToString(KeyLen);
+		return std::to_string(term_) + ' ' + key_->ToString();
 	}
 
 	uint32_t term_;
@@ -36,7 +35,7 @@ struct MushroomLog : private NoCopy
 };
 
 inline MushroomLog* NewMushroomLog() {
-	return (MushroomLog *)(new char[MushroomLog::LogSize]);
+	return (MushroomLog *)new char[MushroomLog::LogSize];
 }
 
 inline void DeleteMushroomLog(MushroomLog *log) {
@@ -46,7 +45,7 @@ inline void DeleteMushroomLog(MushroomLog *log) {
 inline Marshaller& operator<<(Marshaller &marshaller, const MushroomLog &log)
 {
 	marshaller << log.term_;
-	marshaller.Read(log.key_, sizeof(page_t) + MushroomLog::KeyLen);
+	marshaller.Read(log.key_, KeySlice::KeySize);
 	return marshaller;
 }
 

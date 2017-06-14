@@ -18,16 +18,14 @@ class MushroomDB;
 class MushroomTask : private NoCopy
 {
 	public:
-		MushroomTask(uint8_t key_len):fun_(0), db_(0), key_len_(key_len) {
-			key_ = NewKeySlice(key_len_);
-		}
+		MushroomTask():fun_(0), db_(0), key_(NewKeySlice()) { }
 
-		~MushroomTask() { delete [] (char *)key_; }
+		~MushroomTask() { DeleteKeySlice(key_); }
 
 		inline void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
 			fun_ = fun;
 			db_  = db;
-			CopyKey(key_, key, 0, sizeof(valptr) + key_len_);
+			memcpy(key_, key, KeySlice::KeySize);
 		}
 
 		bool operator()() { return (db_->*fun_)(key_); }
@@ -36,7 +34,6 @@ class MushroomTask : private NoCopy
 		bool         (MushroomDB::*(fun_))(KeySlice *);
 		MushroomDB   *db_;
 		KeySlice     *key_;
-		uint8_t       key_len_;
 };
 
 } // namespace Mushroom

@@ -31,7 +31,6 @@ class Page : private NoCopy
 
 		static enum { ROOT = 1, BRANCH = 2, LEAF = 4 } Type;
 
-		static const uint32_t PageByte  = sizeof(page_t);
 		static const uint32_t IndexByte = 2;
 
 		static void SetPageInfo(uint32_t page_size);

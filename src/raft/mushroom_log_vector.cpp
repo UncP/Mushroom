@@ -11,32 +11,19 @@
 
 namespace Mushroom {
 
-uint32_t LogVector::size() const
-{
-	return size_;
-}
+uint32_t LogVector::size() const { return size_; }
 
-const MushroomLog& LogVector::operator[](uint32_t idx) const
-{
+const MushroomLog& LogVector::operator[](uint32_t idx) const {
 	return *(const MushroomLog *)(mem_ + MushroomLog::LogSize * idx);
 }
 
 MushroomLogVector::MushroomLogVector():size_(0), cap_(128), mem_(new char[cap_]) { }
 
-MushroomLogVector::~MushroomLogVector()
-{
-	delete [] mem_;
-}
+MushroomLogVector::~MushroomLogVector() { delete [] mem_; }
 
-uint32_t MushroomLogVector::size() const
-{
-	return size_;
-}
+uint32_t MushroomLogVector::size() const { return size_; }
 
-uint32_t MushroomLogVector::cap() const
-{
-	return cap_;
-}
+uint32_t MushroomLogVector::cap() const { return cap_; }
 
 MushroomLog& MushroomLogVector::operator[](uint32_t idx) const
 {
