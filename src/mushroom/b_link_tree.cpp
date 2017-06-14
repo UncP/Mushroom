@@ -135,6 +135,7 @@ bool BLinkTree::Get(KeySlice *key)
 	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
 			set.latch_->UnlockShared();
+			assert(0);
 			return false;
 		}
 		set.page_no_ = set.page_->Next();

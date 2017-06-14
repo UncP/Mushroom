@@ -56,8 +56,8 @@ class Future : private NoCopyTemplate<T>
 				mutex_.Unlock();
 				return ;
 			}
-			if (cb_) cb_();
 			mutex_.Unlock();
+			if (cb_) cb_();
 		}
 
 		inline void Cancel() {

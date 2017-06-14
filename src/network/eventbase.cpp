@@ -60,7 +60,7 @@ void EventBase::Loop()
 		poller_->LoopOnce(std::min(5000, next_time_out_));
 		HandleTimeout();
 	}
-	if (next_time_out_) {
+	if (next_time_out_ != MaxTimeout) {
 		poller_->LoopOnce(next_time_out_);
 		HandleTimeout();
 	} else {

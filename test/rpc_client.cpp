@@ -20,7 +20,7 @@ using namespace Mushroom;
 int main(int argc, char **argv)
 {
 	EventBase base(1, 8);
-	RpcConnection con(EndPoint(7000, "127.0.0.1"), base.GetPoller());
+	RpcConnection con(EndPoint(7000, "127.0.0.1"), base.GetPoller(), 0.0);
 
 	ExitIf(!con.Success(), "");
 

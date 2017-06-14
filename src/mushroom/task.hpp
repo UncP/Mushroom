@@ -19,11 +19,10 @@ class MushroomTask : private NoCopy
 {
 	public:
 		MushroomTask(uint8_t key_len):fun_(0), db_(0), key_len_(key_len) {
-			char *buf = new char[sizeof(valptr) + key_len_];
-			key_ = (KeySlice *)buf;
+			key_ = NewKeySlice(key_len_);
 		}
 
-		~MushroomTask() { delete [] key_; }
+		~MushroomTask() { delete [] (char *)key_; }
 
 		inline void Assign(bool (MushroomDB::*(fun))(KeySlice *), MushroomDB *db, KeySlice *key) {
 			fun_ = fun;

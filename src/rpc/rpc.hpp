@@ -35,12 +35,10 @@ class RPC
 template<typename T1, typename T2, typename T3>
 inline uint32_t RPC::Generate(const char *str, T1 *obj, void (T1::*(fun))(const T2*, T3*)) {
 	service_ = [this, obj, fun]() {
-		uint32_t rid;
-		marshaller_ >> rid;
-		T2 args;
-		marshaller_ >> args;
+		T2 *args;
+		uint32_t rid = marshaller_.UnmarshalArgs(&args);
 		T3 reply;
-		(obj->*fun)(&args, &reply);
+		(obj->*fun)(args, &reply);
 		marshaller_.MarshalReply(rid, &reply);
 	};
 	return Hash(str);
