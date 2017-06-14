@@ -1,7 +1,7 @@
 #! /bin/sh
-if [ "$1" = "page" ]
+if [ "$1" = "vector" ]
 then
-	make page_test && ./page_test $2
+	make mushroom_log_vector_test && ./mushroom_log_vector_test
 elif [ "$1" = "index" ]
 then
 	make distributed_index_test && ./distributed_index_test 4096 4800 10 4 16 $2

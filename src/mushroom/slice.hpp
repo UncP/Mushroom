@@ -54,11 +54,6 @@ inline void CopyKey(KeySlice *a, const KeySlice *b, size_t pre, size_t len) {
 	}
 };
 
-inline KeySlice* NewKeySlice(uint8_t len) {
-	char *buf = new char[sizeof(page_t) + len];
-	return (KeySlice *)buf;
-}
-
 #define TempSlice(name, length)                  \
 	char buf_##name[sizeof(page_t) + length];      \
 	memset(buf_##name, 0, sizeof(page_t)+length);  \
