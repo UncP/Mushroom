@@ -10,6 +10,13 @@
 
 ### Behold, the power of Mushroom!
 
+### Try Mushroom
+`first run gen_test_data.sh to generate test data, then enter src directory`<br>
+`./run index 100, test distributed index on single machine，100 represents index number(raft is not well optimized, please limit number to 1-10000)`<br>
+`./run mushroom thread 100, test multi-thread b link tree, number can be 1 to 10 million`<br>
+`./run mushroom queue 100, test multi-thread b link tree, number can be 1 to 10 million`<br>
+
+
 ### Version Information
 | Version |       Improvements       |
 |:------:|:--------------------------:|
@@ -35,14 +42,3 @@
 | 1.0.0  |     distributed in-memory index   |
 | 1.1.0  |    B<sup>link</sup> tree node occupies 2/3 of node's space, originally 1/2 (Aborted) |
 | 1.1.1  |     optimize raft memory use   |
-
-
-### Try Mushroom
-`first run ./gen_test_data.sh to generate test data, then enter src directory`<br>
-`./run index 100, test distributed index on single machine，100 represents index number(raft is not well optimized, please limit number to 1-10000)`<br>
-`./run mushroom thread 100, test multi-thread b link tree, number can be 1 to 10 million`<br>
-`./run mushroom queue 100, test multi-thread b link tree, number can be 1 to 10 million`<br>
-
-
-### Other
-+ Version 0.6.0 is the first stable version
