@@ -79,14 +79,14 @@ int main(int argc, char **argv)
 		db.push_back(new MushroomDB("mushroom_test", key_len, page_size, pool_size, hash_bits,
 			seg_bits, log_page));
 		MushroomDB *cur = db[i];
-		rafts[i]->SetApplyFunc([cur](const MushroomLog &log) {
+		rafts[i]->SetApplyFunc([cur](MushroomLog &log) {
 			return cur->Put(log.key_);
 		});
 	}
 
 	sleep(1);
 
-	MushroomLog log(key_len);
+	MushroomLog *log = NewMushroomLog();
 	int fd = open(file, O_RDONLY);
 	assert(fd > 0);
 	char buf[8192];
@@ -101,15 +101,18 @@ int main(int argc, char **argv)
 			char *tmp = buf + i;
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
-			memcpy(log.key_->key_, tmp, key_len);
+			log->key_->page_no_ = 0;
+			memcpy(log->key_->key_, tmp, key_len);
 			uint32_t index;
 			for (auto e : rafts)
-				if (e->Start(log, &index))
+				if (e->Start(*log, &index))
 					break;
 			if (++count == total) {
 				flag = false;
 				break;
 			}
+			if (!(count % 100))
+				sleep(1);
 			++i;
 		}
 	}

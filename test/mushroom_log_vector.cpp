@@ -18,11 +18,11 @@ TEST(Append)
 	const char *str = "hello world ! :)";
 	log->key_->page_no_ = 4321;
 	memcpy(log->key_->key_, str, 16);
-	int total = 100;
+	int total = 10000;
 	for (int i = 0; i < total; ++i)
 		vec.Append(*log);
 	DeleteMushroomLog(log);
-	ASSERT_TRUE(vec.size() == 100);
+	ASSERT_TRUE(int(vec.size()) == total);
 }
 
 TEST(Get)

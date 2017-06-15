@@ -48,19 +48,13 @@ class MushroomLogVector : private NoCopy
 
 		void DeleteFrom(uint32_t idx);
 
+		void FormLogVectorFrom(uint32_t idx, Buffer &buf) const;
+
 	private:
 		uint32_t  size_;
 		uint32_t  cap_;
 		char     *mem_;
 };
-
-inline Marshaller& operator<<(Marshaller &marshaller, const MushroomLogVector &vec)
-{
-	marshaller << vec.size();
-	for (uint32_t i = 0; i < vec.size(); ++i)
-		marshaller << vec[i];
-	return marshaller;
-}
 
 } // namespace Mushroom
 

@@ -89,10 +89,10 @@ uint32_t RaftServer::Term()
 void RaftServer::Status(bool print_log, bool print_next)
 {
 	mutex_.Lock();
-	printf("leader: %d  term: %u  cmit: %d  size: %lu\n",
+	printf("leader: %d  term: %u  cmit: %d  size: %u\n",
 		(state_ == Leader), term_, commit_, logs_.size());
-	for (auto &e : logs_)
-		printf("%u ", e.term_);
+	for (uint32_t i = 0; i < logs_.size(); ++i)
+		printf("%u ", logs_[i].term_);
 	printf("\n");
 	mutex_.Unlock();
 }
@@ -106,7 +106,8 @@ bool RaftServer::Start(MushroomLog &log, uint32_t *index)
 	}
 	*index = logs_.size();
 	log.term_ = term_;
-	logs_.push_back(log);
+	// logs_.push_back(log);
+	logs_.Append(log);
 	mutex_.Unlock();
 	event_base_->RunNow([this]() { SendAppendEntry(); });
 	return true;
@@ -255,7 +256,19 @@ void RaftServer::SendRequestVote()
 	Future<RequestVoteReply> *futures = new Future<RequestVoteReply>[size];
 	for (uint32_t i = 0; i < size; ++i) {
 		Future<RequestVoteReply> *fu = futures + i;
-		peers_[i]->Call("RaftServer::Vote", &args, fu);
+		uint32_t rid = peers_[i]->GetCallId();
+		uint32_t id = RPC::Hash("RaftServer::Vote");
+		fu->SetId(rid);
+		Buffer &out = peers_[i]->GetOutput();
+		out.Reset();
+		uint32_t *len = (uint32_t *)out.end();
+		out.AdvanceTail(4);
+		uint32_t before = out.size();
+		out.Read((const char *)&id, 4);
+		out.Read((const char *)&rid, 4);
+		out.Read((const char *)&args, sizeof(RequestVoteArgs));
+		*len = out.size() - before;
+		peers_[i]->Call(rid, fu);
 		fu->OnCallback([this, fu]() {
 			ReceiveRequestVoteReply(fu->Value());
 		});
@@ -313,23 +326,27 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		goto index;
 	if (prev_i >= 0 && logs_[prev_i].term_ != prev_t) {
 		assert(commit_ < prev_i);
-		logs_.erase(logs_.begin() + prev_i, logs_.end());
+		// logs_.erase(logs_.begin() + prev_i, logs_.end());
+		logs_.DeleteFrom(prev_i);
 		goto index;
 	}
 
-	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
+	if (++prev_i < int32_t(logs_.size()) && !arg.entries_->size()) {
 		assert(commit_ < prev_i);
-		logs_.erase(logs_.begin() + prev_i, logs_.end());
+		// logs_.erase(logs_.begin() + prev_i, logs_.end());
+		logs_.DeleteFrom(prev_i);
 	} else {
-		for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
-			if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
+		for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_->size(); ++prev_i,++prev_j) {
+			if (logs_[prev_i].term_ != (*arg.entries_)[prev_j].term_) {
 				assert(commit_ < prev_i);
-				logs_.erase(logs_.begin() + prev_i, logs_.end());
+				// logs_.erase(logs_.begin() + prev_i, logs_.end());
+				logs_.DeleteFrom(prev_i);
 				break;
 			}
 		}
-		if (prev_j < arg.entries_.size())
-			logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
+		if (prev_j < arg.entries_->size())
+			// logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
+			logs_.Append(*arg.entries_, prev_j);
 	}
 
 	if (arg.leader_commit_ > commit_) {
@@ -353,15 +370,27 @@ void RaftServer::SendAppendEntry()
 		return ;
 	}
 	uint32_t size = peers_.size();
-	AppendEntryArgs args[size];
 	Future<AppendEntryReply> *futures = new Future<AppendEntryReply>[size];
 	for (size_t i = 0; i < peers_.size(); ++i) {
 		int32_t prev = next_[i] - 1;
-		args[i] = {term_, id_, prev >= 0 ? logs_[prev].term_ : 0, prev, commit_};
-		if (next_[i] < int32_t(logs_.size()))
-			args[i].entries_.insert(args[i].entries_.end(), logs_.begin() + next_[i], logs_.end());
 		Future<AppendEntryReply> *fu = futures + i;
-		peers_[i]->Call("RaftServer::AppendEntry", &args[i], fu);
+		AppendEntryArgs args = {term_, id_, prev >= 0 ? logs_[prev].term_ : 0, prev, commit_};
+		uint32_t rid = peers_[i]->GetCallId();
+		uint32_t id = RPC::Hash("RaftServer::AppendEntry");
+		fu->SetId(rid);
+		Buffer &out = peers_[i]->GetOutput();
+		out.Reset();
+		uint32_t pos = out.size();
+		out.AdvanceTail(4);
+		uint32_t before = out.size();
+		out.Read((const char *)&id, 4);
+		out.Read((const char *)&rid, 4);
+		out.Read((const char *)&args, sizeof(AppendEntryArgs));
+		logs_.FormLogVectorFrom(next_[i], out);
+		char *ptr = out.begin() + pos;
+		uint32_t total = out.size() - before;
+		memcpy(ptr, &total, 4);
+		peers_[i]->Call(rid, fu);
 		fu->OnCallback([this, i, fu]() {
 			ReceiveAppendEntryReply(i, fu->Value());
 		});

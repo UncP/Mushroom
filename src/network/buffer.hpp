@@ -15,8 +15,6 @@ namespace Mushroom {
 class Buffer : private NoCopy
 {
 	public:
-		static const uint32_t BufferSize = 4096;
-
 		Buffer();
 
 		~Buffer();
@@ -49,9 +47,12 @@ class Buffer : private NoCopy
 
 		void Unget(uint32_t len);
 
+		void Expand(uint32_t len);
+
 	private:
 		char     *data_;
 		uint32_t  size_;
+		uint32_t  cap_;
 		uint32_t  beg_;
 		uint32_t  end_;
 };

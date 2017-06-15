@@ -56,4 +56,15 @@ void MushroomLogVector::DeleteFrom(uint32_t idx)
 	size_ = idx;
 }
 
+void MushroomLogVector::FormLogVectorFrom(uint32_t idx, Buffer &buf) const
+{
+	assert(idx <= size_);
+	uint32_t all = size_ - idx;
+	uint32_t total = 4 + all * MushroomLog::LogSize;
+	buf.Expand(total);
+	buf.Read((const char *)&all, 4);
+	if (all)
+		buf.Read((const char *)&((*this)[idx]), total - 4);
+}
+
 } // namespace Mushroom

@@ -92,7 +92,6 @@ inline Marshaller& operator<<(Marshaller &marshaller, const AppendEntryArgs &arg
 	marshaller << args.prev_term_;
 	marshaller << args.prev_index_;
 	marshaller << args.leader_commit_;
-	marshaller << args.entries_;
 	return marshaller;
 }
 

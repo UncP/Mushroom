@@ -2,20 +2,13 @@
 [English Version of README](./README.en.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](https://github.com/UncP)
-[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.1.1-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
+### Mushroom是一个C++11编写、不依赖第三方库的轻量级Linux环境分布式内存索引，它由并发B<sup>link</sup>索引，TCP通信库，RPC框架，Raft一致性算法组成。
+
 ### Behold, the power of Mushroom!
-
-### Feature
-+ 并发B<sup>link</sup>树索引
-+ ACID (批操作)
-+ TCP通信库
-+ RPC框架
-+ 一致性算法——Raft
-
-******
 
 ### B<sup>link</sup> Tree BenchFuck
 |关键值数量|关键值长度|     CPU    |    内存   | 版本号 | 排序时间（秒）|        备注      |
@@ -47,8 +40,17 @@
 | 0.9.2  |   优化Raft状态变化，提高Liveness      |
 | 1.0.0  |    分布式内存索引    |
 | 1.1.0  |    B<sup>link</sup>树结点从1/2满提高到2/3满（不可行）    |
+| 1.1.1  |     优化Raft内存使用   |
+
+
+### 尝试
+`首先运行脚本生成测试数据./gen_test_data.sh，然后进入src目录`
+`./run index 100，单机测试分布式索引，100是索引数量（因为Raft没有深入优化过，所以将请数量控制在1-10000）`
+`./run mushroom thread 100，测试多线程索引，数量可以是1到1000万`
+`./run mushroom queue 100，测试多线程索引（通过队列），数量可以是1到1000万`
+
 
 ### 其他
 + 版本0.6.0是第一个稳定版本
 + 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到**Mushroom**的介绍
-+ 请不要clone master分支，这是开发分支，编译不一定通过。有问题请开issue
++ 请不要轻易clone master分支，这是开发分支，编译不一定通过。有问题请开issue
