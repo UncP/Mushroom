@@ -47,10 +47,10 @@
 
 
 ### Try Mushroom
-`first run ./gen_test_data.sh to generate test data, then enter src directory`
-`./run index 100, test distributed index on single machine，100 represents index number(raft is not well optimized, please limit number to 1-10000)`
-`./run mushroom thread 100, test multi-thread b link tree, number can be 1 to 10 million`
-`./run mushroom queue 100, test multi-thread b link tree, number can be 1 to 10 million`
+`first run ./gen_test_data.sh to generate test data, then enter src directory`<br>
+`./run index 100, test distributed index on single machine，100 represents index number(raft is not well optimized, please limit number to 1-10000)`<br>
+`./run mushroom thread 100, test multi-thread b link tree, number can be 1 to 10 million`<br>
+`./run mushroom queue 100, test multi-thread b link tree, number can be 1 to 10 million`<br>
 
 
 ### Other
