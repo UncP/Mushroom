@@ -6,18 +6,9 @@
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
-### Mushroom is a Linux light-weight distributed in-memory index written in C++11, consists of concurrent B<sup>link</sup> tree, TCP communication library, RPC framework and Raft consensus algorithm.
+#### Mushroom is a Linux light-weight distributed in-memory index written in C++11, consists of concurrent B<sup>link</sup> tree, TCP communication library, RPC framework and Raft consensus algorithm.
 
 ### Behold, the power of Mushroom!
-
-### B<sup>link</sup> Tree BenchFuck
-|total key|key length| total size |     CPU    | Mem |
-|:-------:|:--------:|:---------:|:--------------:|:----:|
-|100 million | 16 bytes | 1.6 G | Intel i3 2.1 GHz 4 cores|4 G|
-
-| Version | Sorting Time(s) |       Detail       |
-|:------:|:------:|:-----------------------------------:|
-| 0.6.1 | 142.5 | B<sup>link</sup> tree occupies memory about 2.7G |
 
 ### Version Information
 | Version |       Improvements       |
