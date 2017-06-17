@@ -351,7 +351,10 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 
 	if (arg.leader_commit_ > commit_) {
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
-		for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
+		for (; applied_ < commit_;) {
+			logs_[++applied_].term_ = term_;
+			apply_func_(logs_[applied_]);
+		}
 	}
 
 index:
@@ -429,7 +432,10 @@ void RaftServer::ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &rep
 			++vote;
 	if (vote > ((peers_.size() + 1) / 2)) {
 		commit_ = reply.idx_;
-		for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
+		for (; applied_ < commit_;) {
+			logs_[++applied_].term_ = term_;
+			apply_func_(logs_[applied_]);
+		}
 	}
 end:
 	mutex_.Unlock();
