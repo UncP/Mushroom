@@ -77,7 +77,7 @@ class RaftServer : public RpcServer
 
 		void RequestVote();
 
-		void SendAppendEntry();
+		void SendAppendEntry(bool heartbeat);
 
 		void BecomeFollower(uint32_t term);
 

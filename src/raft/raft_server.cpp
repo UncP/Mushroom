@@ -108,7 +108,7 @@ bool RaftServer::Start(MushroomLog &log, uint32_t *index)
 	log.term_ = term_;
 	logs_.push_back(log);
 	mutex_.Unlock();
-	event_base_->RunNow([this]() { SendAppendEntry(); });
+	event_base_->RunNow([this]() { SendAppendEntry(false); });
 	return true;
 }
 
@@ -198,7 +198,7 @@ void RaftServer::BecomeLeader()
 	for (auto &e : match_)
 		e = -1;
 	heartbeat_id_ = event_base_->RunEvery(HeartbeatInterval, [this]() {
-		SendAppendEntry();
+		SendAppendEntry(true);
 	});
 }
 
@@ -331,12 +331,12 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		if (prev_j < arg.entries_.size())
 			logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
 	}
+	printf("%d %d %d %lu\n", id_, arg.leader_commit_, commit_, logs_.size());
 
 	if (arg.leader_commit_ > commit_) {
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
 		for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
 	}
-
 
 index:
 	reply->idx_ = logs_.size() - 1;
@@ -346,7 +346,7 @@ end:
 	mutex_.Unlock();
 }
 
-void RaftServer::SendAppendEntry()
+void RaftServer::SendAppendEntry(bool heartbeat)
 {
 	mutex_.Lock();
 	if (!running_ || state_ != Leader) {
@@ -359,7 +359,7 @@ void RaftServer::SendAppendEntry()
 	for (size_t i = 0; i < peers_.size(); ++i) {
 		int32_t prev = next_[i] - 1;
 		args[i] = {term_, id_, prev >= 0 ? logs_[prev].term_ : 0, prev, commit_};
-		if (next_[i] < int32_t(logs_.size()))
+		if (!heartbeat && next_[i] < int32_t(logs_.size()))
 			args[i].entries_.insert(args[i].entries_.end(), logs_.begin() + next_[i], logs_.end());
 		Future<AppendEntryReply> *fu = futures + i;
 		peers_[i]->Call("RaftServer::AppendEntry", &args[i], fu);
