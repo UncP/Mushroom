@@ -48,8 +48,7 @@ void RpcServer::HandleAccept()
 		}
 		Marshaller &mar = con->GetMarshaller();
 		bool has = false;
-		uint32_t packet_size;
-		for (; (packet_size = mar.HasCompleteArgs());) {
+		for (; mar.HasCompleteArgs();) {
 			uint32_t id;
 			mar >> id;
 			auto it = services_.find(id);
@@ -57,7 +56,6 @@ void RpcServer::HandleAccept()
 			RPC *rpc = it->second;
 			rpc->GetReady(mar);
 			(*rpc)();
-			mar.Dump(packet_size - 8);
 			has = true;
 			++rpc_count_;
 		}

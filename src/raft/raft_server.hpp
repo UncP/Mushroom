@@ -15,7 +15,6 @@
 #include "../include/cond.hpp"
 #include "../rpc/rpc_server.hpp"
 #include "../network/eventbase.hpp"
-#include "mushroom_log_vector.hpp"
 
 namespace Mushroom {
 
@@ -107,7 +106,7 @@ class RaftServer : public RpcServer
 
 		uint32_t votes_;
 
-		MushroomLogVector logs_;
+		std::vector<MushroomLog> logs_;
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;

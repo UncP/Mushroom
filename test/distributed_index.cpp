@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 
 	sleep(1);
 
-	MushroomLog *log = NewMushroomLog();
+	MushroomLog log;
 	int fd = open(file, O_RDONLY);
 	assert(fd > 0);
 	char buf[8192];
@@ -101,11 +101,11 @@ int main(int argc, char **argv)
 			char *tmp = buf + i;
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
-			log->key_->page_no_ = 0;
-			memcpy(log->key_->key_, tmp, key_len);
+			log.key_->page_no_ = 0;
+			memcpy(log.key_->key_, tmp, key_len);
 			uint32_t index;
 			for (auto e : rafts)
-				if (e->Start(*log, &index))
+				if (e->Start(log, &index))
 					break;
 			if (++count == total) {
 				flag = false;

@@ -35,13 +35,11 @@ class RpcConnection : public Connection
 
 		~RpcConnection();
 
-		template<typename T>
-		inline void Call(uint32_t rid, Future<T> *fu);
+		template<typename T1, typename T2>
+		inline void Call(const char *str, const T1 *args, Future<T2> *fu);
 
 		template<typename T>
 		inline void RemoveFuture(Future<T> *fu);
-
-		inline uint32_t GetCallId() { return RpcId++; }
 
 		bool Close();
 
@@ -68,15 +66,19 @@ class RpcConnection : public Connection
 		Marshaller marshaller_;
 };
 
-template<typename T>
-inline void RpcConnection::Call(uint32_t rid, Future<T> *fu)
+template<typename T1, typename T2>
+inline void RpcConnection::Call(const char *str, const T1 *args, Future<T2> *fu)
 {
+	uint32_t id  = RPC::Hash(str);
+	uint32_t rid = RpcId++;
+	fu->SetId(rid);
 	mutex_.Lock();
 	futures_.insert({rid, std::move([fu, this]() { fu->Notify(marshaller_); })});
-	mutex_.Unlock();
 	if (!disable_.get()) { // && dist(engine) > error_rate_
+		marshaller_.MarshalArgs(id, rid, args);
 		SendOutput();
 	}
+	mutex_.Unlock();
 }
 
 template<typename T>

@@ -8,44 +8,47 @@
 #ifndef _MUSHROOM_LOG_HPP_
 #define _MUSHROOM_LOG_HPP_
 
-#include <string>
-
 #include "../include/utility.hpp"
 #include "../rpc/marshaller.hpp"
 #include "../mushroom/slice.hpp"
 
 namespace Mushroom {
 
-struct MushroomLog : private NoCopy
+struct MushroomLog
 {
-	static const uint32_t LogSize = KeySlice::KeySize + sizeof(uint32_t);
+	MushroomLog():key_(NewKeySlice()) { }
+
+	MushroomLog(const MushroomLog &that) {
+		term_ = that.term_;
+		key_  = NewKeySlice();
+		memcpy(key_, that.key_, KeySlice::KeySize);
+	}
 
 	MushroomLog& operator=(const MushroomLog &that) {
 		term_ = that.term_;
+		key_  = NewKeySlice();
 		memcpy(key_, that.key_, KeySlice::KeySize);
 		return *this;
 	}
 
-	std::string ToString() const {
-		return std::to_string(term_) + ' ' + key_->ToString();
-	}
+	~MushroomLog() { DeleteKeySlice(key_); }
 
-	uint32_t term_;
-	KeySlice key_[0];
+	uint32_t  term_;
+	KeySlice *key_;
 };
-
-inline MushroomLog* NewMushroomLog() {
-	return (MushroomLog *)new char[MushroomLog::LogSize];
-}
-
-inline void DeleteMushroomLog(MushroomLog *log) {
-	delete [] (char *)log;
-}
 
 inline Marshaller& operator<<(Marshaller &marshaller, const MushroomLog &log)
 {
 	marshaller << log.term_;
 	marshaller.Read(log.key_, KeySlice::KeySize);
+	return marshaller;
+}
+
+inline Marshaller& operator>>(Marshaller &marshaller, MushroomLog &log)
+{
+	marshaller >> log.term_;
+	log.key_ = NewKeySlice();
+	marshaller.Write(log.key_, KeySlice::KeySize);
 	return marshaller;
 }
 

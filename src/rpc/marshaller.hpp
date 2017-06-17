@@ -8,6 +8,8 @@
 #ifndef _MARSHALLER_HPP_
 #define _MARSHALLER_HPP_
 
+#include <vector>
+
 #include "../network/buffer.hpp"
 
 namespace Mushroom {
@@ -21,9 +23,6 @@ class Marshaller
 
 		template<typename T>
 		inline void MarshalArgs(uint32_t id, uint32_t rid, const T *args);
-
-		template<typename T>
-		inline uint32_t UnmarshalArgs(T **args);
 
 		template<typename T>
 		inline void MarshalReply(uint32_t rid, const T *reply);
@@ -58,6 +57,15 @@ inline Marshaller& operator<<(Marshaller &marshaller, const uint32_t &v) {
 	return marshaller;
 }
 
+template<typename T>
+inline Marshaller& operator<<(Marshaller &marshaller, const std::vector<T> &v) {
+	uint32_t e = v.size();
+	marshaller << e;
+	for (uint32_t i = 0; i < e; ++i)
+		marshaller << v[i];
+	return marshaller;
+}
+
 inline Marshaller& operator>>(Marshaller &marshaller, uint8_t &v) {
 	marshaller.Write(&v, 1);
 	return marshaller;
@@ -74,6 +82,19 @@ inline Marshaller& operator>>(Marshaller &marshaller, uint32_t &v) {
 }
 
 template<typename T>
+inline Marshaller& operator>>(Marshaller &marshaller, std::vector<T> &v) {
+	uint32_t e;
+	marshaller >> e;
+	v.reserve(e);
+	for (uint32_t i = 0; i < e; ++i) {
+		T t;
+		marshaller >> t;
+		v.push_back(t);
+	}
+	return marshaller;
+}
+
+template<typename T>
 inline void Marshaller::MarshalArgs(uint32_t id, uint32_t rid, const T *args)
 {
 	output_->Reset();
@@ -84,15 +105,6 @@ inline void Marshaller::MarshalArgs(uint32_t id, uint32_t rid, const T *args)
 	*this << rid;
 	*this << *args;
 	*len = output_->size() - before;
-}
-
-template<typename T>
-inline uint32_t Marshaller::UnmarshalArgs(T **args)
-{
-	uint32_t rid;
-	*this >> rid;
-	*args = (T *)input_->begin();
-	return rid;
 }
 
 template<typename T>
