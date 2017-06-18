@@ -317,21 +317,21 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		goto index;
 	}
 
-	if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
-		assert(commit_ < prev_i);
-		logs_.erase(logs_.begin() + prev_i, logs_.end());
-	} else {
-		for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
-			if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
-				assert(commit_ < prev_i);
-				logs_.erase(logs_.begin() + prev_i, logs_.end());
-				break;
-			}
+	// if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
+		// assert(commit_ < prev_i);
+		// logs_.erase(logs_.begin() + prev_i, logs_.end());
+	// } else {
+	++prev_i;
+	for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
+		if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
+			assert(commit_ < prev_i);
+			logs_.erase(logs_.begin() + prev_i, logs_.end());
+			break;
 		}
-		if (prev_j < arg.entries_.size())
-			logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
 	}
-	printf("%d %d %d %lu\n", id_, arg.leader_commit_, commit_, logs_.size());
+	if (prev_j < arg.entries_.size())
+		logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
+	// }
 
 	if (arg.leader_commit_ > commit_) {
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
