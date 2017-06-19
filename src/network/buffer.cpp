@@ -20,6 +20,7 @@ Buffer::Buffer():data_(new char[4096]), cap_(4096)
 
 Buffer::~Buffer()
 {
+	printf("%u\n", cap_);
 	delete [] data_;
 }
 
@@ -101,6 +102,18 @@ void Buffer::Unget(uint32_t len)
 
 void Buffer::Read(const char *data, uint32_t len)
 {
+	if (end_ + len > cap_) {
+		uint32_t new_cap = cap_;
+		while (end_ + len > new_cap)
+			new_cap <<= 1;
+		char *buf = new char[new_cap];
+		memcpy(buf, begin(), size_);
+		delete [] data_;
+		data_ = buf;
+		beg_ = 0;
+		end_ = size_;
+		cap_ = new_cap;
+	}
 	assert(end_ + len <= cap_);
 	memcpy(end(), data, len);
 	end_  += len;
@@ -113,22 +126,6 @@ void Buffer::Write(char *data, uint32_t len)
 	memcpy(data, begin(), len);
 	beg_  += len;
 	size_ -= len;
-}
-
-void Buffer::Expand(uint32_t len)
-{
-	uint32_t new_cap = cap_;
-	for (; end_ + len > new_cap;)
-		new_cap <<= 1;
-	if (end_ + len > cap_) {
-		char *buf = new char[new_cap];
-		memcpy(buf, begin(), size_);
-		delete [] data_;
-		data_ = buf;
-		beg_ = 0;
-		end_ = size_;
-		cap_ = new_cap;
-	}
 }
 
 } // namespace Mushroom

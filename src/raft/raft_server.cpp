@@ -108,7 +108,8 @@ bool RaftServer::Start(MushroomLog &log, uint32_t *index)
 	log.term_ = term_;
 	logs_.push_back(log);
 	mutex_.Unlock();
-	event_base_->RunNow([this]() { SendAppendEntry(false); });
+	// event_base_->RunNow([this]() { SendAppendEntry(false); });
+	SendAppendEntry(false);
 	return true;
 }
 

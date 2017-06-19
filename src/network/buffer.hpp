@@ -47,8 +47,6 @@ class Buffer : private NoCopy
 
 		void Unget(uint32_t len);
 
-		void Expand(uint32_t len);
-
 	private:
 		char     *data_;
 		uint32_t  size_;
