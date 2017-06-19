@@ -37,7 +37,7 @@ class Socket
 
 		int Accept();
 
-		uint32_t Write(const char *data, uint32_t len);
+		uint32_t Write(const char *data, uint32_t len, bool *blocked);
 
 		uint32_t Read(char *data, uint32_t len, bool *blocked);
 

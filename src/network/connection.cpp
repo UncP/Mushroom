@@ -100,8 +100,9 @@ void Connection::HandleWrite()
 		Error("connection has closed :(");
 		return ;
 	}
-	uint32_t write = socket_.Write(output_.begin(), output_.size());
-	if (!write) {
+	bool blocked = false;
+	uint32_t write = socket_.Write(output_.begin(), output_.size(), &blocked);
+	if (!write && !blocked) {
 		Close();
 		return ;
 	}
@@ -139,8 +140,9 @@ void Connection::SendOutput()
 		output_.Clear();
 		return ;
 	}
-	uint32_t write = socket_.Write(output_.begin(), output_.size());
-	if (!write) {
+	bool blocked = false;
+	uint32_t write = socket_.Write(output_.begin(), output_.size(), &blocked);
+	if (!write && !blocked) {
 		Close();
 		return ;
 	}

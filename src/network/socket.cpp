@@ -140,7 +140,7 @@ bool Socket::SetNonBlock()
 	return !fcntl(fd_, F_SETFL, value | O_NONBLOCK);
 }
 
-uint32_t Socket::Write(const char *data, uint32_t len)
+uint32_t Socket::Write(const char *data, uint32_t len, bool *blocked)
 {
 	uint32_t written = 0;
 	for (; written < len;) {
@@ -151,8 +151,10 @@ uint32_t Socket::Write(const char *data, uint32_t len)
 		} else if (r == -1) {
 			if (errno == EINTR)
 				continue;
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				*blocked = true;
 				break;
+			}
 		}
 		Error("write error, %s :(", strerror(errno));
 		break;
