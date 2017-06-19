@@ -6,7 +6,7 @@
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
-#### Mushroom是一个C++11编写、不依赖第三方库的轻量级Linux环境分布式内存索引，它由并发B<sup>link</sup>索引，TCP通信库，RPC框架，Raft一致性算法组成。
+#### Mushroom是一个C++11编写、不依赖第三方库的轻量级Linux环境分布式内存索引，它由并发B<sup>link</sup>树索引，TCP通信库，RPC框架，Raft一致性算法组成。
 
 ### Behold, the power of Mushroom!
 
@@ -46,4 +46,5 @@
 
 ### 其他
 + 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到**Mushroom**的介绍
-+ 请不要轻易clone master分支，这是开发分支，编译不一定通过。有问题请开issue
++ master分支是开发分支，编译不一定能通过
++ 有问题请开issue，我会在24小时内回复
