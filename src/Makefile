@@ -14,7 +14,7 @@ LOBJ = $(LogFile:.cpp=.o)
 RaftOBJ = $(RaftFile:.cpp=.o)
 RpcOBJ = $(RpcFile:.cpp=.o)
 
-all: blinktree_with_queue_test blinktree_multi_thread_test
+all: blinktree_with_queue_test blinktree_multi_thread_test distributed_index_test
 
 mushroom_log_vector_test: raft/mushroom_log_vector.cpp ../test/mushroom_log_vector.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
