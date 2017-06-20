@@ -5,7 +5,6 @@
  *    > Time:  2017-04-23 10:50:45
 **/
 
-#include "../log/log.hpp"
 #include "eventbase.hpp"
 #include "server.hpp"
 #include "channel.hpp"
@@ -36,10 +35,8 @@ void Server::Close()
 
 void Server::Start()
 {
-	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
-	FatalIf(!socket_.SetResuseAddress(), "socket option set failed :(", strerror(errno));
-	FatalIf(!socket_.Bind(port_), "socket bind port %u failed, %s :(", port_, strerror(errno));
-	FatalIf(!socket_.Listen(), "socket listen failed, %s :(", strerror(errno));
+	assert(socket_.Create() && socket_.SetResuseAddress() && socket_.Bind(port_) &&
+		socket_.Listen());
 	listen_ = new Channel(socket_.fd(), event_base_->GetPoller(), [this]() { HandleAccept(); }, 0);
 }
 
@@ -51,10 +48,7 @@ void Server::OnConnect(const ConnectCallBack &connectcb)
 void Server::HandleAccept()
 {
 	int fd = socket_.Accept();
-	if (fd < 0) {
-		Error("socket accept failed, %s :(", strerror(errno));
-		return ;
-	}
+	assert(fd > 0);
 	Connection *con = new Connection(Socket(fd), event_base_->GetPoller());
 	if (connectcb_)
 		connectcb_(con);

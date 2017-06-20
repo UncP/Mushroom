@@ -6,8 +6,10 @@
 **/
 
 #include <unistd.h>
+#include <cstring>
+#include <cerrno>
+#include <cassert>
 
-#include "../log/log.hpp"
 #include "connection.hpp"
 #include "channel.hpp"
 
@@ -16,12 +18,13 @@ namespace Mushroom {
 Connection::Connection(const EndPoint &server, Poller *poller)
 :readcb_(0), writecb_(0)
 {
-	FatalIf(!socket_.Create(), "socket create failed :(", strerror(errno));
+	assert(socket_.Create());
 	if (!socket_.Connect(server)) {
-		Error("socket connect server %s failed, %s :(", server.ToString().c_str(), strerror(errno));
+		printf("socket connect server %s failed, %s :(\n",
+			server.ToString().c_str(), strerror(errno));
 		return ;
 	}
-	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));
+	assert(socket_.SetNonBlock());
 	channel_ = new Channel(socket_.fd(), poller,
 		[this]() { this->HandleRead(); }, [this]() { this->HandleWrite(); });
 	connected_ = true;
@@ -30,7 +33,7 @@ Connection::Connection(const EndPoint &server, Poller *poller)
 Connection::Connection(const Socket &socket, Poller *poller)
 :socket_(socket), readcb_(0), writecb_(0)
 {
-	FatalIf(!socket_.SetNonBlock(), "socket set non-block failed :(", strerror(errno));
+	assert(socket_.SetNonBlock());
 	channel_ = new Channel(socket_.fd(), poller,
 		[this]() { this->HandleRead(); }, [this]() { this->HandleWrite(); });
 	connected_ = true;
@@ -79,7 +82,7 @@ void Connection::OnWrite(const WriteCallBack &writecb)
 void Connection::HandleRead()
 {
 	if (!connected_) {
-		Error("connection has closed :(");
+		printf("connection has closed :(\n");
 		return ;
 	}
 	input_.Reset();
@@ -97,7 +100,7 @@ void Connection::HandleRead()
 void Connection::HandleWrite()
 {
 	if (!connected_) {
-		Error("connection has closed :(");
+		printf("connection has closed :(\n");
 		return ;
 	}
 	bool blocked = false;

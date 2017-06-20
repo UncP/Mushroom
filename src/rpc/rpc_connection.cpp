@@ -7,7 +7,6 @@
 
 #include <cassert>
 
-#include "../log/log.hpp"
 #include "rpc_connection.hpp"
 
 namespace Mushroom {

@@ -14,7 +14,6 @@
 #include <cassert>
 #include <cerrno>
 
-#include "../log/log.hpp"
 #include "socket.hpp"
 
 namespace Mushroom {
@@ -156,7 +155,7 @@ uint32_t Socket::Write(const char *data, uint32_t len, bool *blocked)
 				break;
 			}
 		}
-		Error("write error, %s :(", strerror(errno));
+		printf("write error, %s :(\n", strerror(errno));
 		break;
 	}
 	return written;
@@ -173,7 +172,7 @@ uint32_t Socket::Read(char *data, uint32_t len, bool *blocked)
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				*blocked = true;
 			else
-				Error("read error, %s :(", strerror(errno));
+				printf("read error, %s :(\n", strerror(errno));
 			break;
 		}
 		has_read += r;

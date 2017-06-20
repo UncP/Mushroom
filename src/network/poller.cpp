@@ -7,8 +7,8 @@
 
 #include <unistd.h>
 #include <cstring>
+#include <cassert>
 
-#include "../log/log.hpp"
 #include "poller.hpp"
 #include "channel.hpp"
 
@@ -16,8 +16,7 @@ namespace Mushroom {
 
 Poller::Poller()
 {
-	FatalIf((fd_ = epoll_create1(EPOLL_CLOEXEC)) < 0,
-		"epoll create failed, %s :(", strerror(errno));
+	assert((fd_ = epoll_create1(EPOLL_CLOEXEC)) >= 0);
 }
 
 Poller::~Poller()
@@ -31,8 +30,7 @@ void Poller::AddChannel(Channel *channel)
 	memset(&event, 0, sizeof(event));
 	event.events = channel->events();
 	event.data.ptr = channel;
-	FatalIf(epoll_ctl(fd_, EPOLL_CTL_ADD, channel->fd(), &event),
-		"epoll add event failed, %s :(", strerror(errno));
+	assert(!epoll_ctl(fd_, EPOLL_CTL_ADD, channel->fd(), &event));
 }
 
 void Poller::UpdateChannel(Channel *channel)
@@ -41,8 +39,7 @@ void Poller::UpdateChannel(Channel *channel)
 	memset(&event, 0, sizeof(event));
 	event.events = channel->events();
 	event.data.ptr = channel;
-	FatalIf(epoll_ctl(fd_, EPOLL_CTL_MOD, channel->fd(), &event),
-		"epoll update event failed, %s :(", strerror(errno));
+	assert(!epoll_ctl(fd_, EPOLL_CTL_MOD, channel->fd(), &event));
 }
 
 void Poller::RemoveChannel(Channel *channel)
@@ -51,14 +48,13 @@ void Poller::RemoveChannel(Channel *channel)
 	memset(&event, 0, sizeof(event));
 	event.events = channel->events();
 	event.data.ptr = channel;
-	FatalIf(epoll_ctl(fd_, EPOLL_CTL_DEL, channel->fd(), &event),
-		"epoll remove event failed, %s fd: %d :(", channel->fd(), strerror(errno));
+	assert(!epoll_ctl(fd_, EPOLL_CTL_DEL, channel->fd(), &event));
 }
 
 void Poller::LoopOnce(int ms)
 {
 	int ready = epoll_wait(fd_, events_, MaxEvents, ms);
-	FatalIf(ready == -1 && errno != EINTR, "epoll wait failed, %s :(", strerror(errno));
+	assert(!(ready == -1 && errno != EINTR));
 	for (; --ready >= 0; ) {
 		Channel *channel = (Channel *)events_[ready].data.ptr;
 		uint32_t event = events_[ready].events;
@@ -67,7 +63,7 @@ void Poller::LoopOnce(int ms)
 		} else if (event & WriteEvent) {
 			channel->HandleWrite();
 		} else {
-			Fatal("unexpected epoll event :(");
+			assert(0);
 		}
 	}
 }

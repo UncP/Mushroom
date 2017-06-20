@@ -20,7 +20,6 @@ Buffer::Buffer():data_(new char[4096]), cap_(4096)
 
 Buffer::~Buffer()
 {
-	printf("%u\n", cap_);
 	delete [] data_;
 }
 

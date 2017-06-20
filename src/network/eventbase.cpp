@@ -12,7 +12,6 @@
 #include "../include/thread_pool.hpp"
 #include "time.hpp"
 #include "eventbase.hpp"
-#include "../log/log.hpp"
 #include "poller.hpp"
 #include "channel.hpp"
 #include "socket.hpp"
@@ -26,15 +25,15 @@ EventBase::EventBase(int thread_num, int queue_size)
 queue_(new BoundedQueue<Task>(queue_size)), pool_(new ThreadPool<Task>(queue_, thread_num))
 {
 	int r = pipe(wake_up_);
-	FatalIf(r, "pipe failed, %s :(", strerror(errno));
-	FatalIf(!Socket(wake_up_[0]).SetNonBlock(), "wake up fd set non-block failed :(");
+	assert(!r);
+	assert(Socket(wake_up_[0]).SetNonBlock());
 	channel_ = new Channel(wake_up_[0], poller_, 0, 0);
 	channel_->OnRead([this]() {
 		char buf;
 		ssize_t r = read(channel_->fd(), &buf, sizeof(buf));
 		if (r == sizeof(buf)) {
 		} else {
-			Fatal("pipe read error, %s :(", strerror(errno));
+			assert(0);
 		}
 	});
 	pid_ = pthread_self();
@@ -87,7 +86,7 @@ void EventBase::WakeUp()
 {
 	char buf;
 	ssize_t r = write(wake_up_[1], &buf, sizeof(buf));
-	FatalIf(r <= 0, "%d wake up failed, %s :(", wake_up_[1], strerror(errno));
+	assert(r > 0);
 }
 
 void EventBase::Refresh()

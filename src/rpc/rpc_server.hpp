@@ -13,7 +13,6 @@
 
 #include "../include/utility.hpp"
 #include "../include/atomic.hpp"
-#include "../log/log.hpp"
 #include "../network/server.hpp"
 #include "rpc.hpp"
 
@@ -50,7 +49,7 @@ void RpcServer::Register(const char *str, T1 *obj, void (T1::*(fun))(const T2*, 
 {
 	RPC *rpc = new RPC();
 	uint32_t id = rpc->Generate(str, obj, fun);
-	FatalIf(services_.find(id) != services_.end(), "service %u existed :(", id);
+	assert(services_.find(id) == services_.end());
 	services_.insert({id, rpc});
 }
 

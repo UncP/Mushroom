@@ -35,10 +35,7 @@ void RpcServer::Close()
 void RpcServer::HandleAccept()
 {
 	int fd = socket_.Accept();
-	if (fd < 0) {
-		Error("socket accept failed, %s :(", strerror(errno));
-		return ;
-	}
+	assert(fd > 0);
 	RpcConnection *con = new RpcConnection(Socket(fd), event_base_->GetPoller());
 	connections_.push_back((Connection *)con);
 	con->OnRead([con, this]() {
@@ -52,7 +49,7 @@ void RpcServer::HandleAccept()
 			uint32_t id;
 			mar >> id;
 			auto it = services_.find(id);
-			FatalIf(it == services_.end(), "rpc call %u not registered :(", id);
+			assert(it != services_.end());
 			RPC *rpc = it->second;
 			rpc->GetReady(mar);
 			(*rpc)();
