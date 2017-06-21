@@ -9,7 +9,8 @@
 #define _RAFT_ARG_HPP_
 
 #include "../rpc/marshaller.hpp"
-#include "mushroom_log.hpp"
+// #include "mushroom_log.hpp"
+#include "log.hpp"
 
 namespace Mushroom {
 
@@ -43,7 +44,7 @@ struct AppendEntryArgs
 	uint32_t         prev_term_;
 	int32_t          prev_index_;
 	int32_t          leader_commit_;
-	std::vector<MushroomLog> entries_;
+	std::vector</*Mushroom*/Log> entries_;
 };
 
 struct AppendEntryReply

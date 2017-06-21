@@ -42,7 +42,7 @@ void* Do(void *arg)
 	bool (MushroomDB::*(fun))(KeySlice *);
 	fun = ((ThreadArg *)arg)->fun;
 
-	TempSlice(key, sizeof(valptr)+key_len);
+	TempSlice(key);
 	int fd = open(files[((ThreadArg *)arg)->i], O_RDONLY);
 	assert(fd > 0);
 	char buf[8192];

@@ -1,0 +1,37 @@
+[33m[ Start ]  Unit Tests[0m
+
+[34m[ Run  ] [0mElectionWithNoNetworkFaliure
+[32m[ Pass ] [0mElectionWithNoNetworkFaliure
+[34m[ Run  ] [0mReelectionAfterNetworkFailure
+[32m[ Pass ] [0mReelectionAfterNetworkFailure
+[34m[ Run  ] [0mAgreementWithoutNetworkFailure
+0 failed to reach agreement, 3 : 3
+[36;1m../test/raft.cpp[0m: [31;1m293[0m: [33;1mExpect: [0mindex == i
+[31m[ Fail ] [0mAgreementWithoutNetworkFailure
+[34m[ Run  ] [0mAgreementWithFollowerDisconnected
+0 failed to reach agreement, 3 : 3
+[36;1m../test/raft.cpp[0m: [31;1m307[0m: [33;1mExpect: [0mOne(lg++, total) != ~0u
+[31m[ Fail ] [0mAgreementWithFollowerDisconnected
+[34m[ Run  ] [0mAgreementWithHalfFollowerDisconnected
+0 failed to reach agreement, 5 : 5
+[36;1m../test/raft.cpp[0m: [31;1m340[0m: [33;1mExpect: [0midx++ == One(lg++, total)
+[31m[ Fail ] [0mAgreementWithHalfFollowerDisconnected
+[34m[ Run  ] [0mRejoinOfPartitionedLeader
+0 failed to reach agreement, 3 : 3
+[36;1m../test/raft.cpp[0m: [31;1m385[0m: [33;1mExpect: [0midx++ == One(lg++, total)
+[31m[ Fail ] [0mRejoinOfPartitionedLeader
+[34m[ Run  ] [0mLeaderBackupIncorrectLog
+0 failed to reach agreement, 5 : 5
+[36;1m../test/raft.cpp[0m: [31;1m421[0m: [33;1mExpect: [0mOne(lg++, total) != ~0u
+[31m[ Fail ] [0mLeaderBackupIncorrectLog
+[34m[ Run  ] [0mRpcCount
+[36;1m../test/raft.cpp[0m: [31;1m495[0m: [33;1mExpect: [0mstatic_cast<bool>(rafts[leader]->Start(Log(lg++), &index)) == true
+[31m[ Fail ] [0mRpcCount
+[34m[ Run  ] [0mLeaderFrequentlyChange
+0 failed to reach agreement, 5 : 36580768
+[36;1m../test/raft.cpp[0m: [31;1m538[0m: [33;1mExpect: [0mOne(0, total) != ~0u
+[31m[ Fail ] [0mLeaderFrequentlyChange
+
+[33m[ ALL  ] [33;1m9[0m
+[32m[ PASS ] [32;1m2[0m
+[31m[ FAIL ] [31;1m7[0m

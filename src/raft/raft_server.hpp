@@ -18,6 +18,7 @@
 
 namespace Mushroom {
 
+class Log;
 class MushroomLog;
 class RpcConnection;
 class RequestVoteArgs;
@@ -48,9 +49,9 @@ class RaftServer : public RpcServer
 
 		void Start();
 
-		bool Start(MushroomLog &log, uint32_t *index);
+		bool Start(/*Mushroom*/Log log, uint32_t *index);
 
-		bool LogAt(uint32_t index, MushroomLog &log);
+		bool LogAt(uint32_t index, /*Mushroom*/Log &log);
 
 		void Close();
 
@@ -106,7 +107,8 @@ class RaftServer : public RpcServer
 
 		uint32_t votes_;
 
-		std::vector<MushroomLog> logs_;
+		// std::vector<MushroomLog> logs_;
+		std::vector<Log> logs_;
 
 		std::vector<int32_t> next_;
 		std::vector<int32_t> match_;

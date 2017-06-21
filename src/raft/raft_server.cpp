@@ -13,7 +13,8 @@
 #include "../rpc/future.hpp"
 #include "../rpc/rpc_connection.hpp"
 #include "../network/time.hpp"
-#include "mushroom_log.hpp"
+// #include "mushroom_log.hpp"
+#include "log.hpp"
 #include "arg.hpp"
 
 namespace Mushroom {
@@ -97,7 +98,7 @@ void RaftServer::Status(bool print_log, bool print_next)
 	mutex_.Unlock();
 }
 
-bool RaftServer::Start(MushroomLog &log, uint32_t *index)
+bool RaftServer::Start(/*Mushroom*/Log log, uint32_t *index)
 {
 	mutex_.Lock();
 	if (!running_ || state_ != Leader) {
@@ -113,7 +114,7 @@ bool RaftServer::Start(MushroomLog &log, uint32_t *index)
 	return true;
 }
 
-bool RaftServer::LogAt(uint32_t index, MushroomLog &log)
+bool RaftServer::LogAt(uint32_t index, /*Mushroom*/Log &log)
 {
 	mutex_.Lock();
 	if (int32_t(index) > commit_) {
@@ -318,10 +319,6 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 		goto index;
 	}
 
-	// if (++prev_i < int32_t(logs_.size()) && arg.entries_.empty()) {
-		// assert(commit_ < prev_i);
-		// logs_.erase(logs_.begin() + prev_i, logs_.end());
-	// } else {
 	++prev_i;
 	for (; prev_i < int32_t(logs_.size()) && prev_j < arg.entries_.size(); ++prev_i, ++prev_j) {
 		if (logs_[prev_i].term_ != arg.entries_[prev_j].term_) {
@@ -332,11 +329,10 @@ void RaftServer::AppendEntry(const AppendEntryArgs *args, AppendEntryReply *repl
 	}
 	if (prev_j < arg.entries_.size())
 		logs_.insert(logs_.end(), arg.entries_.begin() + prev_j, arg.entries_.end());
-	// }
 
 	if (arg.leader_commit_ > commit_) {
 		commit_ = std::min(arg.leader_commit_, int32_t(logs_.size()) - 1);
-		for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
+		// for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
 	}
 
 index:
@@ -402,7 +398,7 @@ void RaftServer::ReceiveAppendEntryReply(uint32_t i, const AppendEntryReply &rep
 			++vote;
 	if (vote > ((peers_.size() + 1) / 2)) {
 		commit_ = reply.idx_;
-		for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
+		// for (; applied_ < commit_;) apply_func_(logs_[++applied_]);
 	}
 end:
 	mutex_.Unlock();

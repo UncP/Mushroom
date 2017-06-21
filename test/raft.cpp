@@ -14,6 +14,7 @@
 
 #include "../src/network/signal.hpp"
 #include "../src/rpc/rpc_connection.hpp"
+#include "../src/raft/log.hpp"
 #include "../src/raft/raft_server.hpp"
 #include "../src/include/thread.hpp"
 #include "../src/network/time.hpp"
@@ -143,7 +144,8 @@ static bool CommittedAt(uint32_t index, uint32_t *commit, int *count)
 	*count = 0;
 	uint32_t pre = ~0;
 	for (auto e : rafts) {
-		if (e && !e->LogAt(index, commit)) continue;
+		Log log;
+		if (e && !e->LogAt(index, log)) continue;
 		if (*count && pre != *commit) {
 			printf("not match at %u, %u : %u\n", index, pre, *commit);
 			return false;
@@ -162,7 +164,7 @@ static uint32_t One(uint32_t number, int expect)
 		uint32_t index = ~0u;
 		for (uint32_t i = 0; i < rafts.size(); ++i) {
 			if (!connected[i]) continue;
-			if (rafts[i] && rafts[i]->Start(number, &index))
+			if (rafts[i] && rafts[i]->Start(Log(number), &index))
 				break;
 		}
 		if (index == ~0u) {
@@ -347,7 +349,7 @@ TEST(AgreementWithHalfFollowerDisconnected)
 	DisableServer((leader+3)%total);
 
 	uint32_t index;
-	ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
+	ASSERT_TRUE(rafts[leader]->Start(Log(lg++), &index));
 	ASSERT_EQ(index, 1u);
 
 	WaitForElection(1);
@@ -365,7 +367,7 @@ TEST(AgreementWithHalfFollowerDisconnected)
 	ASSERT_EQ(number, 1);
 
 	uint32_t index2;
-	ASSERT_TRUE(rafts[leader2]->Start(lg++, &index2));
+	ASSERT_TRUE(rafts[leader2]->Start(Log(lg++), &index2));
 	ASSERT_TRUE(index2 >= 1 && index2 < 3);
 
 	ASSERT_NE(One(lg++, total), ~0u);
@@ -390,9 +392,9 @@ TEST(RejoinOfPartitionedLeader)
 	DisableServer(leader);
 
 	uint32_t index;
-	ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
-	ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
-	ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
+	ASSERT_TRUE(rafts[leader]->Start(Log(lg++), &index));
+	ASSERT_TRUE(rafts[leader]->Start(Log(lg++), &index));
+	ASSERT_TRUE(rafts[leader]->Start(Log(lg++), &index));
 
 	WaitForElection(1);
 	ASSERT_EQ(idx++, One(lg++, total-1));
@@ -430,7 +432,7 @@ TEST(LeaderBackupIncorrectLog)
 	int all = 30;
 	uint32_t index;
 	for (int i = 0; i < all; ++i)
-		ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
+		ASSERT_TRUE(rafts[leader]->Start(Log(lg++), &index));
 
 	DisableServer((leader+0)%total);
 	DisableServer((leader+1)%total);
@@ -452,7 +454,7 @@ TEST(LeaderBackupIncorrectLog)
 	DisableServer(other);
 
 	for (int i = 0; i < all; ++i)
-		ASSERT_TRUE(rafts[leader2]->Start(lg++, &index));
+		ASSERT_TRUE(rafts[leader2]->Start(Log(lg++), &index));
 	WaitForElection(0.5);
 
 	for (int i = 0; i < int(total); ++i)
@@ -490,14 +492,14 @@ loop:
 		if (i) WaitForElection(1);
 		all1 = RpcCount();
 		uint32_t index, term;
-		ASSERT_TRUE(rafts[leader]->Start(lg++, &index));
+		ASSERT_TRUE(rafts[leader]->Start(Log(lg++), &index));
 		term = rafts[leader]->Term();
 		int iter = 10;
 		vector<uint32_t> logs;
 		for (int j = 1; j < iter+2; ++j) {
 			uint32_t tmp_idx;
 			logs.push_back(lg);
-			if (!rafts[leader]->Start(lg++, &tmp_idx))
+			if (!rafts[leader]->Start(Log(lg++), &tmp_idx))
 				goto loop;
 			uint32_t tmp_trm = rafts[leader]->Term();
 			if (tmp_trm != term)
@@ -541,7 +543,7 @@ TEST(LeaderFrequentlyChange)
 		for (uint32_t j = 0; j < total; ++j) {
 			if (!connected[j]) continue;
 			uint32_t index;
-			if (rafts[j] && rafts[j]->Start(i, &index)) {
+			if (rafts[j] && rafts[j]->Start(Log(i), &index)) {
 				leader = int32_t(j);
 				break;
 			}

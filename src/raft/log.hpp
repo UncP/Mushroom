@@ -15,7 +15,9 @@ namespace Mushroom {
 struct Log
 {
 		Log() { }
-		Log(uint32_t term, uint32_t number):term_(term), number_(number) { }
+		Log(uint32_t number):number_(number) { }
+
+		bool operator!=(const Log& that) { return term_ != that.term_ || number_ != that.number_; }
 
 		uint32_t term_;
 		uint32_t number_;
