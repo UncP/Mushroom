@@ -74,16 +74,15 @@ int main(int argc, char **argv)
 {
 	const char *file = "../data/10000000";
 
-	assert(argc > 5);
+	assert(argc > 4);
 	uint32_t page_size = atoi(argv[1]) ? atoi(argv[1]) : 4096;
 	uint32_t pool_size = atoi(argv[2]) ? atoi(argv[2]) : 4800;
 	uint32_t hash_bits = atoi(argv[3]) ? atoi(argv[3]) : 10;
 	uint32_t seg_bits  = atoi(argv[4]) ? atoi(argv[4]) : 4;
-	uint32_t log_page  = atoi(argv[5]) ? atoi(argv[5]) : 16;
 
-	total = (argc == 7) ? atoi(argv[6]) : 1;
+	total = (argc == 6) ? atoi(argv[5]) : 1;
 
-	MushroomDB db("mushroom_test", key_len, page_size, pool_size, hash_bits, seg_bits, log_page);
+	MushroomDB db("mushroom_test", key_len, page_size, pool_size, hash_bits, seg_bits);
 
 	double t1 = Do(file, &db, &MushroomDB::Put);
 

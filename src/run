@@ -4,7 +4,7 @@ then
 	make art_test && ./art_test
 elif [ "$1" = "index" ]
 then
-	make distributed_index_test && ./distributed_index_test 4096 4800 10 4 16 $2
+	make distributed_index_test && ./distributed_index_test 4096 4800 10 4 $2
 elif [ "$1" = "raft" ]
 then
 	make raft_test
@@ -40,10 +40,10 @@ elif [ "$1" = "mushroom" ]
 then
 	if [ "$2" = "queue" ]
 	then
-		make blinktree_with_queue_test && ./blinktree_with_queue_test 4096 4800 10 4 16 $3
+		make blinktree_with_queue_test && ./blinktree_with_queue_test 4096 4800 10 4 $3
 	elif [ "$2" = "thread" ]
 	then
-		make blinktree_multi_thread_test && ./blinktree_multi_thread_test 4096 4800 10 4 16 $3
+		make blinktree_multi_thread_test && ./blinktree_multi_thread_test 4096 4800 10 4 $3
 		else
 			echo "wrong argument :("
 	fi

@@ -17,9 +17,9 @@ class ART
 	public:
 		ART();
 
-		bool Put(const KeySlice *key);
+		bool Put(const uint8_t *key, uint32_t len, uint64_t val);
 
-		bool Get(KeySlice *key);
+		bool Get(const uint8_t *key, uint32_t len, uint64_t *val);
 
 	private:
 		Node *root_;

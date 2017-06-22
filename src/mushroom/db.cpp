@@ -12,19 +12,16 @@
 #include "pool_manager.hpp"
 #include "b_link_tree.hpp"
 #include "pool_manager.hpp"
-#include "log_manager.hpp"
 #include "page.hpp"
 
 namespace Mushroom {
 
 MushroomDB::MushroomDB(const char *name, uint32_t key_len, uint32_t page_size,
-	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits, uint32_t log_page)
+	uint32_t pool_size, uint32_t hash_bits, uint32_t seg_bits)
 {
 	assert(name);
 
 	PoolManager::SetManagerInfo(page_size, pool_size, hash_bits, seg_bits);
-
-	LogManager::SetManagerInfo(log_page);
 
 	tree_ = new BLinkTree(key_len);
 }
