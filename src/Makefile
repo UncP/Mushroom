@@ -6,13 +6,18 @@ MushroomFile = $(shell find mushroom -name '*.cpp')
 NetworkFile = $(shell find network -name '*.cpp')
 RaftFile = $(shell find raft -name '*.cpp')
 RpcFile = $(shell find rpc -name '*.cpp')
+ARTFILE = $(shell find art -name '*.cpp')
 
 MOBJ = $(MushroomFile:.cpp=.o)
 NOBJ = $(NetworkFile:.cpp=.o)
 RaftOBJ = $(RaftFile:.cpp=.o)
 RpcOBJ = $(RpcFile:.cpp=.o)
+AOBJ = $(ARTFILE:.cpp=.o)
 
 all: blinktree_with_queue_test blinktree_multi_thread_test distributed_index_test
+
+art_test: $(AOBJ) ../test/art.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 mushroom_log_vector_test: raft/mushroom_log_vector.cpp ../test/mushroom_log_vector.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
