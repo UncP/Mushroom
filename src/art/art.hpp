@@ -22,6 +22,9 @@ class ART
 		bool Get(const uint8_t *key, uint32_t len, uint64_t *val);
 
 	private:
+
+		Node* Descend(Node *cur, char byte);
+
 		Node *root_;
 };
 

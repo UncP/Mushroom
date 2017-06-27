@@ -19,6 +19,9 @@ enum NodeType { NODE4 = 0x0, NODE16, NODE48, NODE256, LEAF };
 class Node
 {
 	public:
+
+		inline NodeType Type() const { return (NodeType)type_; }
+
 		inline bool Full() const {
 			switch(type_) {
 				case NODE4   : return Count() ==  4;

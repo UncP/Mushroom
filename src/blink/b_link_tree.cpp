@@ -38,7 +38,6 @@ bool BLinkTree::operator==(const BLinkTree &that) const
 
 void BLinkTree::Free()
 {
-	// printf("%s\n", pool_manager_->GetPage(root_.get())->ToString(true, true).c_str());
 	pool_manager_->Free();
 }
 
