@@ -10,11 +10,11 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "../src/mushroom/slice.hpp"
-#include "../src/mushroom/db.hpp"
-#include "../src/mushroom/task.hpp"
-#include "../src/mushroom/bounded_mapping_queue.hpp"
-#include "../src/mushroom/thread_pool_mapping.hpp"
+#include "../src/blink/slice.hpp"
+#include "../src/blink/db.hpp"
+#include "../src/blink/task.hpp"
+#include "../src/blink/bounded_mapping_queue.hpp"
+#include "../src/blink/thread_pool_mapping.hpp"
 
 using namespace Mushroom;
 

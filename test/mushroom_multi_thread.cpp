@@ -12,8 +12,8 @@
 #include <chrono>
 #include <pthread.h>
 
-#include "../src/mushroom/slice.hpp"
-#include "../src/mushroom/db.hpp"
+#include "../src/blink/slice.hpp"
+#include "../src/blink/db.hpp"
 
 using namespace Mushroom;
 
