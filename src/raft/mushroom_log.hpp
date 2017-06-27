@@ -10,7 +10,7 @@
 
 #include "../include/utility.hpp"
 #include "../rpc/marshaller.hpp"
-#include "../mushroom/slice.hpp"
+#include "../blink/slice.hpp"
 
 namespace Mushroom {
 
