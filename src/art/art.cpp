@@ -9,11 +9,17 @@
 
 namespace Mushroom {
 
-ART::ART() { }
+ART::ART():root_(new Node4()) { }
 
 bool ART::Put(const uint8_t *key, uint32_t len, uint64_t val)
 {
-	return false;
+	return Insert(root_, &root_, key, 0, len, val);
+}
+
+bool ART::Insert(Node *cur, Node **ref, const uint8_t *key, uint32_t depth, uint32_t len,
+	uint32_t val)
+{
+
 }
 
 bool ART::Get(const uint8_t *key, uint32_t len, uint64_t *val)
@@ -22,7 +28,7 @@ bool ART::Get(const uint8_t *key, uint32_t len, uint64_t *val)
 	return false;
 }
 
-Node* ART::Descend(Node *cur, char byte)
+Node** ART::Descend(Node *cur, char byte)
 {
 	union {
 		Node4   *p4;

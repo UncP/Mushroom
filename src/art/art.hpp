@@ -17,13 +17,14 @@ class ART
 	public:
 		ART();
 
-		bool Put(const uint8_t *key, uint32_t len, uint64_t val);
+		bool Put(const uint8_t *key, uint32_t len, uint32_t val);
 
-		bool Get(const uint8_t *key, uint32_t len, uint64_t *val);
+		bool Get(const uint8_t *key, uint32_t len, uint32_t *val);
 
 	private:
+		Node** Descend(Node *cur, char byte);
 
-		Node* Descend(Node *cur, char byte);
+		bool Insert(Node **cur, const uint8_t *key, uint32_t depth, uint32_t len, uint32_t val);
 
 		Node *root_;
 };

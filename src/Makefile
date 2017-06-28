@@ -2,13 +2,13 @@ CPP = $(CXX)
 CPPFLAGS = -std=c++11 -Wall -Wextra -O3
 LDFLAGS = -pthread
 
-MushroomFile = $(shell find mushroom -name '*.cpp')
+BlinkFile = $(shell find blink -name '*.cpp')
 NetworkFile = $(shell find network -name '*.cpp')
 RaftFile = $(shell find raft -name '*.cpp')
 RpcFile = $(shell find rpc -name '*.cpp')
 ARTFILE = $(shell find art -name '*.cpp')
 
-MOBJ = $(MushroomFile:.cpp=.o)
+MOBJ = $(BlinkFile:.cpp=.o)
 NOBJ = $(NetworkFile:.cpp=.o)
 RaftOBJ = $(RaftFile:.cpp=.o)
 RpcOBJ = $(RpcFile:.cpp=.o)

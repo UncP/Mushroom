@@ -9,6 +9,7 @@
 #define _NODE_HPP_
 
 #include <cstdint>
+#include <cstring>
 #include <cassert>
 #include <emmintrin.h>
 
@@ -19,7 +20,7 @@ enum NodeType { NODE4 = 0x0, NODE16, NODE48, NODE256, LEAF };
 class Node
 {
 	public:
-
+		Node():count_(0), len_(0) { }
 		inline NodeType Type() const { return (NodeType)type_; }
 
 		inline bool Full() const {
@@ -28,7 +29,7 @@ class Node
 				case NODE16  : return Count() == 16;
 				case NODE48  : return Count() == 48;
 				case NODE256 : return Count() ==  0; // uint8_t [0, 256)
-				default : assert(0);
+				default: assert(0);
 			};
 		}
 
@@ -49,11 +50,23 @@ class Node
 class Node4 : public Node
 {
 	public:
-		Node* Descend(uint8_t byte) {
+		Node4():Node(), type_(NODE4) { }
+
+		Node** Descend(uint8_t byte) {
 			for (int i = 0; i < Count(); ++i)
 				if (key_[i] == byte)
-					return child_[i];
+					return &child_[i];
 			return 0;
+		}
+
+		void Add(uint8_t byte, void *child) {
+			int idx;
+			for (idx = 0; idx < Count(); ++idx)
+				if (key_[idx] > byte)
+					break;
+			memmove(key_ + idx + 1, key_ + idx, Count() - idx);
+			key_[idx] = byte;
+			child_[idx] = leaf;
 		}
 
 	private:
@@ -64,11 +77,17 @@ class Node4 : public Node
 class Node16 : public Node
 {
 	public:
-		Node* Descend(uint8_t byte) {
+		Node16():Node(), type_(NODE16) { }
+
+		Node** Descend(uint8_t byte) {
 			__m128i cmp = _mm_cmpeq_epi8(_mm_set1_epi8(byte), _mm_loadu_si128((__m128i *)key_));
-			int bit = _mm_movemask_epi8(cmp) & int((1 << Count()) - 1);
-			if (bit) return child_[__builtin_ctz(bit)];
+			int bit = _mm_movemask_epi8(cmp) & ((1 << Count()) - 1);
+			if (bit) return &child_[__builtin_ctz(bit)];
 			else return 0;
+		}
+
+		void Add(uint8_t byte, void *child) {
+			int mask = (1 << Count()) - 1;
 		}
 
 	private:
@@ -79,9 +98,11 @@ class Node16 : public Node
 class Node48 : public Node
 {
 	public:
-		Node* Descend(uint8_t byte) {
+		Node48():Node(), type_(NODE48) { }
+
+		Node** Descend(uint8_t byte) {
 			uint8_t idx = index_[byte];
-			if (idx) return child_[idx];
+			if (idx) return &child_[idx];
 			else return 0;
 		}
 
@@ -93,13 +114,36 @@ class Node48 : public Node
 class Node256 : public Node
 {
 	public:
-		Node* Descend(uint8_t byte) {
-			return child_[byte];
+		Node256():Node(), type_(NODE256) { }
+
+		Node** Descend(uint8_t byte) {
+			return &child_[byte];
 		}
 
 	private:
 		Node *child_[256];
 };
+
+class Leaf
+{
+	public:
+		Leaf(const uint8_t *key, uint32_t len, uint32_t val):val_(val), len_(len) {
+			memcpy(key_, key, len_);
+		}
+
+	private:
+		uint32_t val_;
+		uint32_t len_;
+		uint8_t  key_[0];
+};
+
+inline Leaf* NewLeaf(const uint8_t *key, uint32_t len, uint32_t val) {
+	return new (new char[8 + len]) Leaf(key, len, val);
+}
+
+inline void DeleteLeaf(Leaf *leaf) {
+	delete [] (char *)leaf;
+}
 
 } // namespace Mushroom
 
