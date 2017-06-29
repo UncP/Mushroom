@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <cassert>
 #include <cstring>
+#include <new>
 
 #include "latch.hpp"
 #include "page.hpp"

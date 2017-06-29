@@ -24,7 +24,8 @@ class ART
 	private:
 		Node** Descend(Node *cur, char byte);
 
-		bool Insert(Node **cur, const uint8_t *key, uint32_t depth, uint32_t len, uint32_t val);
+		bool Insert(Node *cur, Node **ref, const uint8_t *key, uint32_t depth, uint32_t len,
+			uint32_t val);
 
 		Node *root_;
 };

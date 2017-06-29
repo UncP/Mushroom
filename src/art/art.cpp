@@ -9,9 +9,13 @@
 
 namespace Mushroom {
 
-ART::ART():root_(new Node4()) { }
+#define IS_LEAF(x)  (x & 1)
+#define SET_LEAF(x) (void *)(x | 1)
+#define LEAF_RAW(x) (Leaf *)(x & ~1)
 
-bool ART::Put(const uint8_t *key, uint32_t len, uint64_t val)
+ART::ART():root_(0) { }
+
+bool ART::Put(const uint8_t *key, uint32_t len, uint32_t val)
 {
 	return Insert(root_, &root_, key, 0, len, val);
 }
@@ -19,10 +23,32 @@ bool ART::Put(const uint8_t *key, uint32_t len, uint64_t val)
 bool ART::Insert(Node *cur, Node **ref, const uint8_t *key, uint32_t depth, uint32_t len,
 	uint32_t val)
 {
+	if (!cur) {
+		*ref = (Node *)SET_LEAF(NewLeaf(key, len, val));
+		return true;
+	}
+	if (IsLeaf(cur)) {
+		Leaf *leaf = LEAF_RAW(cur);
+		if (leaf->Match(key, len)) return ;
 
+		Leaf *leaf2 = NewLeaf(key, len, val);
+		int prefix_len = leaf->PrefixFrom(depth, leaf2);
+
+		Node4 *node4 = new Node4();
+		node4->SetPrefix(key + depth, prefix_len);
+
+		node4->AddChild(leaf->KeyAt(depth+prefix_len), SET_LEAF(leaf));
+		node4->AddChild(leaf2->KeyAt(depth+prefix_len), SET_LEAF(leaf));
+
+		*ref = (Node *)node4;
+	}
+
+	if (cur->PrefixLen()) {
+
+	}
 }
 
-bool ART::Get(const uint8_t *key, uint32_t len, uint64_t *val)
+bool ART::Get(const uint8_t *key, uint32_t len, uint32_t *val)
 {
 
 	return false;
