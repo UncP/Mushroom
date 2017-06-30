@@ -13,14 +13,15 @@
 #include <cstring>
 #include <cassert>
 #include <new>
+#include <algorithm>
 
 namespace Mushroom {
 
 enum NodeType { NODE4 = 0x0, NODE16, NODE48, NODE256, LEAF };
 
-#define IS_LEAF(x)  (x & 1)
-#define SET_LEAF(x) (void *)(x | 1)
-#define LEAF_RAW(x) (Leaf *)(x & ~1)
+#define IS_LEAF(x)  (uintptr_t(x) & 1)
+#define SET_LEAF(x) (void *)(uintptr_t(x) | 1)
+#define LEAF_RAW(x) (Leaf *)(uintptr_t(x) & ~1)
 
 class Leaf
 {
@@ -50,6 +51,8 @@ class Leaf
 			return key_[idx];
 		}
 
+		inline const uint8_t* Key() const { return key_; }
+
 	private:
 		uint32_t val_;
 		uint32_t len_;
@@ -70,11 +73,21 @@ class Node
 			memcpy(prefix_, prefix, std::min(MAX_PREFIX_LEN, len_));
 		}
 
-		static Leaf* Minimum(const Node *node);
+		inline void AdjustPrefix(uint32_t len) {
+			len_ -= len + 1;
+			memmove(prefix_, prefix_ + len + 1, std::min(MAX_PREFIX_LEN, len_));
+		}
+
+		inline void AdjustPrefix(uint32_t len, uint32_t depth, const uint8_t *key) {
+			len_ -= len + 1;
+			memcpy(prefix_, key + len + depth + 1, std::min(MAX_PREFIX_LEN, len_));
+		}
+
+		inline const uint8_t* Prefix() const { return prefix_; }
 
 		inline uint32_t PrefixLen() const { return len_; }
 
-		void MismatchPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
+		int MismatchPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
 			int max_cmp = std::min(std::min(MAX_PREFIX_LEN, len_), len - depth);
 			int idx;
 			for (idx = 0; idx < max_cmp; ++idx) {
@@ -98,6 +111,8 @@ class Node
 
 		static const uint32_t MAX_PREFIX_LEN = 8;
 
+		static Leaf* Minimum(const Node *node);
+
 	protected:
 		inline void IncrCount() { ++count_; }
 
@@ -113,7 +128,7 @@ class Node4 : public Node
 	public:
 		Node4():Node(NODE4) { memset(key_, 0, 4); }
 
-		inline Node* ChildAt(uint32_t idx) {
+		inline Node* ChildAt(uint32_t idx) const {
 			assert(idx < Count());
 			return child_[idx];
 		}
@@ -125,7 +140,7 @@ class Node4 : public Node
 			return 0;
 		}
 
-		void Add(uint8_t byte, void *child) {
+		void AddChild(uint8_t byte, void *child) {
 			int idx;
 			for (idx = 0; idx < Count(); ++idx)
 				if (key_[idx] > byte)
@@ -147,7 +162,7 @@ class Node16 : public Node
 	public:
 		Node16():Node(NODE16) { memset(key_, 0, 16); }
 
-		inline Node* ChildAt(uint32_t idx) {
+		inline Node* ChildAt(uint32_t idx) const {
 			assert(idx < Count());
 			return child_[idx];
 		}
@@ -159,7 +174,7 @@ class Node16 : public Node
 			else return 0;
 		}
 
-		void Add(uint8_t byte, void *child) {
+		void AddChild(uint8_t byte, void *child) {
 			__m128i cmp = _mm_cmplt_epi8(_mm_set1_epi8(byte), _mm_loadu_si128((__m128i *)key_));
 			int bit = _mm_movemask_epi8(cmp) & ((1 << Count()) - 1);
 			int idx;
@@ -185,12 +200,12 @@ class Node48 : public Node
 	public:
 		Node48():Node(NODE48) { memset(index_, 0, 256); memset(child_, 0, sizeof(Node *) * 48); }
 
-		inline Node* KeyAt(uint32_t idx) {
+		inline uint8_t KeyAt(uint32_t idx) const {
 			assert(idx < Count());
-			return key_[idx];
+			return index_[idx];
 		}
 
-		inline Node* ChildAt(uint32_t idx) {
+		inline Node* ChildAt(uint32_t idx) const {
 			assert(child_[idx]);
 			return child_[idx];
 		}
@@ -201,7 +216,7 @@ class Node48 : public Node
 			else return 0;
 		}
 
-		void Add(uint8_t byte, void *child) {
+		void AddChild(uint8_t byte, void *child) {
 			int idx = 0;
 			while (child_[idx]) ++idx;
 			index_[byte] = idx;
@@ -219,7 +234,7 @@ class Node256 : public Node
 	public:
 		Node256():Node(NODE256) { memset(child_, 0, sizeof(Node *) * 256); }
 
-		inline Node* ChildAt(uint32_t idx) {
+		inline Node* ChildAt(uint32_t idx) const {
 			assert(idx < 256);
 			return child_[idx];
 		}
@@ -228,7 +243,7 @@ class Node256 : public Node
 			return &child_[byte];
 		}
 
-		void Add(uint8_t byte, void *child) {
+		void AddChild(uint8_t byte, void *child) {
 			child_[byte] = (Node *)child;
 			IncrCount();
 		}
