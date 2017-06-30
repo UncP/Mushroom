@@ -18,6 +18,44 @@ namespace Mushroom {
 
 enum NodeType { NODE4 = 0x0, NODE16, NODE48, NODE256, LEAF };
 
+#define IS_LEAF(x)  (x & 1)
+#define SET_LEAF(x) (void *)(x | 1)
+#define LEAF_RAW(x) (Leaf *)(x & ~1)
+
+class Leaf
+{
+	public:
+		Leaf(const uint8_t *key, uint32_t len, uint32_t val):val_(val), len_(len) {
+			memcpy(key_, key, len_);
+		}
+
+		inline bool Match(const uint8_t *key, uint32_t len) const {
+			if (len != len_) return false;
+			return !memcmp(key_, key, len_);
+		}
+
+		int CommonPrefix(uint32_t depth, const Leaf *that) const {
+			int max_cmp = std::min(this->len_, that->len_) - depth;
+			int idx;
+			for (idx = 0; idx < max_cmp; ++idx)
+				if (this->key_[depth + idx] != that->key_[depth + idx])
+					return idx;
+			return idx;
+		}
+
+		inline uint32_t KeyLen() const { return len_; }
+
+		inline uint8_t KeyAt(uint32_t idx) const {
+			assert(idx < len_);
+			return key_[idx];
+		}
+
+	private:
+		uint32_t val_;
+		uint32_t len_;
+		uint8_t  key_[0];
+};
+
 class Node
 {
 	public:
@@ -27,31 +65,58 @@ class Node
 
 		inline uint8_t Count() const { return count_; }
 
-		inline void SetPrefix(const uint8_t *prefix, uint8_t len) {
-			memcpy(prefix_, prefix, std::min(len_, len));
+		inline void SetPrefix(const uint8_t *prefix, uint32_t len) {
+			len_ = len;
+			memcpy(prefix_, prefix, std::min(MAX_PREFIX_LEN, len_));
 		}
 
-		inline uint8_t PrefixLen() const { return len_; }
+		static Leaf* Minimum(const Node *node);
+
+		inline uint32_t PrefixLen() const { return len_; }
+
+		void MismatchPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
+			int max_cmp = std::min(std::min(MAX_PREFIX_LEN, len_), len - depth);
+			int idx;
+			for (idx = 0; idx < max_cmp; ++idx) {
+				if (prefix_[idx] != key[depth + idx])
+					return idx;
+			}
+
+			if (len_ > MAX_PREFIX_LEN) {
+				Leaf *leaf = Minimum(this);
+				max_cmp = std::min(leaf->KeyLen(), len) - depth;
+				for (; idx < max_cmp; ++idx) {
+					if (leaf->KeyAt(depth + idx) != key[depth + idx])
+						return idx;
+				}
+			}
+			return idx;
+		}
 
 		Node(const Node &) = delete;
 		Node& operator=(const Node &) = delete;
 
-		static const uint32_t MAX_PRE_LEN = 8;
+		static const uint32_t MAX_PREFIX_LEN = 8;
 
 	protected:
 		inline void IncrCount() { ++count_; }
 
 	private:
-		uint8_t type_;
-		uint8_t count_;
-		uint8_t len_;
-		uint8_t prefix_[MAX_PRE_LEN];
+		uint8_t  type_;
+		uint8_t  count_;
+		uint32_t len_;
+		uint8_t  prefix_[MAX_PREFIX_LEN];
 };
 
 class Node4 : public Node
 {
 	public:
 		Node4():Node(NODE4) { memset(key_, 0, 4); }
+
+		inline Node* ChildAt(uint32_t idx) {
+			assert(idx < Count());
+			return child_[idx];
+		}
 
 		Node** Descend(uint8_t byte) {
 			for (int i = 0; i < Count(); ++i)
@@ -81,6 +146,11 @@ class Node16 : public Node
 {
 	public:
 		Node16():Node(NODE16) { memset(key_, 0, 16); }
+
+		inline Node* ChildAt(uint32_t idx) {
+			assert(idx < Count());
+			return child_[idx];
+		}
 
 		Node** Descend(uint8_t byte) {
 			__m128i cmp = _mm_cmpeq_epi8(_mm_set1_epi8(byte), _mm_loadu_si128((__m128i *)key_));
@@ -115,6 +185,16 @@ class Node48 : public Node
 	public:
 		Node48():Node(NODE48) { memset(index_, 0, 256); memset(child_, 0, sizeof(Node *) * 48); }
 
+		inline Node* KeyAt(uint32_t idx) {
+			assert(idx < Count());
+			return key_[idx];
+		}
+
+		inline Node* ChildAt(uint32_t idx) {
+			assert(child_[idx]);
+			return child_[idx];
+		}
+
 		Node** Descend(uint8_t byte) {
 			uint8_t idx = index_[byte];
 			if (idx) return &child_[idx];
@@ -139,6 +219,11 @@ class Node256 : public Node
 	public:
 		Node256():Node(NODE256) { memset(child_, 0, sizeof(Node *) * 256); }
 
+		inline Node* ChildAt(uint32_t idx) {
+			assert(idx < 256);
+			return child_[idx];
+		}
+
 		Node** Descend(uint8_t byte) {
 			return &child_[byte];
 		}
@@ -150,38 +235,6 @@ class Node256 : public Node
 
 	private:
 		Node *child_[256];
-};
-
-class Leaf
-{
-	public:
-		Leaf(const uint8_t *key, uint32_t len, uint32_t val):val_(val), len_(len) {
-			memcpy(key_, key, len_);
-		}
-
-		bool Match(const uint8_t *key, uint32_t len) const {
-			if (len != len_) return false;
-			return !memcmp(key_, key, len_);
-		}
-
-		int PrefixFrom(uint32_t depth, const Leaf *that) const {
-			int max_cmp = std::min(this->len_, that->len_) - depth;
-			int idx;
-			for (idx = 0; idx < max_cmp; ++idx)
-				if (this->key_[depth + idx] != that->key_[depth + idx])
-					return idx;
-			return idx;
-		}
-
-		uint8_t KeyAt(uint32_t idx) const {
-			assert(idx < len_);
-			return key_[idx];
-		}
-
-	private:
-		uint32_t val_;
-		uint32_t len_;
-		uint8_t  key_[0];
 };
 
 inline Leaf* NewLeaf(const uint8_t *key, uint32_t len, uint32_t val) {
