@@ -62,7 +62,7 @@ class Leaf
 };
 
 inline Leaf* NewLeaf(const uint8_t *key, uint32_t len, uint32_t val) {
-	return new (new char[8 + len]) Leaf(key, len, val);
+	return new (new char[sizeof(Leaf) + len]) Leaf(key, len, val);
 }
 
 inline void DeleteLeaf(Leaf *leaf) {
@@ -74,6 +74,11 @@ class Node
 	public:
 		Node(NodeType type):type_(type), count_(0), len_(0) { }
 
+		Node(NodeType type, uint8_t count, uint32_t len, const uint8_t *prefix)
+		:type_(type), count_(count), len_(len) {
+			memcpy(prefix_, prefix, std::min(MAX_PREFIX_LEN, len_));
+		}
+
 		inline NodeType Type() const { return (NodeType)type_; }
 
 		inline uint8_t Count() const { return count_; }
@@ -83,7 +88,7 @@ class Node
 			memcpy(prefix_, prefix, std::min(MAX_PREFIX_LEN, len_));
 		}
 
-		inline int CheckPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
+		inline uint32_t CheckPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
 			int max_cmp = std::min(int(std::min(len_, MAX_PREFIX_LEN)), int(len - depth));
 			int idx;
 			for (idx = 0; idx < max_cmp; ++idx)
@@ -147,6 +152,12 @@ class Node4 : public Node
 	public:
 		Node4():Node(NODE4) { memset(key_, 0, 4); }
 
+		inline bool Full() const { return Count() == 4; }
+
+		inline const uint8_t* Key() const { return key_; }
+
+		inline const Node* Child() const { return (const Node *)child_; }
+
 		inline Node* ChildAt(uint32_t idx) const {
 			assert(idx < Count());
 			return child_[idx];
@@ -180,6 +191,21 @@ class Node16 : public Node
 {
 	public:
 		Node16():Node(NODE16) { memset(key_, 0, 16); }
+
+		Node16(const Node4 *node4)
+		:Node(NODE16, node4->Count(), node4->PrefixLen(), node4->Prefix()) {
+			memcpy(key_, node4->Key(), node4->Count());
+			memcpy(child_, node4->Child(), sizeof(Node *) * node4->Count());
+		}
+
+		inline bool Full() const { return Count() == 16; }
+
+		inline const Node* Child() const { return (const Node *)child_; }
+
+		inline uint8_t KeyAt(uint32_t idx) const {
+			assert(idx < Count());
+			return key_[idx];
+		}
 
 		inline Node* ChildAt(uint32_t idx) const {
 			assert(idx < Count());
@@ -219,20 +245,27 @@ class Node48 : public Node
 	public:
 		Node48():Node(NODE48) { memset(index_, 0, 256); memset(child_, 0, sizeof(Node *) * 48); }
 
+		Node48(const Node16 *node16)
+		:Node(NODE48, node16->Count(), node16->PrefixLen(), node16->Prefix()) {
+			memcpy(child_, node16->Child(), sizeof(Node *) * node16->Count());
+			for (uint8_t i = 0; i < node16->Count(); ++i)
+				index_[node16->KeyAt(i)] = i;
+		}
+
+		inline bool Full() const { return Count() == 48; }
+
 		inline uint8_t KeyAt(uint32_t idx) const {
 			assert(idx < Count());
 			return index_[idx];
 		}
 
 		inline Node* ChildAt(uint32_t idx) const {
-			assert(child_[idx]);
+			assert(idx < Count());
 			return child_[idx];
 		}
 
 		Node** Descend(uint8_t byte) {
-			uint8_t idx = index_[byte];
-			if (idx) return &child_[idx];
-			else return 0;
+			return &child_[index_[byte]];
 		}
 
 		void AddChild(uint8_t byte, void *child) {
@@ -252,6 +285,13 @@ class Node256 : public Node
 {
 	public:
 		Node256():Node(NODE256) { memset(child_, 0, sizeof(Node *) * 256); }
+
+		Node256(const Node48 *node48)
+		:Node(NODE256, node48->Count(), node48->PrefixLen(), node48->Prefix()) {
+			for (uint32_t i = 0; i < 256; ++i)
+				if (node48->KeyAt(i))
+					child_[i] = node48->ChildAt(node48->KeyAt(i));
+		}
 
 		inline Node* ChildAt(uint32_t idx) const {
 			assert(idx < 256);
