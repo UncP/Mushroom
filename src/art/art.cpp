@@ -46,7 +46,7 @@ static bool Insert(Node *cur, Node **ref, const uint8_t *key, uint32_t depth, ui
 		if (leaf->Match(key, len)) return false;
 
 		Leaf *leaf2 = NewLeaf(key, len, val);
-		int prefix_len = leaf->CommonPrefix(depth, leaf2);
+		uint32_t prefix_len = leaf->CommonPrefix(depth, leaf2);
 
 		Node4 *node4 = new Node4();
 		node4->SetPrefix(key + depth, prefix_len);
@@ -58,8 +58,8 @@ static bool Insert(Node *cur, Node **ref, const uint8_t *key, uint32_t depth, ui
 	}
 
 	if (cur->PrefixLen()) {
-		int prefix_diff = cur->MismatchPrefix(key, len, depth);
-		if (uint32_t(prefix_diff) >= cur->PrefixLen()) {
+		uint32_t prefix_diff = cur->MismatchPrefix(key, len, depth);
+		if (prefix_diff >= cur->PrefixLen()) {
 			depth += cur->PrefixLen();
 			goto Recurse_Search;
 		}
@@ -96,6 +96,29 @@ bool ART::Put(const uint8_t *key, uint32_t len, uint32_t val)
 
 bool ART::Get(const uint8_t *key, uint32_t len, uint32_t *val)
 {
+	Node *cur = root_;
+	uint32_t depth = 0;
+	while (cur) {
+		if (IS_LEAF(cur)) {
+			Leaf *leaf = LEAF_RAW(cur);
+			if (leaf->Match(key, len)) {
+				*val = leaf->Value();
+				return true;
+			}
+			return false;
+		}
+
+		if (cur->PrefixLen()) {
+			uint32_t prefix_len = cur->CheckPrefix(key, len, depth);
+			if (prefix_len != std::min(Node::MAX_PREFIX_LEN, cur->PrefixLen()))
+				return false;
+			depth += cur->PrefixLen();
+		}
+
+		Node **child = Descend(cur, key[depth]);
+		cur = child ? *child : 0;
+		++depth;
+	}
 	return false;
 }
 

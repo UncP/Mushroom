@@ -35,7 +35,7 @@ class Leaf
 			return !memcmp(key_, key, len_);
 		}
 
-		int CommonPrefix(uint32_t depth, const Leaf *that) const {
+		uint32_t CommonPrefix(uint32_t depth, const Leaf *that) const {
 			int max_cmp = std::min(this->len_, that->len_) - depth;
 			int idx;
 			for (idx = 0; idx < max_cmp; ++idx)
@@ -51,6 +51,8 @@ class Leaf
 			return key_[idx];
 		}
 
+		inline uint32_t Value() const { return val_; }
+
 		inline const uint8_t* Key() const { return key_; }
 
 	private:
@@ -58,6 +60,14 @@ class Leaf
 		uint32_t len_;
 		uint8_t  key_[0];
 };
+
+inline Leaf* NewLeaf(const uint8_t *key, uint32_t len, uint32_t val) {
+	return new (new char[8 + len]) Leaf(key, len, val);
+}
+
+inline void DeleteLeaf(Leaf *leaf) {
+	delete [] (char *)leaf;
+}
 
 class Node
 {
@@ -71,6 +81,15 @@ class Node
 		inline void SetPrefix(const uint8_t *prefix, uint32_t len) {
 			len_ = len;
 			memcpy(prefix_, prefix, std::min(MAX_PREFIX_LEN, len_));
+		}
+
+		inline int CheckPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
+			int max_cmp = std::min(int(std::min(len_, MAX_PREFIX_LEN)), int(len - depth));
+			int idx;
+			for (idx = 0; idx < max_cmp; ++idx)
+				if (prefix_[idx] != key[depth + idx])
+					return idx;
+			return idx;
 		}
 
 		inline void AdjustPrefix(uint32_t len) {
@@ -87,8 +106,8 @@ class Node
 
 		inline uint32_t PrefixLen() const { return len_; }
 
-		int MismatchPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
-			int max_cmp = std::min(std::min(MAX_PREFIX_LEN, len_), len - depth);
+		uint32_t MismatchPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
+			int max_cmp = std::min(int(std::min(MAX_PREFIX_LEN, len_)), int(len - depth));
 			int idx;
 			for (idx = 0; idx < max_cmp; ++idx) {
 				if (prefix_[idx] != key[depth + idx])
@@ -251,16 +270,6 @@ class Node256 : public Node
 	private:
 		Node *child_[256];
 };
-
-inline Leaf* NewLeaf(const uint8_t *key, uint32_t len, uint32_t val) {
-	char *tmp = new char[8 + len];
-	Leaf *leaf = (Leaf *)tmp;
-	return new (leaf) Leaf(key, len, val);
-}
-
-inline void DeleteLeaf(Leaf *leaf) {
-	delete [] (char *)leaf;
-}
 
 } // namespace Mushroom
 
