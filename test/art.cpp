@@ -37,7 +37,7 @@ double Put(ART *art)
 			assert(buf[i] == '\n' || buf[i] == '\0');
 			buf[i] = '\0';
 
-			art->Put((const uint8_t *)tmp, key_len, (uint32_t *)&count);
+			art->Put((const uint8_t *)tmp, key_len, (uint32_t)count);
 
 			if (++count == total) {
 				flag = false;
@@ -99,7 +99,6 @@ int main(int argc, char **argv)
 
 	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", total, t1);
 	printf("\033[34mget time: %f  s\033[0m\n", t2);
-	getchar();
 
 	return 0;
 }

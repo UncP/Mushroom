@@ -47,7 +47,7 @@ class Leaf
 		inline uint32_t KeyLen() const { return len_; }
 
 		inline uint8_t KeyAt(uint32_t idx) const {
-			assert(idx < len_);
+			// assert(idx < len_);
 			return key_[idx];
 		}
 
@@ -161,7 +161,7 @@ class Node4 : public Node
 		inline const Node* Child() const { return (const Node *)child_; }
 
 		inline Node* ChildAt(uint32_t idx) const {
-			assert(idx < Count());
+			// assert(idx < Count());
 			return child_[idx];
 		}
 
@@ -204,12 +204,12 @@ class Node16 : public Node
 		inline const Node* Child() const { return (const Node *)child_; }
 
 		inline uint8_t KeyAt(uint32_t idx) const {
-			assert(idx < Count());
+			// assert(idx < Count());
 			return key_[idx];
 		}
 
 		inline Node* ChildAt(uint32_t idx) const {
-			assert(idx < Count());
+			// assert(idx < Count());
 			return child_[idx];
 		}
 
@@ -255,12 +255,12 @@ class Node48 : public Node
 		inline bool Full() const { return Count() == 48; }
 
 		inline uint8_t KeyAt(uint32_t idx) const {
-			assert(idx < 256);
+			// assert(idx < 256);
 			return index_[idx];
 		}
 
 		inline Node* ChildAt(uint32_t idx) const {
-			assert(idx < Count());
+			// assert(idx < Count());
 			return child_[idx];
 		}
 
@@ -296,7 +296,7 @@ class Node256 : public Node
 		}
 
 		inline Node* ChildAt(uint32_t idx) const {
-			assert(idx < 256);
+			// assert(idx < 256);
 			return child_[idx];
 		}
 
