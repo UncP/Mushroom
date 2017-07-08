@@ -41,11 +41,12 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 		while (--ptr && buf[ptr] != '\n' && buf[ptr] != '\0') buf[ptr] = '\0';
 		if (ptr) buf[ptr++] = '\0';
 		else break;
-		for (int i = 0; i < ptr;) {
-			int j = 0;
+		for (int i = 0; i < ptr; ++i) {
 			char *tmp = buf + i;
-			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
-			tmp[j] = '\0';
+			i += key_len;
+			assert(buf[i] == '\n' || buf[i] == '\0');
+			buf[i] = '\0';
+
 			key->page_no_ = 0;
 			memcpy(key->key_, tmp, key_len);
 
@@ -57,7 +58,6 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 				flag = false;
 				break;
 			}
-			++i;
 		}
 	}
 	close(fd);
