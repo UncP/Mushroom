@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 	const int total = (argc == 6) ? atoi(argv[5]) : 1;
 
 	MushroomDB *db = new MushroomDB("mushroom_test",
-		key_len, page_size, pool_size, hash_bits, seg_bits, log_page);
+		key_len, page_size, pool_size, hash_bits, seg_bits);
 
 	int thread_num = 4;
 	auto beg = std::chrono::high_resolution_clock::now();
@@ -119,5 +119,6 @@ int main(int argc, char **argv)
 
 	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", all * thread_num, t1);
 	printf("\033[34mget time: %f  s\033[0m\n", t2);
+	getchar();
 	return 0;
 }

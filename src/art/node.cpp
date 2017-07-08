@@ -72,7 +72,7 @@ Leaf* Node::Minimum(const Node *node)
 			idx = 0;
 			p.p48 = (const Node48 *)node;
 			while (!p.p48->KeyAt(idx)) ++idx;
-			idx = p.p48->KeyAt(idx);
+			idx = p.p48->KeyAt(idx) - 1;
 			return Minimum(p.p48->ChildAt(idx));
 		case NODE256:
 			idx = 0;

@@ -121,7 +121,7 @@ static bool Insert(Node *cur, Node **ref, const uint8_t *key, uint32_t depth, ui
 		} else {
 			Leaf *leaf = Node::Minimum(cur);
 			node4->AddChild(leaf->KeyAt(depth + prefix_diff), cur);
-			cur->AdjustPrefix(prefix_diff, depth, leaf->Key());
+			cur->AdjustPrefix(prefix_diff, leaf->Key() + depth);
 		}
 
 		Leaf *leaf = NewLeaf(key, len, val);

@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <chrono>
+#include <cassert>
 
 #include "../src/art/art.hpp"
 
@@ -36,7 +37,7 @@ double Put(ART *art)
 			assert(buf[i] == '\n' || buf[i] == '\0');
 			buf[i] = '\0';
 
-			art->Put((const uint8_t *)tmp, key_len, uint32_t(0));
+			art->Put((const uint8_t *)tmp, key_len, (uint32_t *)&count);
 
 			if (++count == total) {
 				flag = false;
@@ -71,7 +72,7 @@ double Get(ART *art)
 			buf[i] = '\0';
 
 			uint32_t val;
-			assert(art->Get((const uint8_t *)tmp, key_len, &val) && val == 0);
+			assert(art->Get((const uint8_t *)tmp, key_len, &val) && int(val) == count);
 
 			if (++count == total) {
 				flag = false;
@@ -90,15 +91,15 @@ int main(int argc, char **argv)
 {
 	total = argc == 2 ? atoi(argv[1]) : 1;
 
-	ART *art = new ART();
+	ART art;
 
-	auto t1 = Put(art);
+	auto t1 = Put(&art);
 
-	auto t2 = Get(art);
+	auto t2 = Get(&art);
 
 	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", total, t1);
 	printf("\033[34mget time: %f  s\033[0m\n", t2);
+	getchar();
 
-	delete art;
 	return 0;
 }
