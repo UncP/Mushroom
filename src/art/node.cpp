@@ -9,6 +9,50 @@
 
 namespace Mushroom {
 
+void Free(Node *node)
+{
+	if (!node) return ;
+
+	if (IS_LEAF(node)) {
+		DeleteLeaf(LEAF_RAW(node));
+		return ;
+	}
+
+	int i;
+	union {
+		Node4   *p4;
+		Node16  *p16;
+		Node48  *p48;
+		Node256 *p256;
+	}p;
+	switch (node->Type()) {
+		case NODE4:
+			p.p4 = (Node4 *)node;
+			for (i = 0; i < node->Count(); ++i)
+				Free(p.p4->ChildAt(i));
+			break;
+		case NODE16:
+			p.p16 = (Node16 *)node;
+			for (i = 0; i < node->Count(); ++i)
+				Free(p.p16->ChildAt(i));
+			break;
+		case NODE48:
+			p.p48 = (Node48 *)node;
+			for (i = 0; i < node->Count(); ++i)
+				Free(p.p48->ChildAt(i));
+			break;
+		case NODE256:
+			p.p256 = (Node256 *)node;
+			for (i = 0; i < 256; ++i)
+				if (p.p256->ChildAt(i))
+					Free(p.p256->ChildAt(i));
+			break;
+		default:
+			assert(0);
+	}
+	delete node;
+}
+
 Leaf* Node::Minimum(const Node *node)
 {
 	if (!node) return 0;

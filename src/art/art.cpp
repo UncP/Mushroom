@@ -148,7 +148,7 @@ bool ART::Get(const uint8_t *key, uint32_t len, uint32_t *val)
 {
 	Node *cur = root_;
 	uint32_t depth = 0;
-	for (; cur) {
+	while (cur) {
 		if (IS_LEAF(cur)) {
 			Leaf *leaf = LEAF_RAW(cur);
 			if (leaf->Match(key, len)) {
@@ -170,6 +170,11 @@ bool ART::Get(const uint8_t *key, uint32_t len, uint32_t *val)
 		++depth;
 	}
 	return false;
+}
+
+ART::~ART()
+{
+	Free(root_);
 }
 
 } // namespace Mushroom

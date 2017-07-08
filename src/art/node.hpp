@@ -130,6 +130,8 @@ class Node
 			return idx;
 		}
 
+		void Free();
+
 		Node(const Node &) = delete;
 		Node& operator=(const Node &) = delete;
 
@@ -310,6 +312,8 @@ class Node256 : public Node
 	private:
 		Node *child_[256];
 };
+
+void Free(Node *node);
 
 } // namespace Mushroom
 
