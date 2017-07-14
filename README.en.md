@@ -44,4 +44,4 @@
 | 1.1.0  |    B<sup>link</sup> tree node occupies 2/3 of node's space, originally 1/2 (Aborted) |
 | 1.1.1  |     optimize raft memory use   |
 | 1.2.0  |     Adaptive Radix Tree    |
-| 1.2.1  |  remove latch manager, each page has its own latch   |
+| 1.2.1  |  remove latch manager, each page has its own latch, improve performance by 10%   |
