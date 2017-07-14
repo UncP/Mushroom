@@ -16,8 +16,6 @@ namespace Mushroom {
 class KeySlice;
 class Page;
 class PoolManager;
-class Latch;
-class LatchManager;
 
 enum LockType { WriteLock, ReadLock };
 
@@ -42,7 +40,6 @@ class BLinkTree : private NoCopy
 		struct Set {
 			Set():depth_(0) { }
 			page_t   page_no_;
-			Latch   *latch_;
 			Page    *page_;
 			page_t   stack_[8];
 			uint32_t depth_;
@@ -54,7 +51,6 @@ class BLinkTree : private NoCopy
 
 		void Insert(Set &set, KeySlice *key);
 
-		LatchManager *latch_manager_;
 		PoolManager  *pool_manager_;
 
 		Atomic<page_t> root_;

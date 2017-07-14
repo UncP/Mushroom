@@ -29,6 +29,7 @@ uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
 	memset(this, 0, PageSize);
+	pthread_rwlock_init(latch_, 0);
 	page_no_ = page_no;
 	degree_  = degree;
 	type_    = (uint8_t)type;
@@ -124,7 +125,6 @@ InsertStatus Page::Insert(const KeySlice *key, page_t &page_no)
 	if (pos) memmove(&index[0], &index[1], pos << 1);
 	index[pos] = end;
 	++total_key_;
-	dirty_ = 1;
 	return InsertOk;
 }
 
@@ -182,8 +182,6 @@ void Page::Split(Page *that, KeySlice *slice)
 
 	this->total_key_ = left;
 	that->total_key_ = right;
-	this->dirty_ = 1;
-	that->dirty_ = 1;
 }
 
 bool Page::Full() const
@@ -224,63 +222,7 @@ bool Page::NeedSplit()
 	pre_len_ += pre_len;
 	key_len_ -= pre_len;
 	degree_  = degree;
-	dirty_   = 1;
 	return false;
-}
-
-bool Page::FenceKeyLessEqual(const Page *that) const
-{
-	int f = 0;
-	KeySlice *last  = this->Key(this->Index(), this->total_key_ - 1);
-	KeySlice *first = that->Key(that->Index(), 0);
-	if (this->pre_len_ == that->pre_len_) {
-		if (this->pre_len_)
-			f = memcmp(this->data_, that->data_, this->pre_len_);
-		if (f < 0) return true;
-		f = memcmp(last->key_, first->key_, this->key_len_);
-	} else if (this->pre_len_ < that->pre_len_) {
-		if (this->pre_len_)
-			f = memcmp(this->data_, that->data_, this->pre_len_);
-		if (f < 0) return true;
-		uint16_t left = that->pre_len_ - this->pre_len_;
-		f = memcmp(last->key_, that->data_ + this->pre_len_, left);
-		if (f < 0) return true;
-		f = memcmp(last->key_ + left, first->key_, that->key_len_);
-	} else {
-		if (that->pre_len_)
-			f |= memcmp(this->data_, that->data_, that->pre_len_);
-		if (f < 0) return true;
-		uint16_t left = this->pre_len_ - that->pre_len_;
-		f = memcmp(this->data_ + that->pre_len_, first->key_, left);
-		if (f < 0) return true;
-		f = memcmp(last->key_, first->key_ + left, this->key_len_);
-	}
-	return f <= 0 ? true : false;
-}
-
-bool Page::FenceKeyEqual(const Page *that) const
-{
-	int f = 0;
-	KeySlice *last  = this->Key(this->Index(), this->total_key_ - 1);
-	KeySlice *first = that->Key(that->Index(), 0);
-	if (this->pre_len_ == that->pre_len_) {
-		if (this->pre_len_)
-			f |= memcmp(this->data_, that->data_, this->pre_len_);
-		f |= memcmp(last->key_, first->key_, this->key_len_);
-	} else if (this->pre_len_ < that->pre_len_) {
-		if (this->pre_len_)
-			f |= memcmp(this->data_, that->data_, this->pre_len_);
-		uint16_t left = that->pre_len_ - this->pre_len_;
-		f |= memcmp(last->key_, that->data_ + this->pre_len_, left);
-		f |= memcmp(last->key_ + left, first->key_, that->key_len_);
-	} else {
-		if (that->pre_len_)
-			f |= memcmp(this->data_, that->data_, that->pre_len_);
-		uint16_t left = this->pre_len_ - that->pre_len_;
-		f |= memcmp(this->data_ + that->pre_len_, first->key_, left);
-		f |= memcmp(last->key_, first->key_ + left, this->key_len_);
-	}
-	return f == 0 ? true : false;
 }
 
 std::string Page::ToString(bool f, bool f2) const

@@ -2,7 +2,7 @@
 [中文版 README](./README.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.1.1-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.2.1-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
@@ -44,3 +44,4 @@
 | 1.1.0  |    B<sup>link</sup> tree node occupies 2/3 of node's space, originally 1/2 (Aborted) |
 | 1.1.1  |     optimize raft memory use   |
 | 1.2.0  |     Adaptive Radix Tree    |
+| 1.2.1  |     remove latch manager, each page has its own latch    |

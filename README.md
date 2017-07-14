@@ -2,7 +2,7 @@
 [English Version of README](./README.en.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](https://github.com/UncP)
-[![Version](https://img.shields.io/badge/Version-1.1.1-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.2.1-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
@@ -44,6 +44,7 @@
 | 1.1.0  |    B<sup>link</sup>树结点从1/2满提高到2/3满（不可行）    |
 | 1.1.1  |     优化Raft内存使用（牺牲可读性）   |
 | 1.2.0  |     Adaptive Radix Tree |
+| 1.2.1  |     移除锁管理器，每个页面一把锁 |
 
 
 ### 其他
