@@ -228,61 +228,6 @@ bool Page::NeedSplit()
 	return false;
 }
 
-bool Page::FenceKeyLessEqual(const Page *that) const
-{
-	int f = 0;
-	KeySlice *last  = this->Key(this->Index(), this->total_key_ - 1);
-	KeySlice *first = that->Key(that->Index(), 0);
-	if (this->pre_len_ == that->pre_len_) {
-		if (this->pre_len_)
-			f = memcmp(this->data_, that->data_, this->pre_len_);
-		if (f < 0) return true;
-		f = memcmp(last->key_, first->key_, this->key_len_);
-	} else if (this->pre_len_ < that->pre_len_) {
-		if (this->pre_len_)
-			f = memcmp(this->data_, that->data_, this->pre_len_);
-		if (f < 0) return true;
-		uint16_t left = that->pre_len_ - this->pre_len_;
-		f = memcmp(last->key_, that->data_ + this->pre_len_, left);
-		if (f < 0) return true;
-		f = memcmp(last->key_ + left, first->key_, that->key_len_);
-	} else {
-		if (that->pre_len_)
-			f |= memcmp(this->data_, that->data_, that->pre_len_);
-		if (f < 0) return true;
-		uint16_t left = this->pre_len_ - that->pre_len_;
-		f = memcmp(this->data_ + that->pre_len_, first->key_, left);
-		if (f < 0) return true;
-		f = memcmp(last->key_, first->key_ + left, this->key_len_);
-	}
-	return f <= 0 ? true : false;
-}
-
-bool Page::FenceKeyEqual(const Page *that) const
-{
-	int f = 0;
-	KeySlice *last  = this->Key(this->Index(), this->total_key_ - 1);
-	KeySlice *first = that->Key(that->Index(), 0);
-	if (this->pre_len_ == that->pre_len_) {
-		if (this->pre_len_)
-			f |= memcmp(this->data_, that->data_, this->pre_len_);
-		f |= memcmp(last->key_, first->key_, this->key_len_);
-	} else if (this->pre_len_ < that->pre_len_) {
-		if (this->pre_len_)
-			f |= memcmp(this->data_, that->data_, this->pre_len_);
-		uint16_t left = that->pre_len_ - this->pre_len_;
-		f |= memcmp(last->key_, that->data_ + this->pre_len_, left);
-		f |= memcmp(last->key_ + left, first->key_, that->key_len_);
-	} else {
-		if (that->pre_len_)
-			f |= memcmp(this->data_, that->data_, that->pre_len_);
-		uint16_t left = this->pre_len_ - that->pre_len_;
-		f |= memcmp(this->data_ + that->pre_len_, first->key_, left);
-		f |= memcmp(last->key_, first->key_ + left, this->key_len_);
-	}
-	return f == 0 ? true : false;
-}
-
 std::string Page::ToString(bool f, bool f2) const
 {
 	std::ostringstream os;

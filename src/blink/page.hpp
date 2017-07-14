@@ -72,10 +72,6 @@ class Page : private NoCopy
 
 		std::string ToString(bool f, bool f2) const;
 
-		bool FenceKeyEqual(const Page *that) const;
-
-		bool FenceKeyLessEqual(const Page *that) const;
-
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
