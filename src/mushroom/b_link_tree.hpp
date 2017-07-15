@@ -50,7 +50,7 @@ class BLinkTree : private NoCopy
 
 		void GetNext(Set &set);
 
-		void DescendToLeaf(const KeySlice *key, Set &set, LockType type);
+		bool DescendToLeaf(const KeySlice *key, Set &set, LockType type);
 
 		bool SplitAndPromote(Set &set, KeySlice *key);
 

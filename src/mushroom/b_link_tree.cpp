@@ -53,16 +53,17 @@ void BLinkTree::GetNext(Set &set)
 	set.latch_->Lock();
 }
 
-void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set, LockType type)
+bool BLinkTree::DescendToLeaf(const KeySlice *key, Set &set, LockType type)
 {
+	bool is_last = true;
 	set.page_no_ = root_.get();
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	set.page_ = pool_manager_->GetPage(set.page_no_);
 	uint8_t level = set.page_->level_;
-	for (; level;) {
+	for (; level; is_last = true) {
 		set.latch_->LockShared();
 		page_t pre_no = set.page_->page_no_;
-		set.page_no_ = set.page_->Descend(key);
+		set.page_no_ = set.page_->Descend(key, is_last);
 		set.latch_->UnlockShared();
 		set.latch_ = latch_manager_->GetLatch(set.page_no_);
 		set.page_ = pool_manager_->GetPage(set.page_no_);
@@ -76,6 +77,7 @@ void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set, LockType type)
 	else
 		set.latch_->LockShared();
 	assert(!set.page_->level_);
+	return is_last;
 }
 
 bool BLinkTree::SplitAndPromote(Set &set, KeySlice *key)
@@ -121,39 +123,39 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 bool BLinkTree::Update(Set &set, KeySlice *old_key, KeySlice *new_key)
 {
 	UpdateStatus status;
-	for (; (status = set.page_->Update(old_key, new_key, set.page_no_));) {
-		if (status == MoveNext) {
-			Latch *pre = set.latch_;
+	Latch *leaf = set.latch_;
+	GetParent(set);
+	for (; (status = set.page_->Update(old_key, new_key, set.page_no_)) != UpdateOk;) {
+		Latch *pre = set.latch_;
+		if (status == MoveNext)
 			GetNext(set);
-			pre->Unlock();
-		} else {
-			return true;
-		}
+		else
+			GetParent(set);
+		pre->Unlock();
 	}
-	return false;
+	leaf->Unlock();
+	return true;
 }
 
 bool BLinkTree::Put(KeySlice *key)
 {
 	Set set;
 
-	DescendToLeaf(key, set, WriteLock);
+	bool is_last = DescendToLeaf(key, set, WriteLock);
 
 	Insert(set, key);
 
 	if (set.page_->NeedSplit()) {
-		page_t page_no = set.page_->Next();
-		if (page_no) {
+		if (!is_last) {
+			page_t page_no = set.page_->Next();
+			assert(page_no);
 			Latch *latch = latch_manager_->GetLatch(page_no);
 			Page *next = pool_manager_->GetPage(page_no);
 			latch->Lock();
 			TempSlice(tmp, key_len_);
 			if (set.page_->Move(next, tmp, key)) {
 				latch->Unlock();
-				Latch *pre = set.latch_;
-				GetParent(set);
 				Update(set, tmp, key);
-				pre->Unlock(); // crucial
 			} else {
 				Page *right = pool_manager_->NewPage(set.page_->type_, key_len_,
 					set.page_->level_, degree_);
@@ -161,15 +163,8 @@ bool BLinkTree::Put(KeySlice *key)
 				right->Combine(set.page_, next, tmp, tmp2, key);
 				latch->Unlock();
 				uint8_t depth = set.depth_;
-				Latch *pre = set.latch_;
-				GetParent(set);
-				page_t parent = set.page_no_;
-				for (; Update(set, tmp, tmp2) && set.depth_;) {
-					pre->Unlock();
-					pre = set.latch_;
-					GetParent(set);
-				}
-				pre->Unlock();
+				page_t parent = set.stack_[depth - 1];
+				Update(set, tmp, tmp2);
 				if (set.page_->page_no_ != parent) {
 					set.depth_ = depth;
 					set.latch_->Unlock();
@@ -261,7 +256,7 @@ Page* BLinkTree::Split(Set &set, KeySlice *key)
 void BLinkTree::Audit()
 {
 	Page *root = pool_manager_->GetPage(root_.get());
-	ShowPage(root_.get());
+	// ShowPage(root_.get());
 	int level = root->level_ - 1;
 	for (; level >= 0; --level) {
 		Page *page = pool_manager_->GetPage(root->first_);
@@ -269,8 +264,8 @@ void BLinkTree::Audit()
 			Page *pre = page;
 			Page *cur = pool_manager_->GetPage(pre->Next());
 			assert(pre->level_ == cur->level_);
-			if (pre->level_)
-				printf("%s\n", pre->ToString(true, true).c_str());
+			// if (pre->level_)
+				// printf("%s\n", pre->ToString(true, true).c_str());
 			assert(pre->FenceKeyLessEqual(cur));
 			page = cur;
 		}

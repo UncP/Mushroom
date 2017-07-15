@@ -20,10 +20,10 @@ using namespace Mushroom;
 static const int key_len = 16;
 
 static const char *files[] = {
-	"../data/2500000_0",
-	"../data/2500000_1",
-	"../data/2500000_2",
-	"../data/2500000_3"
+	"../data/25000000_0",
+	"../data/25000000_1",
+	"../data/25000000_2",
+	"../data/25000000_3"
 };
 
 struct ThreadArg

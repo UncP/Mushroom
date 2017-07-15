@@ -101,15 +101,16 @@ bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int ty
 		}
 	}
 	*idx = high;
-	if (high) *slice = Key(index, high-1);
+	if (high) *slice = Key(index, high - 1);
 	return false;
 }
 
-page_t Page::Descend(const KeySlice *key) const
+page_t Page::Descend(const KeySlice *key, bool &is_last) const
 {
 	uint16_t index;
 	KeySlice *slice = 0;
 	Traverse(key, &index, &slice, 0);
+	is_last = (index == (total_key_ - 1));
 	return index ? slice->page_no_ : first_;
 }
 
@@ -156,18 +157,18 @@ UpdateStatus Page::Update(const KeySlice *old_key, const KeySlice *new_key, page
 	uint16_t pos;
 	KeySlice *slice = 0;
 	bool flag = Traverse(old_key, &pos, &slice);
-	if (pos == total_key_) {
-		page_no = Next();
-		assert(page_no);
-		return MoveNext;
-	}
 	if (flag) {
-		// if (pos != total_key_-1)
-			// slice->page_no_ = new_key->page_no_;
 		memcpy(slice->key_, new_key->key_ + pre_len_, key_len_);
+		if (pos != total_key_ - 1) {
+			return UpdateOk;
+		} else {
+			page_no = Next();
+			return MoveNext;
+		}
+	} else {
+		assert(pos != total_key_);
 		return Promote;
 	}
-	return UpdateOk;
 }
 
 void Page::FillFrom(uint16_t above)

@@ -61,7 +61,7 @@ class Page : private NoCopy
 
 		void AssignFirst(page_t first);
 
-		page_t Descend(const KeySlice *key) const;
+		page_t Descend(const KeySlice *key, bool &is_last) const;
 
 		bool Search(const KeySlice *key, uint16_t *index) const;
 

@@ -36,7 +36,7 @@ then
 		fi
 	done
 	echo 'Total '$total'  Fail '$fail'  Success '$success''
-elif [ "$1" = "mushroom" ]
+elif [ "$1" = "blink" ]
 then
 	if [ "$2" = "queue" ]
 	then
