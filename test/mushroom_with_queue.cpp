@@ -23,11 +23,11 @@ static int total;
 
 double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *))
 {
-	// BoundedMappingQueue<MushroomTask> *queue = new BoundedMappingQueue<MushroomTask>(1024, []() {
-	// 	return new MushroomTask(key_len);
-	// });
+	BoundedMappingQueue<MushroomTask> *queue = new BoundedMappingQueue<MushroomTask>(1024, []() {
+		return new MushroomTask(key_len);
+	});
 
-	// ThreadPoolMapping<MushroomTask> pool(queue, 4);
+	ThreadPoolMapping<MushroomTask> pool(queue, 4);
 
 	TempSlice(key, key_len);
 	int fd = open(file, O_RDONLY);
@@ -49,10 +49,11 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 			key->page_no_ = 0;
 			memcpy(key->key_, tmp, key_len);
 
-			// MushroomTask *task = queue->Get();
-			// task->Assign(fun, db, key);
-			// queue->Push();
-			(db->*fun)(key);
+			MushroomTask *task = queue->Get();
+			task->Assign(fun, db, key);
+			queue->Push();
+
+			// (db->*fun)(key);
 
 			if (++count == total) {
 				flag = false;
@@ -63,8 +64,8 @@ double Do(const char *file, MushroomDB *db, bool (MushroomDB::*(fun))(KeySlice *
 	}
 	close(fd);
 
-	// pool.Clear();
-	// delete queue;
+	pool.Clear();
+	delete queue;
 
 	auto end = std::chrono::high_resolution_clock::now();
 	auto t = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
