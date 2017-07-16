@@ -95,6 +95,7 @@ void PoolManager::Free()
 {
 	for (uint16_t i = 1, end = total_pool_.get(); i <= end; ++i)
 		delete [] pool_[i].mem_;
+	printf("%u\n", total_pool_.get());
 }
 
 bool PoolManager::operator==(PoolManager &that)

@@ -20,10 +20,10 @@ using namespace Mushroom;
 static const int key_len = 16;
 
 static const char *files[] = {
-	"../data/2500000_0",
-	"../data/2500000_1",
-	"../data/2500000_2",
-	"../data/2500000_3"
+	"../data/25000000_0",
+	"../data/25000000_1",
+	"../data/25000000_2",
+	"../data/25000000_3"
 };
 
 struct ThreadArg
@@ -119,6 +119,5 @@ int main(int argc, char **argv)
 
 	printf("\033[31mtotal: %d\033[0m\n\033[32mput time: %f  s\033[0m\n", all * thread_num, t1);
 	printf("\033[34mget time: %f  s\033[0m\n", t2);
-	getchar();
 	return 0;
 }
