@@ -94,6 +94,8 @@ void PoolManager::Free()
 {
 	for (uint16_t i = 1, end = total_pool_.get(); i <= end; ++i)
 		delete [] pool_[i].mem_;
+	printf("memory usage: %u %.2f\n", total_pool_.get(),
+		float(total_pool_.get()) * PagePool::SegSize / 256);
 }
 
 } // namespace Mushroom

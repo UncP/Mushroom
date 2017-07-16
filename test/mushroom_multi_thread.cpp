@@ -57,6 +57,7 @@ void* Do(void *arg)
 			char *tmp = buf + i;
 			for (; buf[i] != '\n' && buf[i] != '\0'; ++i, ++j) ;
 			tmp[j] = '\0';
+			key->page_no_ = 0;
 			memcpy(key->key_, tmp, key_len);
 			(db->*fun)(key);
 			if (++count == all) {

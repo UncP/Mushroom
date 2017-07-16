@@ -33,7 +33,7 @@ BLinkTree::~BLinkTree()
 
 void BLinkTree::Free()
 {
-	Audit();
+	// Audit();
 	pool_manager_->Free();
 }
 
@@ -55,14 +55,15 @@ void BLinkTree::GetNext(Set &set)
 
 bool BLinkTree::DescendToLeaf(const KeySlice *key, Set &set, LockType type)
 {
-	bool is_last = true;
 	set.page_no_ = root_.get();
 	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	set.page_ = pool_manager_->GetPage(set.page_no_);
+	bool is_last = true;
 	uint8_t level = set.page_->level_;
-	for (; level; is_last = true) {
+	for (; level;) {
 		set.latch_->LockShared();
 		page_t pre_no = set.page_->page_no_;
+		is_last = true;
 		set.page_no_ = set.page_->Descend(key, is_last);
 		set.latch_->UnlockShared();
 		set.latch_ = latch_manager_->GetLatch(set.page_no_);
@@ -125,12 +126,9 @@ bool BLinkTree::Update(Set &set, KeySlice *old_key, KeySlice *new_key)
 	UpdateStatus status;
 	Latch *leaf = set.latch_;
 	GetParent(set);
-	for (; (status = set.page_->Update(old_key, new_key, set.page_no_)) != UpdateOk;) {
+	for (; (status = set.page_->Update(old_key, new_key)) != UpdateOk;) {
 		Latch *pre = set.latch_;
-		if (status == MoveNext)
-			GetNext(set);
-		else
-			GetParent(set);
+		GetParent(set);
 		pre->Unlock();
 	}
 	leaf->Unlock();
@@ -193,8 +191,6 @@ bool BLinkTree::Get(KeySlice *key)
 	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
 			set.latch_->UnlockShared();
-			printf("%s\n", set.page_->ToString(true, true).c_str());
-			printf("%s", key->ToString(key_len_).c_str());
 			assert(0);
 			return false;
 		}
@@ -267,6 +263,11 @@ void BLinkTree::Audit()
 			// if (pre->level_)
 				// printf("%s\n", pre->ToString(true, true).c_str());
 			assert(pre->FenceKeyLessEqual(cur));
+			// if (!pre->FenceKeyEqual(cur)) {
+				// ShowPage(pre->PageNo());
+				// ShowPage(cur->PageNo());
+			// }
+			// assert(pre->FenceKeyEqual(cur));
 			page = cur;
 		}
 	}

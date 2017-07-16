@@ -71,7 +71,7 @@ class Page : private NoCopy
 
 		void Insert(Page *that, KeySlice *key);
 
-		UpdateStatus Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no);
+		UpdateStatus Update(const KeySlice *old_key, const KeySlice *new_key);
 
 		void Split(Page *that, KeySlice *slice);
 

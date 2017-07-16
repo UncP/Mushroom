@@ -152,21 +152,19 @@ bool Page::Insert(const KeySlice *key)
 	return Insert(key, page_no) == InsertOk;
 }
 
-UpdateStatus Page::Update(const KeySlice *old_key, const KeySlice *new_key, page_t &page_no)
+UpdateStatus Page::Update(const KeySlice *old_key, const KeySlice *new_key)
 {
 	uint16_t pos;
 	KeySlice *slice = 0;
 	bool flag = Traverse(old_key, &pos, &slice);
 	if (flag) {
 		memcpy(slice->key_, new_key->key_ + pre_len_, key_len_);
-		if (pos != total_key_ - 1) {
+		if (pos != total_key_ - 1)
 			return UpdateOk;
-		} else {
-			page_no = Next();
-			return MoveNext;
-		}
+		else
+			return Promote;
 	} else {
-		assert(pos != total_key_);
+		assert(pos != total_key_); // should not move to next page on the same level
 		return Promote;
 	}
 }
@@ -214,6 +212,8 @@ void Page::Split(Page *that, KeySlice *slice)
 		that->AssignFirst(fence->page_no_);
 		r_idx -= --right;
 		++index;
+		// KeySlice *new_fence = Key(l_idx, left);
+		// CopySuffix(fence, new_fence->key_, pre_len_, key_len_);
 	} else {
 		r_idx -= right;
 	}
