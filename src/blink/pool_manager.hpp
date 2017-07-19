@@ -16,7 +16,6 @@ namespace Mushroom {
 class Page;
 class HashEntry;
 class PagePool;
-class LatchManager;
 
 class PoolManager : private NoCopy
 {

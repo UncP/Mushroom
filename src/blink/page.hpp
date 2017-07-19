@@ -71,8 +71,6 @@ class Page : private NoCopy
 
 		inline void LockShared() { pthread_rwlock_rdlock(latch_); }
 
-<<<<<<< HEAD
-=======
 		inline void Lock() { pthread_rwlock_wrlock(latch_); }
 
 		inline void UnlockShared() { pthread_rwlock_unlock(latch_); }
@@ -81,7 +79,6 @@ class Page : private NoCopy
 
 		std::string ToString(bool f, bool f2) const;
 
->>>>>>> v1.2.1
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 

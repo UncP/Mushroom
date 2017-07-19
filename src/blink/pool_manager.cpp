@@ -10,11 +10,10 @@
 #include <cstring>
 #include <new>
 
-#include "latch.hpp"
+#include "hash_entry.hpp"
 #include "page.hpp"
 #include "page_pool.hpp"
 #include "pool_manager.hpp"
-#include "latch_manager.hpp"
 
 namespace Mushroom {
 

@@ -65,7 +65,7 @@ int main()
 
 	MushroomDBTestData data(time(0));
 	//           total_key  file_number  key_size
-	data.Generate(10000000,     4,        16);
+	data.Generate(100000000,     4,        16);
 	data.Generate(10000000,     1,        16);
 	return 0;
 }
