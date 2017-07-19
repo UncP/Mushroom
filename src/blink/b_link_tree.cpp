@@ -7,17 +7,14 @@
 
 #include <cassert>
 
-#include "latch.hpp"
 #include "b_link_tree.hpp"
 #include "page.hpp"
-#include "latch_manager.hpp"
 #include "pool_manager.hpp"
 
 namespace Mushroom {
 
 BLinkTree::BLinkTree(uint32_t key_len)
-:latch_manager_(new LatchManager()), pool_manager_(new PoolManager()), root_(0),
-key_len_(key_len)
+:pool_manager_(new PoolManager()), root_(0), key_len_(key_len)
 {
 	degree_ = Page::CalculateDegree(key_len_);
 	Set set;
@@ -27,7 +24,6 @@ key_len_(key_len)
 
 BLinkTree::~BLinkTree()
 {
-	delete latch_manager_;
 	delete pool_manager_;
 }
 
@@ -44,15 +40,13 @@ void BLinkTree::Free()
 void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set, LockType type)
 {
 	set.page_no_ = root_.get();
-	set.latch_ = latch_manager_->GetLatch(set.page_no_);
 	set.page_ = pool_manager_->GetPage(set.page_no_);
 	uint8_t level = set.page_->level_;
 	for (; level;) {
-		set.latch_->LockShared();
+		set.page_->LockShared();
 		page_t pre_no = set.page_->page_no_;
 		set.page_no_ = set.page_->Descend(key);
-		set.latch_->UnlockShared();
-		set.latch_ = latch_manager_->GetLatch(set.page_no_);
+		set.page_->UnlockShared();
 		set.page_ = pool_manager_->GetPage(set.page_no_);
 		if (set.page_->level_ != level) {
 			set.stack_[set.depth_++] = pre_no;
@@ -60,9 +54,9 @@ void BLinkTree::DescendToLeaf(const KeySlice *key, Set &set, LockType type)
 		}
 	}
 	if (type == WriteLock)
-		set.latch_->Lock();
+		set.page_->Lock();
 	else
-		set.latch_->LockShared();
+		set.page_->LockShared();
 }
 
 bool BLinkTree::Split(Set &set, KeySlice *key)
@@ -71,12 +65,11 @@ bool BLinkTree::Split(Set &set, KeySlice *key)
 		Page *right = pool_manager_->NewPage(set.page_->type_, set.page_->key_len_,
 			set.page_->level_, set.page_->degree_);
 		set.page_->Split(right, key);
-		set.latch_->Unlock();
+		set.page_->Unlock();
 		assert(set.depth_);
 		set.page_no_ = set.stack_[--set.depth_];
-		set.latch_ = latch_manager_->GetLatch(set.page_no_);
 		set.page_ = pool_manager_->GetPage(set.page_no_);
-		set.latch_->Lock();
+		set.page_->Lock();
 		Insert(set, key);
 		return true;
 	} else {
@@ -103,11 +96,10 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 	InsertStatus status;
 	for (; (status = set.page_->Insert(key, set.page_no_));) {
 		assert(status == MoveRight);
-		Latch *pre = set.latch_;
-		set.latch_ = latch_manager_->GetLatch(set.page_no_);
+		pthread_rwlock_t *pre = set.page_->Latch();
 		set.page_ = pool_manager_->GetPage(set.page_no_);
-		set.latch_->Lock();
-		pre->Unlock();
+		set.page_->Lock();
+		pthread_rwlock_unlock(pre);
 	}
 }
 
@@ -122,7 +114,7 @@ bool BLinkTree::Put(KeySlice *key)
 	for (; set.page_->NeedSplit() && Split(set, key); )
 		continue;
 
-	set.latch_->Unlock();
+	set.page_->Unlock();
 	return true;
 }
 
@@ -134,19 +126,18 @@ bool BLinkTree::Get(KeySlice *key)
 
 	for (uint16_t idx = 0; !set.page_->Search(key, &idx);) {
 		if (idx != set.page_->total_key_) {
-			set.latch_->UnlockShared();
+			set.page_->UnlockShared();
 			assert(0);
 			return false;
 		}
 		set.page_no_ = set.page_->Next();
-		Latch *pre = set.latch_;
-		set.latch_ = latch_manager_->GetLatch(set.page_no_);
+		pthread_rwlock_t *pre = set.page_->Latch();
 		set.page_ = pool_manager_->GetPage(set.page_no_);
-		set.latch_->LockShared();
-		pre->UnlockShared();
+		set.page_->LockShared();
+		pthread_rwlock_unlock(pre);
 	}
 
-	set.latch_->UnlockShared();
+	set.page_->UnlockShared();
 	return true;
 }
 

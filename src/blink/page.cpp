@@ -29,6 +29,7 @@ uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_t degree)
 {
 	memset(this, 0, PageSize);
+	pthread_rwlock_init(latch_, 0);
 	page_no_ = page_no;
 	degree_  = degree;
 	type_    = (uint8_t)type;
@@ -124,7 +125,6 @@ InsertStatus Page::Insert(const KeySlice *key, page_t &page_no)
 	if (pos) memmove(&index[0], &index[1], pos << 1);
 	index[pos] = end;
 	++total_key_;
-	dirty_ = 1;
 	return InsertOk;
 }
 
@@ -182,8 +182,6 @@ void Page::Split(Page *that, KeySlice *slice)
 
 	this->total_key_ = left;
 	that->total_key_ = right;
-	this->dirty_ = 1;
-	that->dirty_ = 1;
 }
 
 bool Page::Full() const
@@ -224,7 +222,6 @@ bool Page::NeedSplit()
 	pre_len_ += pre_len;
 	key_len_ -= pre_len;
 	degree_  = degree;
-	dirty_   = 1;
 	return false;
 }
 
