@@ -14,7 +14,7 @@
 `首先运行脚本gen_test_data.sh生成测试数据，然后进入src目录`<br>
 `./run index 100，单机测试分布式索引，100是索引数量（因为Raft没有深入优化过，所以请将数量控制在1-1000）`<br>
 `./run blink queue 100，测试多线程索引（通过队列），数量可以是1到1000万`<br>
-`./run blink thread 100，测试多线程索引，数量可以是1到250万（实际乘以4）`<br>
+`./run blink thread 100，测试多线程索引，数量可以是1到1000万`<br>
 `./run art 100，测试Adaptive Radix Tree，数量可以是1到1000万`<br>
 
 
