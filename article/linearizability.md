@@ -1,6 +1,6 @@
 # Linearizability一致性验证
 
-上篇文章介绍了[TiDB](https://github.com/pingcap/tidb)如何使用[Jepsen](https://github.com/jepsen-io/jepsen)来进行一致性验证，并且介绍了具体的测试案例，但是并没有对Jepsen背后的一致性验证算法做过多介绍。这篇文章将会深入Jepsen的核心库[knossos](https://github.com/jepsen-io/knossos)，介绍knossos库所涉及的**Linearizability（线性化）一致性验证算法**。
+这篇文章将会深入Jepsen的核心库[knossos](https://github.com/jepsen-io/knossos)，介绍knossos库所涉及的**Linearizability（线性化）一致性验证算法**。
 
 ## Linearizability一致性模型
 
@@ -152,7 +152,7 @@ $$
 
 下面这张图可以帮助你很好地理解上述公式的意思。第二列是线性化的表现值（linearized representation values），第三列是线性化的抽象值（linearized abstract values），可以看到每一行中第二列都是第三列的子集。
 
-![queue history](./image/queue.png)
+![queue history](./queue.png)
 
 ## Wing & Gong线性化算法
 
@@ -176,7 +176,7 @@ typedef struct ev {
 
 >  区域（Section）：由触发（inv）事件，对应的返回事件，以及它们中间包含的所有事件。
 
-![section](./image/section.png)
+![section](./section.png)
 
 虚线同时可以看作是也是$$match$$指针。
 
@@ -184,7 +184,7 @@ typedef struct ev {
 >
 > unlift：将移出的某对操作放回
 
-![](./image/lift.png)
+![](./lift.png)
 
 这个算法的核心是一个搜索（Search）函数，如果历史$$H$$是线性化的，那么那么他返回一个线性化点（即顺序化历史$$S$$）。搜索使用一个栈来保存历史中已经线性化的部分，这个栈及栈中的元素是这样定义的：
 
@@ -216,24 +216,26 @@ typedef struct {
 
    b：1. 如果当前区域内还有一些未被选择的触发（inv）事件没有排在任何返回（res）事件之后，那么选择一个然后回到4
 
-   2. 当前区域的所有操作已经被尝试但是失败了，所以我们需要将操作出栈然后尝试其他的顺序，如果栈是空的，那么意味着历史不是线性化的，函数返回；否则，将顶层元素出栈，这个元素包含了之前区域的所有信息，以及被选择的操作，然后undo之前的$$op$$，然后unlift这个操作，最后，设置$$current$$为之前区域的指针，然后回到5b1
+   2. 当前区域的所有操作已经被尝试但是失败了，所以我们需要将操作出栈然后尝试其他的顺序，如果栈是空的，那么意味着历史不是线性化的，函数返回；否则，将顶层元素出栈，这个元素包含了之前区域的所有信息，以及被选择的操作，然后undo之前的$$op$$，unlift这个操作，最后，设置$$current$$为之前区域的指针，然后回到5b1
+
+> 注：4中$$op$$操作取决于具体模型，如果被测试的是一个寄存器的话，那$$op$$可以是$$read$$、$$write$$和$$cas$$，如果$$read$$和$$cas$$时读到的值和预期值不一致，则操作无法进行。
 
 这就是整个WGL算法。这个算法很简单也很好理解，但是有两个明显的缺点：
 
 1. 一旦操作数量上升，整个算法会运行地很缓慢，因为可能会出现涉及大量回溯的操作
-2. 这个算法只能验证是否线性化，一旦线性化不成立，却不能给出具体违反线性化的出错点
+2. 这个算法只能验证是否线性化，一旦线性化不成立，并不能给出具体违反线性化的出错点
 
-对此knossos库的第二个算法使用了WGL算法的改进版本。但是能力有限，只能给大家介绍这么多了，具体论文链接会在最后给出。
-
-
-
-##### 最后的思考
-
-这篇文章介绍了什么是Linearizability、Linearizability正确性的验证及其算法。这些算法在分布式系统中的应用只是一个很小的方面，算法本身是独立的，它只需要一个历史H，至于这个历史是随机生成的还是某个应用在实际中产生的并不重要。你可以使用这些算法对任何并发系统进行验证，小到一个无锁队列、Set，大到某个分布式系统。TiDB作为一个大型分布式系统却能被抽象化为一个队列、寄存器来被用作测试这本身就是一个很有意思的地方，同时也很好地展现了这些算法自身的魅力。
+对此knossos库的第二个算法使用了WGL算法的改进版本，它对性能进行了优化并且在一致性验证失败的点可以给出对应的信息，但是能力有限，只能给大家介绍这么多了，具体论文链接会在最后给出。
 
 
 
-##### 参考
+#### 最后的思考
+
+这篇文章介绍了什么是Linearizability、Linearizability正确性的验证及其算法。这些算法在分布式系统中的应用只是一个很小的方面，算法本身是独立的，它只需要一个历史H，至于这个历史是随机生成的还是某个应用在实际中产生的并不重要。你可以使用这些算法对任何并发系统进行验证，小到一个无锁队列、Set，大到某个分布式系统。一个分布式系统却能被抽象化为一个队列、寄存器来被用作测试这本身就是一个很有意思的地方，同时也很好地展现了这些算法自身的魅力。
+
+
+
+#### 参考
 
 [Consistency Model](https://en.wikipedia.org/wiki/Consistency_model)
 
@@ -248,4 +250,3 @@ typedef struct {
 [WGL算法](http://www.cs.cmu.edu/~wing/publications/WingGong93.pdf)
 
 [Testing for Linearizability](http://www.cs.ox.ac.uk/people/gavin.lowe/LinearizabiltyTesting/paper.pdf)
-
