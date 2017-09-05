@@ -96,10 +96,10 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 	InsertStatus status;
 	for (; (status = set.page_->Insert(key, set.page_no_));) {
 		assert(status == MoveRight);
-		pthread_rwlock_t *pre = set.page_->Latch();
+		Latch *pre = set.page_->GetLatch();
 		set.page_ = pool_manager_->GetPage(set.page_no_);
 		set.page_->Lock();
-		pthread_rwlock_unlock(pre);
+		pre->Unlock();
 	}
 }
 
@@ -131,10 +131,10 @@ bool BLinkTree::Get(KeySlice *key)
 			return false;
 		}
 		set.page_no_ = set.page_->Next();
-		pthread_rwlock_t *pre = set.page_->Latch();
+		Latch *pre = set.page_->GetLatch();
 		set.page_ = pool_manager_->GetPage(set.page_no_);
 		set.page_->LockShared();
-		pthread_rwlock_unlock(pre);
+		pre->Unlock();
 	}
 
 	set.page_->UnlockShared();

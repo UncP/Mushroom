@@ -10,10 +10,10 @@
 
 #include <string>
 #include <cassert>
-#include <pthread.h>
 
 #include "../include/utility.hpp"
 #include "slice.hpp"
+#include "../include/latch.hpp"
 
 namespace Mushroom {
 
@@ -67,15 +67,15 @@ class Page : private NoCopy
 
 		bool NeedSplit();
 
-		inline pthread_rwlock_t* Latch() { return latch_; }
+		inline Latch* GetLatch() { return &latch_; }
 
-		inline void LockShared() { pthread_rwlock_rdlock(latch_); }
+		inline void LockShared() { latch_.ReadLock(); }
 
-		inline void Lock() { pthread_rwlock_wrlock(latch_); }
+		inline void Lock() { latch_.WriteLock(); }
 
-		inline void UnlockShared() { pthread_rwlock_unlock(latch_); }
+		inline void UnlockShared() { latch_.Unlock(); }
 
-		inline void Unlock() { pthread_rwlock_unlock(latch_); }
+		inline void Unlock() { latch_.Unlock(); }
 
 		std::string ToString(bool f, bool f2) const;
 
@@ -90,8 +90,7 @@ class Page : private NoCopy
 			return (KeySlice *)(data_ + index[pos]);
 		}
 
-		pthread_rwlock_t latch_[1];
-
+		Latch    latch_;
 		page_t   page_no_;
 		page_t   first_;
 		uint16_t total_key_;
