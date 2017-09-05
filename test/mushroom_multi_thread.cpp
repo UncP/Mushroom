@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 	auto end = std::chrono::high_resolution_clock::now();
 	auto t1 = std::chrono::duration<double, std::ratio<1>>(end - beg).count();
 
-	// Put
+	// Get
 	beg = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i != thread_num; ++i) {
 		args[i].i = i;
