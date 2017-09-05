@@ -19,10 +19,13 @@ all: blinktree_with_queue_test blinktree_multi_thread_test distributed_index_tes
 art_test: $(AOBJ) ../test/art.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ -msse2
 
+bloom_test: $(MOBJ) ../test/bloom.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
 mushroom_log_vector_test: raft/mushroom_log_vector.cpp ../test/mushroom_log_vector.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
-distributed_index_test:$(MOBJ) $(NOBJ) $(RpcOBJ) $(RaftOBJ) ../test/distributed_index.cpp
+distributed_index_test: $(MOBJ) $(NOBJ) $(RpcOBJ) $(RaftOBJ) ../test/distributed_index.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 raft_test:  $(NOBJ) $(RpcOBJ) $(RaftOBJ) ../test/raft.cpp

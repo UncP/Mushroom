@@ -9,23 +9,26 @@
 #define _BLOOM_FILTER_HPP_
 
 #include "../include/utility.hpp"
+#include "slice.hpp"
 
 namespace Mushroom {
 
 class BloomFilter : public NoCopy
 {
-  public:
-  	BloomFilter(int bits_per_key);
+	public:
+		BloomFilter(int count);
 
-  	void CreateFilter(const Slice* keys, int n, std::string* dst) const;
+		~BloomFilter();
 
-  	bool KeyMayMatch(const Slice& key, const Slice& bloom_filter) const;
+		void Add(const char *data, size_t len);
 
-  private:
-    size_t  bits_per_key_;
-    size_t  num_probes_;
-    size_t  len_;
-    char   *filter_;
+		bool Match(const char *data, size_t len) const;
+
+	private:
+		static const int BitsPerKey = 10;
+		static const int NumProbe   = BitsPerKey * 0.69;
+		int   bytes_;
+		char *filter_;
 };
 
 } // namespace Mushroom
