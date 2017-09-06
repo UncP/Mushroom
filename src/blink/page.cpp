@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "page.hpp"
+#include "bloom.hpp"
 
 namespace Mushroom {
 
@@ -19,10 +20,10 @@ void Page::SetPageInfo(uint32_t page_size)
 	PageSize = page_size;
 }
 
-uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
+uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len, uint16_t filter)
 {
 	Page *page = 0;
-	uint16_t offset = (char *)page->data_ - (char *)page + pre_len + BloomFilter::Size(100);
+	uint16_t offset = (char *)page->data_ - (char *)page + pre_len + BloomFilter::Size(filter);
 	return (PageSize - offset) / (KeySlice::ValLen + IndexByte + key_len);
 }
 
@@ -35,7 +36,6 @@ Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_
 	type_    = (uint8_t)type;
 	key_len_ = key_len;
 	level_   = level;
-	filter_count_ = (((degree_ / 2) + 99) / 100) * 100;
 }
 
 void Page::InsertInfiniteKey()
@@ -49,6 +49,14 @@ void Page::InsertInfiniteKey()
 void Page::AssignFirst(page_t first)
 {
 	first_ = first;
+}
+
+uint16_t* Page::Index() const {
+	return (uint16_t*)((char *)this + (PageSize - (total_key_ * IndexByte) - BloomFilter::Size(filter_)));
+}
+
+KeySlice* Page::Key(const uint16_t *index, uint16_t pos) const {
+	return (KeySlice *)(data_ + index[pos]);
 }
 
 bool Page::Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type) const
@@ -185,14 +193,23 @@ void Page::Split(Page *that, KeySlice *slice)
 	that->total_key_ = right;
 }
 
-bool Page::Full() const
-{
-	return total_key_ == degree_;
-}
-
 bool Page::NeedSplit()
 {
-	if (!Full()) return false;
+	return ExpandBloomFilter() && PrefixCompaction();
+}
+
+bool Page::ExpandBloomFilter()
+{
+	if (total_key_ != filter_) return false;
+	uint16_t next_filter = filter_ + 100;
+	uint16_t next_degree = CalculateDegree(key_len_, pre_len_, next_filter);
+	if (next_degree <= degree_) return true;
+
+}
+
+bool Page::PrefixCompaction()
+{
+	if (total_key_ != degree_) return false;
 	uint16_t *index = Index();
 	const char *first = Key(index, 0)->key_;
 	const char *last  = Key(index, total_key_ - 1)->key_;
@@ -202,7 +219,7 @@ bool Page::NeedSplit()
 		prefix[pre_len] = first[pre_len];
 	if (!pre_len)
 		return true;
-	uint16_t degree = CalculateDegree(key_len_ - pre_len, pre_len + pre_len_);
+	uint16_t degree = CalculateDegree(key_len_ - pre_len, pre_len + pre_len_, filter_);
 	if (degree <= degree_)
 		return true;
 	char buf[PageSize];

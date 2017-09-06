@@ -61,7 +61,6 @@ inline uint32_t BloomHash(const char *data, size_t len)
 BloomFilter::BloomFilter(char *filter, int count, bool clear):filter_(filter)
 {
 	bytes_ = Size(count);
-	// if (bytes_ < 8) bytes_ = 8;
 	if (clear) memset(filter_, 0, bytes_);
 }
 

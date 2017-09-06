@@ -36,7 +36,7 @@ class Page : private NoCopy
 
 		static void SetPageInfo(uint32_t page_size);
 
-		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0);
+		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0, uint16_t filter = 100);
 
 		void InsertInfiniteKey();
 
@@ -63,8 +63,6 @@ class Page : private NoCopy
 
 		void Split(Page *that, KeySlice *slice);
 
-		bool Full() const;
-
 		bool NeedSplit();
 
 		inline Latch* GetLatch() { return &latch_; }
@@ -82,13 +80,13 @@ class Page : private NoCopy
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
-		inline uint16_t* Index() const {
-			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
-		}
+		uint16_t* Index() const;
 
-		inline KeySlice* Key(const uint16_t *index, uint16_t pos) const {
-			return (KeySlice *)(data_ + index[pos]);
-		}
+		KeySlice* Key(const uint16_t *index, uint16_t pos) const;
+
+		bool ExpandBloomFilter();
+
+		bool PrefixCompaction();
 
 		Latch    latch_;
 		page_t   page_no_;
