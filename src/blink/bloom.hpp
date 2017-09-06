@@ -9,7 +9,6 @@
 #define _BLOOM_FILTER_HPP_
 
 #include "../include/utility.hpp"
-#include "slice.hpp"
 
 namespace Mushroom {
 
@@ -23,6 +22,8 @@ class BloomFilter : public NoCopy
 		void Add(const char *data, size_t len);
 
 		bool Match(const char *data, size_t len) const;
+
+		int size() const { return bytes_; }
 
 	private:
 		static const int BitsPerKey = 10;

@@ -11,10 +11,6 @@
 
 namespace Mushroom {
 
-inline void EncodeFixed32(char *buf, uint32_t value) {
-	memcpy(buf, &value, sizeof(value));
-}
-
 inline uint32_t DecodeFixed32(const char *ptr) {
 	uint32_t result;
 	memcpy(&result, ptr, sizeof(result));
