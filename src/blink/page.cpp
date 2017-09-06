@@ -22,7 +22,7 @@ void Page::SetPageInfo(uint32_t page_size)
 uint16_t Page::CalculateDegree(uint8_t key_len, uint8_t pre_len)
 {
 	Page *page = 0;
-	uint16_t offset = (char *)page->data_ - (char *)page + pre_len;
+	uint16_t offset = (char *)page->data_ - (char *)page + pre_len + BloomFilter::Size(100);
 	return (PageSize - offset) / (KeySlice::ValLen + IndexByte + key_len);
 }
 
@@ -35,6 +35,7 @@ Page::Page(page_t page_no, uint8_t type, uint8_t key_len, uint8_t level, uint16_
 	type_    = (uint8_t)type;
 	key_len_ = key_len;
 	level_   = level;
+	filter_count_ = (((degree_ / 2) + 99) / 100) * 100;
 }
 
 void Page::InsertInfiniteKey()

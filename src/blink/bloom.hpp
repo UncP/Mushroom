@@ -15,9 +15,7 @@ namespace Mushroom {
 class BloomFilter : public NoCopy
 {
 	public:
-		BloomFilter(int count);
-
-		~BloomFilter();
+		BloomFilter(char *filter, int count, bool clear);
 
 		void Add(const char *data, size_t len);
 
@@ -25,11 +23,14 @@ class BloomFilter : public NoCopy
 
 		int size() const { return bytes_; }
 
+		static int Size(int count) { return (count * BitsPerKey + 7) >> 3; }
+
 	private:
 		static const int BitsPerKey = 10;
 		static const int NumProbe   = 0.69 * BitsPerKey;
-		int   bytes_;
+
 		char *filter_;
+		int   bytes_;
 };
 
 } // namespace Mushroom

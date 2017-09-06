@@ -11,13 +11,8 @@
 
 namespace Mushroom {
 
-inline uint32_t DecodeFixed32(const char *ptr) {
-	uint32_t result;
-	memcpy(&result, ptr, sizeof(result));
-	return result;
-}
-
-uint32_t Hash(const char *data, size_t n, uint32_t seed) {
+uint32_t Hash(const char *data, size_t n, uint32_t seed)
+{
 	// Similar to murmur hash
 	const uint32_t m = 0xc6a4a793;
 	const uint32_t r = 24;
@@ -26,7 +21,8 @@ uint32_t Hash(const char *data, size_t n, uint32_t seed) {
 
 	// Pick up four bytes at a time
 	while (data + 4 <= limit) {
-		uint32_t w = DecodeFixed32(data);
+		uint32_t w;
+		memcpy(&w, data, sizeof(uint32_t));
 		data += 4;
 		h += w;
 		h *= m;
@@ -57,24 +53,16 @@ uint32_t Hash(const char *data, size_t n, uint32_t seed) {
 	return h;
 }
 
-inline uint32_t BloomHash(const char *data, size_t len) {
+inline uint32_t BloomHash(const char *data, size_t len)
+{
 	return Hash(data, len, 0xbc9f1d34);
 }
 
-BloomFilter::BloomFilter(int count)
+BloomFilter::BloomFilter(char *filter, int count, bool clear):filter_(filter)
 {
-	int bits = count * BitsPerKey;
-	if (bits < 64) bits = 64;
-
-	bytes_ = (bits + 7) / 8;
-
-	filter_ = new char[bytes_];
-	memset(filter_, 0, bytes_);
-}
-
-BloomFilter::~BloomFilter()
-{
-	delete [] filter_;
+	bytes_ = Size(count);
+	// if (bytes_ < 8) bytes_ = 8;
+	if (clear) memset(filter_, 0, bytes_);
 }
 
 void BloomFilter::Add(const char *data, size_t len)

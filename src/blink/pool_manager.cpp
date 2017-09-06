@@ -96,15 +96,4 @@ void PoolManager::Free()
 		delete [] pool_[i].mem_;
 }
 
-bool PoolManager::operator==(PoolManager &that)
-{
-	// printf("%u %u\n", total_pool_.get(), that.total_pool_.get());
-	if (total_pool_.get() != that.total_pool_.get())
-		return false;
-	for (uint16_t i = 1, end = total_pool_.get(); i <= end; ++i)
-		if (memcmp(pool_[i].mem_, that.pool_[i].mem_, Page::PageSize * PagePool::SegSize))
-			return false;
-	return true;
-}
-
 } // namespace Mushroom

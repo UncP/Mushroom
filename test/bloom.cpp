@@ -25,16 +25,10 @@ static int NextLength(int length) {
 	return length;
 }
 
-TEST(Empty_BloomFilter)
-{
-	BloomFilter f(0);
-	ASSERT_FALSE(f.Match("hello", 5));
-	ASSERT_FALSE(f.Match("world", 5));
-}
-
 TEST(Simple_BloomFilter)
 {
-	BloomFilter f(2);
+	char buf[1024];
+	BloomFilter f(buf, 2, true);
 	ASSERT_FALSE(f.Match("hello", 5));
 	ASSERT_FALSE(f.Match("world", 5));
 	f.Add("hello", 5);
@@ -51,7 +45,8 @@ TEST(VaryingLengths_BloomFilter) {
 	int good_filters = 0;
 
 	for (int length = 1; length <= 10000; length = NextLength(length)) {
-		BloomFilter f(length);
+		char filter_buf[100000];
+		BloomFilter f(filter_buf, length, true);
 		for (int i = 0; i < length; i++) {
 			memcpy(buffer, &i, sizeof(int));
 			f.Add(buffer, sizeof(int));
@@ -75,7 +70,7 @@ TEST(VaryingLengths_BloomFilter) {
 
 		printf("false positives: %5.2f%% @ length = %6d ; bytes = %6d\n",
 		        rate * 100.0, length, static_cast<int>(f.size()));
-		// ASSERT_LE(rate, 0.02);   // Must not be over 2%
+		ASSERT_LE(rate, 0.02);   // Must not be over 2%
 		if (rate > 0.0125) mediocre_filters++;  // Allowed, but not too often
 		else good_filters++;
 	}
