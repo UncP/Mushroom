@@ -79,7 +79,7 @@ BloomFilter::~BloomFilter()
 
 void BloomFilter::Add(const char *data, size_t len)
 {
-  int bits = bytes_ * 8;
+  int bits = bytes_ << 3;
   uint32_t h = BloomHash(data, len);
   const uint32_t delta = (h >> 17) | (h << 15);
   for (int j = 0; j < NumProbe; ++j) {
@@ -91,7 +91,7 @@ void BloomFilter::Add(const char *data, size_t len)
 
 bool BloomFilter::Match(const char *key, size_t len) const
 {
-  int bits = bytes_ * 8;
+  int bits = bytes_ << 3;
   uint32_t h = BloomHash(key, len);
   const uint32_t delta = (h >> 17) | (h << 15);
   for (int j = 0; j < NumProbe; ++j) {

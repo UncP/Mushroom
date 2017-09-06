@@ -27,7 +27,7 @@ class BloomFilter : public NoCopy
 
 	private:
 		static const int BitsPerKey = 10;
-		static const int NumProbe   = BitsPerKey * 0.69;
+		static const int NumProbe   = 0.69 * BitsPerKey;
 		int   bytes_;
 		char *filter_;
 };
