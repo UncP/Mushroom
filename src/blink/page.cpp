@@ -15,6 +15,24 @@ namespace Mushroom {
 
 uint32_t Page::PageSize;
 
+Page* Page::NewPage(uint8_t key_len)
+{
+	char *buf = new char[PageSize];
+	memset(buf, 0, PageSize);
+	Page *page = (Page *)buf;
+	page->type_    = LEAF;
+	page->key_len_ = key_len;
+	page->degree_  = CalculateDegree(key_len);
+	page->filter_  = 100;
+	page->InsertInfiniteKey();
+	return page;
+}
+
+void Page::DeletePage(Page *page)
+{
+	delete [] (char *)page;
+}
+
 void Page::SetPageInfo(uint32_t page_size)
 {
 	PageSize = page_size;
@@ -195,16 +213,40 @@ void Page::Split(Page *that, KeySlice *slice)
 
 bool Page::NeedSplit()
 {
-	return ExpandBloomFilter() && PrefixCompaction();
+	return ExpandBloomFilter() || PrefixCompaction();
+}
+
+char* Page::BloomFilterPtr(uint16_t filter) const
+{
+	return (char *)this + PageSize - BloomFilter::Size(filter);
 }
 
 bool Page::ExpandBloomFilter()
 {
+	static const int filter_expand_size = 100;
 	if (total_key_ != filter_) return false;
-	uint16_t next_filter = filter_ + 100;
+	uint16_t next_filter = filter_ + filter_expand_size;
 	uint16_t next_degree = CalculateDegree(key_len_, pre_len_, next_filter);
-	if (next_degree <= degree_) return true;
+	if (next_degree <= total_key_) return true;
+	uint16_t *index = Index();
+	uint16_t *next_index = (uint16_t *)((char *)index - BloomFilter::Size(filter_expand_size));
+	memmove(next_index, index, sizeof(uint16_t) * total_key_);
+	index = next_index;
 
+	BloomFilter new_filter(BloomFilterPtr(next_filter), next_filter, true);
+	char buf[KeySlice::KeyLen], *ptr = buf;
+	if (pre_len_) {
+		memcpy(ptr, data_, pre_len_);
+		ptr += pre_len_;
+	}
+	for (uint16_t i = 0; i != total_key_; ++i) {
+		KeySlice *cur = Key(index, i);
+		memcpy(ptr, cur->key_, key_len_);
+		new_filter.Add(buf, KeySlice::KeyLen);
+	}
+	filter_ = next_filter;
+	degree_ = next_degree;
+	return false;
 }
 
 bool Page::PrefixCompaction()
@@ -243,7 +285,7 @@ bool Page::PrefixCompaction()
 	return false;
 }
 
-std::string Page::ToString(bool f, bool f2) const
+std::string Page::ToString(bool f) const
 {
 	std::ostringstream os;
 	os << "type: ";
@@ -255,7 +297,8 @@ std::string Page::ToString(bool f, bool f2) const
 	os << "tot: " << total_key_ << "  ";
 	os << "lvl: " << (int)level_ << "  ";
 	os << "keylen: " << (int)key_len_ << "  ";
-	os << "deg: " << degree_ << "\n";
+	os << "deg: " << degree_ << " ";
+	os << "flt: " << filter_ << "\n";
 
 	if (pre_len_) {
 		os << "pre_len: " << (int)pre_len_ << " ";
@@ -263,21 +306,36 @@ std::string Page::ToString(bool f, bool f2) const
 	}
 
 	uint16_t *index = Index();
+	// printf("%d\n", (char *)index - (char *)this);
 	if (!f) {
 		os << Key(index, 0)->ToString(key_len_);
 		os << Key(index, total_key_ - 1)->ToString(key_len_);
 	} else {
-		// for (uint16_t i = 0; i != total_key_; ++i)
-			// os << index[i] << " ";
-		// os << "\n";
-		for (uint16_t i = 0; i != total_key_; ++i) {
-			KeySlice *key = Key(index, i);
-			if (f2)
-				os << key->page_no_ << " ";
-			os << key->ToString(key_len_);
-		}
+		for (uint16_t i = 0; i != total_key_; ++i)
+			os << index[i] << " ";
+		os << "\n";
+		// for (uint16_t i = 0; i != total_key_; ++i) {
+		// 	KeySlice *key = Key(index, i);
+		// 	if (f2)
+		// 		os << key->page_no_ << " ";
+		// 	os << key->ToString(key_len_);
+		// }
 	}
 	os << "\nnext: " << Key(index, total_key_-1)->page_no_ << "\n";
+	return os.str();
+}
+
+std::string Page::Status() const
+{
+	std::ostringstream os;
+	os << "keylen: " << (int)key_len_ << "  ";
+	os << "totkey: " << total_key_ << " ";
+	os << "degree: " << degree_ << " ";
+	os << "filter: " << filter_ << "\n";
+	uint16_t *index = Index();
+	os << "end: " << int(data_ + total_key_ * (key_len_+KeySlice::ValLen) - (char *)this) << " ";
+	os << "index: " << int((char *)index - (char *)this) << " ";
+	os << "bloom: " << int(BloomFilterPtr(filter_) - (char *)this) << "\n";
 	return os.str();
 }
 

@@ -36,6 +36,10 @@ class Page : private NoCopy
 
 		static void SetPageInfo(uint32_t page_size);
 
+		static Page* NewPage(uint8_t key_len);
+
+		static void DeletePage(Page *page);
+
 		static uint16_t CalculateDegree(uint8_t key_len, uint8_t pre_len = 0, uint16_t filter = 100);
 
 		void InsertInfiniteKey();
@@ -75,7 +79,9 @@ class Page : private NoCopy
 
 		inline void Unlock() { latch_.Unlock(); }
 
-		std::string ToString(bool f, bool f2) const;
+		std::string ToString(bool f) const;
+
+		std::string Status() const;
 
 	private:
 		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
@@ -87,6 +93,8 @@ class Page : private NoCopy
 		bool ExpandBloomFilter();
 
 		bool PrefixCompaction();
+
+		char* BloomFilterPtr(uint16_t filter) const;
 
 		Latch    latch_;
 		page_t   page_no_;

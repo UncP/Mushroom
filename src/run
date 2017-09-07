@@ -72,6 +72,9 @@ then
 elif [ "$1" = "bloom" ]
 then
 	make bloom_test && ./bloom_test
+elif [ "$1" = "page" ]
+then
+	make page_test && ./page_test
 else
 	echo "wrong argument :("
 fi
