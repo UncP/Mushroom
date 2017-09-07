@@ -2,7 +2,7 @@
 [English Version of README](./README.en.md)
 
 [![Author](https://img.shields.io/badge/Author-UncP-brightgreen.svg)](https://github.com/UncP)
-[![Version](https://img.shields.io/badge/Version-1.2.1-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.2.2-blue.svg)]()
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://travis-ci.org/UncP/Mushroom)
 [![License](https://img.shields.io/badge/License-BSD-red.svg)](./LICENSE)
 
@@ -45,6 +45,7 @@
 | 1.1.1  |     优化Raft内存使用（牺牲可读性）   |
 | 1.2.0  |     Adaptive Radix Tree |
 | 1.2.1  |     移除锁管理器，每个页面一把锁，性能提升约10% |
+| 1.2.2  |     引入布隆过滤器进行读写优化  |
 
 ### 其他
 + 你可以在这个[知乎专栏](https://zhuanlan.zhihu.com/b-tree)里找到**Mushroom**的介绍
