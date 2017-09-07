@@ -94,7 +94,9 @@ class Page : private NoCopy
 
 		bool PrefixCompaction();
 
-		char* BloomFilterPtr(uint16_t filter) const;
+		char* BloomFilterPtr() const;
+
+		void AdjustBloomFilter(uint16_t filter);
 
 		Latch    latch_;
 		page_t   page_no_;

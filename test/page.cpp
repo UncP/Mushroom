@@ -66,11 +66,6 @@ TEST(PageNotSplit)
 	Page::DeletePage(page);
 }
 
-TEST(PagePrefixCompactionWithBloomFilter)
-{
-
-}
-
 int main()
 {
 	Page::SetPageInfo(4096);

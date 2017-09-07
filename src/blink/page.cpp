@@ -209,6 +209,29 @@ void Page::Split(Page *that, KeySlice *slice)
 
 	this->total_key_ = left;
 	that->total_key_ = right;
+	this->AdjustBloomFilter((this->total_key_ / 100 + 1) * 100); // make sure new filter is bigger than
+	that->AdjustBloomFilter((that->total_key_ / 100 + 1) * 100); // total_key_ & can be divided by 100
+}
+
+void Page::AdjustBloomFilter(uint16_t filter)
+{
+	uint16_t *index = Index();
+	filter_ = filter;
+	uint16_t *next_index = Index();
+	memmove(next_index, index, sizeof(uint16_t) * total_key_);
+
+	// BloomFilter new_filter(BloomFilterPtr(), filter_, true);
+	// char buf[KeySlice::KeyLen], *ptr = buf;
+	// if (pre_len_) {
+	// 	memcpy(ptr, data_, pre_len_);
+	// 	ptr += pre_len_;
+	// }
+	// index = next_index;
+	// for (uint16_t i = 0; i != total_key_; ++i) {
+	// 	KeySlice *cur = Key(index, i);
+	// 	memcpy(ptr, cur->key_, key_len_);
+	// 	new_filter.Add(buf, KeySlice::KeyLen);
+	// }
 }
 
 bool Page::NeedSplit()
@@ -216,9 +239,9 @@ bool Page::NeedSplit()
 	return ExpandBloomFilter() || PrefixCompaction();
 }
 
-char* Page::BloomFilterPtr(uint16_t filter) const
+char* Page::BloomFilterPtr() const
 {
-	return (char *)this + PageSize - BloomFilter::Size(filter);
+	return (char *)this + PageSize - BloomFilter::Size(filter_);
 }
 
 bool Page::ExpandBloomFilter()
@@ -228,24 +251,8 @@ bool Page::ExpandBloomFilter()
 	uint16_t next_filter = filter_ + filter_expand_size;
 	uint16_t next_degree = CalculateDegree(key_len_, pre_len_, next_filter);
 	if (next_degree <= total_key_) return true;
-	uint16_t *index = Index();
-	uint16_t *next_index = (uint16_t *)((char *)index - BloomFilter::Size(filter_expand_size));
-	memmove(next_index, index, sizeof(uint16_t) * total_key_);
-	index = next_index;
-
-	BloomFilter new_filter(BloomFilterPtr(next_filter), next_filter, true);
-	char buf[KeySlice::KeyLen], *ptr = buf;
-	if (pre_len_) {
-		memcpy(ptr, data_, pre_len_);
-		ptr += pre_len_;
-	}
-	for (uint16_t i = 0; i != total_key_; ++i) {
-		KeySlice *cur = Key(index, i);
-		memcpy(ptr, cur->key_, key_len_);
-		new_filter.Add(buf, KeySlice::KeyLen);
-	}
-	filter_ = next_filter;
 	degree_ = next_degree;
+	AdjustBloomFilter(next_filter);
 	return false;
 }
 
@@ -335,7 +342,7 @@ std::string Page::Status() const
 	uint16_t *index = Index();
 	os << "end: " << int(data_ + total_key_ * (key_len_+KeySlice::ValLen) - (char *)this) << " ";
 	os << "index: " << int((char *)index - (char *)this) << " ";
-	os << "bloom: " << int(BloomFilterPtr(filter_) - (char *)this) << "\n";
+	os << "bloom: " << int(BloomFilterPtr() - (char *)this) << "\n";
 	return os.str();
 }
 
