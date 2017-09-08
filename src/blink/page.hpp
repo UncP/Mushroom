@@ -79,6 +79,8 @@ class Page : private NoCopy
 
 		inline void Unlock() { latch_.Unlock(); }
 
+		void AdjustBloomFilter(uint16_t filter);
+
 		std::string ToString(bool f) const;
 
 		std::string Status() const;
@@ -95,8 +97,6 @@ class Page : private NoCopy
 		bool PrefixCompaction();
 
 		char* BloomFilterPtr() const;
-
-		void AdjustBloomFilter(uint16_t filter);
 
 		Latch    latch_;
 		page_t   page_no_;

@@ -209,8 +209,10 @@ void Page::Split(Page *that, KeySlice *slice)
 
 	this->total_key_ = left;
 	that->total_key_ = right;
-	this->AdjustBloomFilter((this->total_key_ / 100 + 1) * 100); // make sure new filter is bigger than
-	that->AdjustBloomFilter((that->total_key_ / 100 + 1) * 100); // total_key_ & can be divided by 100
+	if (!level_) {
+		this->AdjustBloomFilter((this->total_key_ / 100 + 1) * 100); // make sure new filter is bigger than
+		that->AdjustBloomFilter((that->total_key_ / 100 + 1) * 100); // total_key_ & can be divided by 100
+	}
 }
 
 void Page::AdjustBloomFilter(uint16_t filter)
@@ -313,7 +315,6 @@ std::string Page::ToString(bool f) const
 	}
 
 	uint16_t *index = Index();
-	// printf("%d\n", (char *)index - (char *)this);
 	if (!f) {
 		os << Key(index, 0)->ToString(key_len_);
 		os << Key(index, total_key_ - 1)->ToString(key_len_);

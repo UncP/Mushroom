@@ -20,6 +20,7 @@ BLinkTree::BLinkTree(uint32_t key_len)
 	Set set;
 	set.page_ = pool_manager_->NewPage(Page::ROOT, key_len_, 0, degree_);
 	set.page_->InsertInfiniteKey();
+	set.page_->AdjustBloomFilter(100);
 }
 
 BLinkTree::~BLinkTree()
@@ -29,6 +30,7 @@ BLinkTree::~BLinkTree()
 
 void BLinkTree::Free()
 {
+	printf("%s", pool_manager_->GetPage(root_.get())->Status().c_str());
 	pool_manager_->Free();
 }
 
@@ -134,6 +136,25 @@ bool BLinkTree::Get(KeySlice *key)
 
 	set.page_->UnlockShared();
 	return true;
+}
+
+void BLinkTree::CheckBloomFilter()
+{
+	Page *page = pool_manager_->GetPage(root_.get());
+	while (page->level_) {
+		page_t next_level = page->first_;
+		assert(page->filter_ == 0);
+		while (page->Next()) {
+			page = pool_manager_->GetPage(page->Next());
+			assert(page->filter_ == 0);
+		}
+		page = pool_manager_->GetPage(next_level);
+	}
+	assert((page->total_key_ / 100 + 1) * 100 == page->filter_);
+	while (page->Next()) {
+		page = pool_manager_->GetPage(page->Next());
+		assert((page->total_key_ / 100 + 1) * 100 == page->filter_);
+	}
 }
 
 } // namespace Mushroom

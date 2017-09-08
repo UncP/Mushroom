@@ -34,6 +34,8 @@ class BLinkTree : private NoCopy
 
 		void Free();
 
+		void CheckBloomFilter();
+
 	private:
 		struct Set {
 			Set():depth_(0) { }

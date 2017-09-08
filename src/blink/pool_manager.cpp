@@ -92,6 +92,7 @@ Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_
 
 void PoolManager::Free()
 {
+	printf("%d\n", total_pool_.get() * PagePool::SegSize);
 	for (uint16_t i = 1, end = total_pool_.get(); i <= end; ++i)
 		delete [] pool_[i].mem_;
 }

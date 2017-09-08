@@ -13,6 +13,7 @@
 #include "../src/blink/slice.hpp"
 #include "../src/blink/db.hpp"
 #include "../src/blink/task.hpp"
+#include "../src/blink/b_link_tree.hpp"
 #include "../src/blink/bounded_mapping_queue.hpp"
 #include "../src/blink/thread_pool_mapping.hpp"
 
@@ -87,6 +88,9 @@ int main(int argc, char **argv)
 	double t1 = Do(file, &db, &MushroomDB::Put);
 
 	double t2 = Do(file, &db, &MushroomDB::Get);
+
+	auto tree = db.Tree();
+	tree->CheckBloomFilter();
 
 	db.Close();
 

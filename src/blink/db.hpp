@@ -27,6 +27,8 @@ class MushroomDB : private NoCopy
 
 		void Close();
 
+		BLinkTree* Tree() { return tree_; }
+
 		~MushroomDB();
 
 	private:
