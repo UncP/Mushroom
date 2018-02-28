@@ -41,7 +41,6 @@ class PoolManager : private NoCopy
 
 		void Link(uint16_t hash, uint16_t victim);
 
-		int            fd_;
 		Atomic<page_t> cur_page_;
 		atomic_16_t    total_pool_;
 		HashEntry     *entries_;
