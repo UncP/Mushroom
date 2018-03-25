@@ -11,7 +11,6 @@
 #include <cassert>
 #include <cstdio>
 
-#include "../src/art/node.hpp"
 #include "../src/art/art.hpp"
 
 const char *file = "../data/10000000";

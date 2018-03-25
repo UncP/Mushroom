@@ -108,8 +108,6 @@ class Node
 
 		inline uint32_t PrefixLen() const { return len_; }
 
-		static uint32_t MAX_PREFIX_LEN;
-
 		uint32_t MismatchPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
 			int max_cmp = std::min(int(std::min(MAX_PREFIX_LEN, len_)), int(len - depth));
 			int idx;
@@ -132,6 +130,8 @@ class Node
 		Node(const Node &) = delete;
 		Node& operator=(const Node &) = delete;
 
+		static uint32_t MAX_PREFIX_LEN;
+
 		static Leaf* Minimum(const Node *node);
 
 	protected:
@@ -141,7 +141,7 @@ class Node
 		uint8_t  type_;
 		uint8_t  count_;
 		uint32_t len_;
-		uint8_t  prefix_[8];
+		uint8_t  prefix_[8]; // MAX_PREFIX_LEN
 };
 
 class Node4 : public Node
