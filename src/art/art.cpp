@@ -5,6 +5,7 @@
  *    > Time:    2017-06-21 10:40:44
 **/
 
+#include "node.hpp"
 #include "art.hpp"
 
 namespace Mushroom {
@@ -79,8 +80,7 @@ static void AddChild(Node *cur, Node **ref, uint8_t byte, void *child)
 	}
 }
 
-static bool Insert(Node *cur, Node **ref, const uint8_t *key, uint32_t depth, uint32_t len,
-	uint32_t val)
+static bool Insert(Node *cur, Node **ref, const uint8_t *key, uint32_t depth, uint32_t len, uint32_t val)
 {
 	if (!cur) {
 		*ref = (Node *)SET_LEAF(NewLeaf(key, len, val));

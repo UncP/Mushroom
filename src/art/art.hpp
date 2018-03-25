@@ -8,7 +8,7 @@
 #ifndef _ART_HPP_
 #define _ART_HPP_
 
-#include "node.hpp"
+class Node;
 
 namespace Mushroom {
 
