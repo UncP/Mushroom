@@ -69,8 +69,6 @@ inline void DeleteLeaf(Leaf *leaf) {
 class Node
 {
 	public:
-		static const uint32_t MAX_PREFIX_LEN = 8;
-
 		Node(NodeType type):type_(type), count_(0), len_(0) { }
 
 		Node(NodeType type, uint8_t count, uint32_t len, const uint8_t *prefix)
@@ -110,6 +108,8 @@ class Node
 
 		inline uint32_t PrefixLen() const { return len_; }
 
+		static uint32_t MAX_PREFIX_LEN;
+
 		uint32_t MismatchPrefix(const uint8_t *key, uint32_t len, uint32_t depth) {
 			int max_cmp = std::min(int(std::min(MAX_PREFIX_LEN, len_)), int(len - depth));
 			int idx;
@@ -129,8 +129,6 @@ class Node
 			return idx;
 		}
 
-		void Free();
-
 		Node(const Node &) = delete;
 		Node& operator=(const Node &) = delete;
 
@@ -143,7 +141,7 @@ class Node
 		uint8_t  type_;
 		uint8_t  count_;
 		uint32_t len_;
-		uint8_t  prefix_[MAX_PREFIX_LEN];
+		uint8_t  prefix_[8];
 };
 
 class Node4 : public Node

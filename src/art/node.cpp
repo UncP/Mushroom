@@ -5,9 +5,13 @@
  *    > Time:    2017-06-30 10:10:10
 **/
 
+#include <cassert>
+
 #include "node.hpp"
 
 namespace Mushroom {
+
+uint32_t Node::MAX_PREFIX_LEN = 8;
 
 void Free(Node *node)
 {
