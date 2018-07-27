@@ -27,11 +27,6 @@ BLinkTree::~BLinkTree()
 	delete pool_manager_;
 }
 
-bool BLinkTree::operator==(const BLinkTree &that) const
-{
-	return *pool_manager_ == *that.pool_manager_;
-}
-
 void BLinkTree::Free()
 {
 	pool_manager_->Free();
@@ -103,6 +98,7 @@ void BLinkTree::Insert(Set &set, KeySlice *key)
 	}
 }
 
+// this is the entrance for putting a key in b link tree
 bool BLinkTree::Put(KeySlice *key)
 {
 	Set set;
@@ -118,6 +114,7 @@ bool BLinkTree::Put(KeySlice *key)
 	return true;
 }
 
+// this is the entrance for getting a key in b link tree
 bool BLinkTree::Get(KeySlice *key)
 {
 	Set set;
