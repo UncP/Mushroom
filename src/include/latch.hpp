@@ -19,7 +19,9 @@ class Latch : private NoCopy {
 	public:
 		Latch() { }
 
-		void Init() { assert(!pthread_rwlock_init(latch_, 0)); }
+		inline void Init() {
+			assert(!pthread_rwlock_init(latch_, 0));
+		}
 
 		inline void ReadLock() {
 			pthread_rwlock_rdlock(latch_);
@@ -31,6 +33,10 @@ class Latch : private NoCopy {
 
 		inline void Unlock() {
 			pthread_rwlock_unlock(latch_);
+		}
+
+		inline void Destroy() {
+			assert(!pthread_rwlock_destroy(latch_));
 		}
 
 	private:

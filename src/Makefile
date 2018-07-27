@@ -14,7 +14,7 @@ RaftOBJ = $(RaftFile:.cpp=.o)
 RpcOBJ = $(RpcFile:.cpp=.o)
 AOBJ = $(ARTFILE:.cpp=.o)
 
-all: blinktree_with_queue_test blinktree_multi_thread_test distributed_index_test
+default: blinktree_with_queue_test blinktree_multi_thread_test
 
 art_test: $(AOBJ) ../test/art.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ -msse2

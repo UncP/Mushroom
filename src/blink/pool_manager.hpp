@@ -33,8 +33,6 @@ class PoolManager : private NoCopy
 
 		void Free();
 
-		bool operator==(PoolManager &that);
-
 	private:
 		static uint32_t HashMask;
 		static uint32_t PoolSize;

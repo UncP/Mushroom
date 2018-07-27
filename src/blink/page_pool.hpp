@@ -40,6 +40,10 @@ class PagePool : private NoCopy
 			return (Page *)(mem_ + Page::PageSize * (page_no & SegMask));
 		}
 
+		inline void Destroy() {
+			delete [] mem_;
+		}
+
 		static uint32_t SegSize;
 	private:
 		static uint32_t SegBits;
