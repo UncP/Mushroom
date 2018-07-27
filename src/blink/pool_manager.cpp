@@ -93,7 +93,7 @@ Page* PoolManager::NewPage(uint8_t type, uint8_t key_len, uint8_t level, uint16_
 void PoolManager::Free()
 {
 	for (uint16_t i = 1, end = total_pool_.get(); i <= end; ++i)
-		pool_[i].Free();
+		pool_[i].Destroy();
 }
 
 } // namespace Mushroom

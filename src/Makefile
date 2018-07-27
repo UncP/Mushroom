@@ -7,16 +7,26 @@ NetworkFile = $(shell find network -name '*.cpp')
 RaftFile = $(shell find raft -name '*.cpp')
 RpcFile = $(shell find rpc -name '*.cpp')
 ARTFILE = $(shell find art -name '*.cpp')
+PalmFile = $(shell find palm -name '*.cpp')
 
 MOBJ = $(BlinkFile:.cpp=.o)
 NOBJ = $(NetworkFile:.cpp=.o)
 RaftOBJ = $(RaftFile:.cpp=.o)
 RpcOBJ = $(RpcFile:.cpp=.o)
 AOBJ = $(ARTFILE:.cpp=.o)
+POBJ = $(PalmFile:.cpp=.o)
 
-default: blinktree_with_queue_test blinktree_multi_thread_test
+default: palm_tree_test
 
-art_test: $(AOBJ) ../test/art.cpp
+all: blinktree_with_queue_test blinktree_multi_thread_test palm_tree_test
+
+palm_tree_test: $(POBJ) ./blink/pool_manager.o ./blink/page_pool.o ./blink/page.o ../test/palm.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+barrier_test: ../test/barrier.cpp
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+art_tree_test: $(AOBJ) ../test/art.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ -msse2
 
 mushroom_log_vector_test: raft/mushroom_log_vector.cpp ../test/mushroom_log_vector.cpp

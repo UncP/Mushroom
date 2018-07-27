@@ -5,8 +5,8 @@
  *    > Time:  2018-3-25 23:21:00
 **/
 
-#ifndef _BARRIER_H_
-#define _BARRIER_H_
+#ifndef _BARRIER_HPP_
+#define _BARRIER_HPP_
 
 #include "../include/mutex.hpp"
 #include "../include/cond.hpp"
@@ -42,4 +42,4 @@ class Barrier
 
 } // namespace Mushroom
 
-#endif /* _BARRIER_H_ */
+#endif /* _BARRIER_HPP_ */
