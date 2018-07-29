@@ -12,7 +12,7 @@
 
 namespace Mushroom {
 
-uint32_t Page::PageSize;
+uint32_t Page::PageSize = 4096;
 
 void Page::SetPageInfo(uint32_t page_size)
 {

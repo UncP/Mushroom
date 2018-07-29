@@ -51,6 +51,10 @@ class Page : private NoCopy
 
 		inline page_t PageNo() const { return page_no_; }
 
+		inline uint16_t TotalKey() const { return total_key_; }
+
+		inline uint16_t Degree() const { return degree_; }
+
 		void AssignFirst(page_t first);
 
 		page_t Descend(const KeySlice *key) const;
@@ -77,11 +81,6 @@ class Page : private NoCopy
 
 		inline void Unlock() { latch_.Unlock(); }
 
-		std::string ToString(bool f, bool f2) const;
-
-	private:
-		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
-
 		inline uint16_t* Index() const {
 			return (uint16_t *)((char *)this + (PageSize - (total_key_ * IndexByte)));
 		}
@@ -89,6 +88,11 @@ class Page : private NoCopy
 		inline KeySlice* Key(const uint16_t *index, uint16_t pos) const {
 			return (KeySlice *)(data_ + index[pos]);
 		}
+
+		std::string ToString(bool f, bool f2) const;
+
+	private:
+		bool Traverse(const KeySlice *key, uint16_t *idx, KeySlice **slice, int type = 1) const;
 
 		Latch    latch_;
 		page_t   page_no_;

@@ -8,10 +8,13 @@
 #ifndef _BATCHER_HPP_
 #define _BATCHER_HPP_
 
+#include <string>
+
 #include "../include/utility.hpp"
 
 namespace Mushroom {
 
+class KeySlice;
 class Page;
 
 // batcher is just a wrapper of page, we use it to store keys in order before
@@ -21,8 +24,23 @@ class Batcher : private NoCopy
 	public:
 		Batcher();
 
-	private:
+		~Batcher();
 
+		bool InsertKeySlice(const KeySlice *slice);
+
+		uint32_t TotalKey() const;
+
+		uint32_t Capacity() const;
+
+		void BeforeGet();
+
+		const KeySlice* GetKeySlice(uint32_t idx) const;
+
+		std::string ToString() const;
+
+	private:
+		Page     *page_;
+		uint16_t *idx_;
 };
 
 } // Mushroom

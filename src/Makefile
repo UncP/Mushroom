@@ -23,6 +23,9 @@ all: blinktree_with_queue_test blinktree_multi_thread_test palm_tree_test
 palm_tree_test: $(POBJ) ./blink/pool_manager.o ./blink/page_pool.o ./blink/page.o ../test/palm.cpp
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
+batcher_test: ../test/batcher.cpp ./palm/batcher.o ./blink/page.o
+	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
 batch_test: ../test/batch.cpp ./palm/batch.o
 	$(CPP) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
