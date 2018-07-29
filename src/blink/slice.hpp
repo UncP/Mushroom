@@ -27,7 +27,7 @@ class KeySlice : private NoCopy
 		}
 
 		page_t  page_no_;
-		char   key_[0];
+		char    key_[0];
 };
 
 inline KeySlice* NewKeySlice() {
