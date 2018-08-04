@@ -14,8 +14,7 @@ int main()
 {
 	using namespace Mushroom;
 	Batcher batcher;
-	printf("%s\n", batcher.ToString().c_str());
-	for (uint32_t i = 0; i < batcher.Capacity() - 1; ++i) {
+	for (uint32_t i = 0; i < batcher.Capacity(); ++i) {
 		std::string s = std::to_string(i);
 		s.insert(0, 3 - s.size(), '0');
 		s = "batcher_test_" + s;

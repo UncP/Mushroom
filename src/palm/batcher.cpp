@@ -35,11 +35,11 @@ bool Batcher::InsertKeySlice(const KeySlice *slice)
 }
 
 uint32_t Batcher::TotalKey() const {
-	return page_->TotalKey();
+	return page_->TotalKey() - 1;
 }
 
 uint32_t Batcher::Capacity() const {
-	return page_->Degree();
+	return page_->Degree() - 1;
 }
 
 void Batcher::BeforeGet() {
