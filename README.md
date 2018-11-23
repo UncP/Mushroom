@@ -1,4 +1,4 @@
-#### 这个 repo 已弃用，请移步 [aili](https://github.com/UncP/aili) 查看最新进展
+### 这个 repo 已弃用，请移步 [aili](https://github.com/UncP/aili) 查看最新进展
 ***
 
 ## Mushroom（蘑菇）：分布式内存索引
