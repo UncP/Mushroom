@@ -1,3 +1,6 @@
+### this repo is not updated any more，please go to [aili](https://github.com/UncP/aili)
+***
+
 ## Mushroom: Distributed In-Memory Index
 [中文版 README](./README.md)
 
